@@ -1,0 +1,19 @@
+# OS / 에디터
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 비밀정보
+.env
+.env.*
+*.pem
+*.key
+auth.json
+secrets*
+
+# 로컬 설정·임시 파일
+.claude/settings.local.json
+.codex-review/
+*.log
+node_modules/
