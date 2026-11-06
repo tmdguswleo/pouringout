@@ -2615,8 +2615,8 @@ async function draftSheet(hs){
     box.append(el("p",{class:"hint",style:"margin:0 0 4px"},"이번 2주 휴무: "+DRAFT_STAFF.map(p=>`${nm(p)} ${res.offCnt[p]}`).join(" · ")));
     box.append(el("p",{class:"hint",style:"margin:0;white-space:pre-line"},res.issues.length?"못 지킨 부분\n· "+res.issues.join("\n· "):"모든 규칙을 지켰어요"))};
   drawRes();
-  const again=el("button",{class:"btn ghost",type:"button",style:"margin-right:auto",onclick:async()=>{again.disabled=true;seed=(seed*48271)%2147483647;const r=await draftApply(hs,seed);if(r){res=r;drawRes()}again.disabled=false}},"다시 만들기");
-  openSheet(`${md(hs)}~${md(addDays(hs,13))} 초안을 넣었어요`,[el("p",{class:"hint",style:"margin:0;white-space:pre-line"},"닫고 달력에서 칸을 눌러 고치면 그 날은 고정돼요. '다시 만들기'를 해도 고친 날은 그대로예요.\n다 됐으면 '확정하기' → '공개하기'를 눌러 주세요"),box],async()=>{draftConfirm(hs);return true},"확정하기",again);draw()}
+  // 버튼 없는 안내 창: 바깥을 누르면 닫힘. 다시 만들기·비우기·확정하기는 근무표 위 버튼으로
+  openSheet(`${md(hs)}~${md(addDays(hs,13))} 초안을 넣었어요`,[el("p",{class:"hint",style:"margin:0;white-space:pre-line"},"달력에서 칸을 눌러 고치면 그 날은 고정돼요. '다시 만들기'를 해도 고친 날은 그대로예요.\n다 됐으면 '확정하기' → '공개하기'를 눌러 주세요"),box],async()=>true,"",null,{autosave:true});draw()}
 function hopeCap(d){return parse(d).getDay()===3?3:1}
 function hopeBlocked(d,who){
   const taken=S.dayoffs.filter(x=>x.date===d&&x.staff!==who&&x.staff!=="seunghyun");
