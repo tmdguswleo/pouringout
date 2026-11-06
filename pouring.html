@@ -1358,7 +1358,7 @@ async function afterWebLogin(key,usedPw){
     if(row&&row.must_change){setStatus("");loginPick="";pinSheet(key,false,usedPw);return}}
   // 새로 고치지 않고 바로 앱으로. 저장해 둔 데이터가 있으면 그걸로 화면부터, 서버 값은 뒤에서 받음
   ownerFlag=key==="seunghyun";myUid=key;me=key;loginPick="";try{localStorage.setItem("pn.login",key);localStorage.setItem("pn.uid",key)}catch(e){}
-  if(window.__updMe)__updMe();await loadCache(key);render();subAll();
+  if(window.__updMe)__updMe();if(await loadCache(key))render();subAll(); // 저장된 데이터가 없으면 다 받은 뒤 한 번에 화면을 그림
   sb.rpc("my_status").then(r=>{const row=r.data&&r.data[0];if(row&&row.must_change){me="";pinSheet(key,false,"");render()}}).catch(()=>{})}
 /* 푸시 알림 (새 주소만): 이 기기를 pushsubs/<내키>_<기기>에 등록 → 서버(notify 함수)가 새 글이 오면 알림 */
 const VAPID_PUB="BB8kfBFZbQfoZbZDq0it2Y_6_UryhM9Wzq1Ye8b9fbPRhdpJUyasclfNLgHcS1mcM3JQ3hW3HFnNHmmZJZwk_lY";
@@ -3594,15 +3594,16 @@ function closeSheet(){sheetDismiss=null;$("sheetRoot").textContent="";document.d
 /* ---------- data ---------- */
 /* 새 주소: 받은 데이터를 휴대폰에 저장해 두고, 다음에 열거나 로그인할 때 그걸로 화면부터 바로 보여 줌 (그다음 서버 값으로 바뀜) */
 const CACHE_COLS=["notices","checks","todos","schedule","dayoffs","closing","cleaning","cleanman","docs","extra","monthnotes","opencounts","orders"];
-let cacheT=null;
+let cacheT=null,cacheShown=false;
 function saveCacheSoon(){if(!WEB||!myUid||!("caches" in window))return;clearTimeout(cacheT);cacheT=setTimeout(()=>{try{const o={};CACHE_COLS.forEach(c=>o[c]=S[c]||[]);
   caches.open("po-data").then(c=>c.put("/s-"+myUid,new Response(JSON.stringify(o),{headers:{"Content-Type":"application/json"}}))).catch(()=>{})}catch(e){}},1500)}
 async function loadCache(uid){if(!WEB||!uid||!("caches" in window))return false;try{const c=await caches.open("po-data");const r=await c.match("/s-"+uid);if(!r)return false;const o=await r.json();
-  let any=false;CACHE_COLS.forEach(k=>{if(Array.isArray(o[k])&&!(S[k]||[]).length){S[k]=o[k];any=true}});return any}catch(e){return false}}
+  let any=false;CACHE_COLS.forEach(k=>{if(Array.isArray(o[k])&&!(S[k]||[]).length){S[k]=o[k];any=true}});if(any)cacheShown=true;return any}catch(e){return false}}
 function subAll(){
   const specs={notices:["createdAt",1000],checks:["createdAt",400],todos:["createdAt",600],schedule:["date",500],dayoffs:["date",800],closing:["date",240],cleaning:[null,100],cleanman:[null,200],pins:[null,20],docs:["updatedAt",1000],extra:[null,60],monthnotes:[null,60],opencounts:[null,200],orders:["createdAt",400]};
   let ready=0;const total=Object.keys(specs).length;
   const timer=setTimeout(()=>{if(!loaded)setStatus("연결이 느려요. 잠시만 기다려주세요",true)},10000);
+  if(WEB)setTimeout(()=>{if(!loaded&&!cacheShown){cacheShown=true;render()}},3000); // 너무 오래 걸리면 받은 것부터 보여 줌
   const go=name=>{
     const [f,n]=specs[name];let q=col(name);q=f?q.orderBy(f,"desc").limit(n):q.limit(n);
     let first=true;
@@ -3614,6 +3615,8 @@ function subAll(){
       if(name==="dayoffs"&&window.__hopeCalDraw)try{window.__hopeCalDraw()}catch(e){}
       if(first){first=false;ready++;if(ready===total){loaded=true;clearTimeout(timer);setStatus("실시간 동기화 중")}}
       saveCacheSoon();
+      // 새 주소에서 저장해 둔 데이터 없이 처음 받을 때는, 근무·전달사항 등이 하나씩 튀어나오지 않게 다 받은 뒤 한 번에 그림
+      if(WEB&&!loaded&&!cacheShown)return;
       render();
     },err=>{if(err.code==="unavailable"){setStatus("연결이 끊겼어요. 다시 연결 중…",true);setTimeout(()=>go(name),3000)}else setStatus("일부 내용을 불러오지 못했어요",true)});
   };
