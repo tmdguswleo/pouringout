@@ -1,10 +1,11 @@
 // Supabase Edge Function "notify": store 테이블에 새 글이 들어오면 휴대폰에 알림 보내기
 // Supabase → Edge Functions → Deploy a new function → Via Editor → 이름 notify → 이 내용 붙여 넣기 → Deploy
-// Secrets: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (예: mailto:주인 이메일)
+// Secrets: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (예: mailto:주인 이메일), NOTIFY_SECRET
+// 함수 설정에서 'Verify JWT'는 끄고, 대신 Database Webhook이 보내는 x-notify-secret 머리글로 확인함
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
-const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+const sb = createClient(Deno.env.get("SUPABASE_URL")!, (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SECRET_KEY"))!);
 webpush.setVapidDetails(Deno.env.get("VAPID_SUBJECT") || "mailto:pouringout@example.com",
   Deno.env.get("VAPID_PUBLIC_KEY")!, Deno.env.get("VAPID_PRIVATE_KEY")!);
 const NAME: Record<string, string> = { seunghyun: "승현", daseul: "다슬", junhyung: "준형", jeonghan: "정한", wonseok: "원석", woojun: "우준", koha: "koha", hojeong: "호정" };
@@ -12,6 +13,8 @@ const STORE: Record<string, string> = { pouring: "푸어링", meraki: "메라키
 const cut = (s: string, n = 80) => (s || "").replace(/\s+/g, " ").trim().slice(0, n);
 
 Deno.serve(async (req) => {
+  const need = Deno.env.get("NOTIFY_SECRET");
+  if (!need || req.headers.get("x-notify-secret") !== need) return new Response("forbidden", { status: 403 }); // 연결된 Webhook만 부를 수 있음
   const p = await req.json().catch(() => ({}));
   if (p.type !== "INSERT" || !p.record) return new Response("skip");
   const r = p.record, d = r.data || {};
