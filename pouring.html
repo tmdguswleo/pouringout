@@ -1349,7 +1349,7 @@ async function pushOn(){
   catch(e){flash("알림을 켜지 못했어요. 다시 해 주세요",true);return false}}
 async function pushOffNow(){try{const s=await pushSub();if(s){try{await db.collection("pushsubs").doc(await pushDocId(s)).delete()}catch(e){};await s.unsubscribe()}flash("알림을 껐어요")}catch(e){flash("알림을 끄지 못했어요",true)}}
 async function webInit(){
-  if("serviceWorker" in navigator)try{navigator.serviceWorker.register("sw.js")}catch(e){} // 빠른 실행 + 알림
+  if("serviceWorker" in navigator)try{navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{})}catch(e){} // 빠른 실행 + 알림 (열 때마다 새 버전 확인)
   setStatus("연결 중…");
   try{if(!window.supabase)await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js")}catch(e){setStatus("연결하지 못했어요. 인터넷을 확인하고 새로 고쳐 주세요",true);return}
   sb=window.supabase.createClient(SUPA_URL,SUPA_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"pn.sb"}});
