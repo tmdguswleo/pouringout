@@ -264,6 +264,7 @@ li.editing .iedit-bar{display:flex}
 .ie-pc{display:none!important}
 li.ie-chk .ie-pc{display:block!important}
 li.ie-nochk .chk{opacity:.25}
+.oc.draft td,.oc.draft th{font-size:12.5px;padding:5px 4px;text-align:left;white-space:nowrap}.oc.draft{table-layout:auto;width:100%}
 .chiprow1{display:flex;flex:0 0 100%;justify-content:space-between;gap:4px;min-width:0} /* 내 계정 이름 첫 줄: 양끝 맞춤 */
 .sheet .panel.acct{padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))} /* 내 계정 창은 좌우 여백 넓게 */
 .sheet.autosave .panel{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
@@ -2305,7 +2306,7 @@ function vSchedule(v){
       askConfirm(nv?`${md(hs)}~${md(he)} 근무표를 직원들에게 공개할까요?`:`${md(hs)}~${md(he)} 근무표를 직원들에게서 숨길까요?`,()=>{const halves={...schedPub(),[hs]:nv};
         W(()=>col("monthnotes").doc("schedpub").set({halves,editedBy:me,editedAt:now(),updatedAt:now()}),nv?"근무표 공개됨":"근무표 숨김")},nv?"공개":"숨기기")}},
       `${md(hs)}~${md(he)} `,el("span",{},on?"공개 중":"공개하기"));
-    return b})):null;
+    return b}),...[periodStart,addDays(periodStart,14)].map(hs=>el("button",{class:"chktog pubb",type:"button",disabled:halfShown(hs),onclick:()=>draftSheet(hs)},halfShown(hs)?"공개된 2주":"초안 만들기"))):null; // 사장만: 2주 초안
   v.append(el("section",{},el("h2",{},"4주 근무표",el("span",{class:"meta",style:"font-size:11.5px"},"왼쪽 메라키 · 오른쪽 본점 · 컬러 이름=휴무 · ★=희망휴무")),pubBar,zbar,wrap,
     isMob()?el("p",{class:"hint",style:"font-size:11.5px"},"두 손가락으로 늘리고, 커진 상태에서 옆으로 밀어 볼 수 있어요"):null)); // 희망휴무 안내와 같은 크기
   if(isMob())setupZoom(wrap,board,zbar);
@@ -2515,6 +2516,86 @@ function halfFilled(k){const h=halfStart(k);for(let i=0;i<14;i++)if(!dayFilled(a
 const schedPub=()=>((S.monthnotes.find(x=>x.id==="schedpub")||{}).halves)||{};
 function halfShown(k){const h=halfStart(k),v=schedPub()[h];if(v===true)return true;if(v===false)return false;return h<=halfStart(TODAY)&&halfFilled(k)}
 const hopeGone=d=>isBoss()?halfFilled(d):halfShown(d); // 희망휴무 ★ 표시는 근무표가 정해지면(직원은 공개되면) 사라짐
+/* ---------- 2주 근무표 초안 (사장만) — 기준: tools/schedule_rules.md ----------
+   정직원 5명(다슬·준형·정한·원석·우준)을 메라키 10:30-19:30(오픈, m2 2명) / 푸어링 13:30-22:30(마감, b2 2명)에 배치.
+   승현: 메라키 8:00-10:30(m1), 푸어링 10:30-13:30(b1, 수요일 제외). 수요일은 푸어링 휴무 → 메라키 2명만.
+   이미 적어 둔 칸(이름·휴무)과 희망휴무(★)는 고정, 나머지만 채움. 여러 번 만들어 보고 점수가 가장 좋은 안을 고름. */
+const DRAFT_STAFF=["daseul","junhyung","jeonghan","wonseok","woojun"];
+function draftHalf(hs,seed){
+  let rnd=seed||Date.now()%2147483647;const rand=()=>(rnd=rnd*16807%2147483647)/2147483647;
+  const days=[...Array(14)].map((_,i)=>addDays(hs,i));
+  const isWed=k=>parse(k).getDay()===3,dow=k=>parse(k).getDay();
+  const rec=k=>S.schedule.find(x=>x.id===k)||{};
+  const hopeOf=k=>S.dayoffs.filter(x=>x.date===k&&DRAFT_STAFF.includes(x.staff)).map(x=>x.staff);
+  // 지난 4주 오픈 횟수 (메라키 10:30 + 승현이 아닌 사람이 들어간 푸어링 10:30)
+  const base={};DRAFT_STAFF.forEach(p=>base[p]=0);
+  for(let i=1;i<=28;i++){const r=rec(addDays(hs,-i));(r.m2||[]).forEach(p=>{if(p in base)base[p]++});(r.b1||[]).forEach(p=>{if(p in base)base[p]++})}
+  // 바로 전날 근무(오픈/마감) — 전환 규칙용
+  const prevShift={};{const r=rec(addDays(hs,-1));DRAFT_STAFF.forEach(p=>{prevShift[p]=(r.m2||[]).includes(p)?"o":(r.b2||[]).includes(p)?"c":"x"})}
+  // 메모(대관·휴무 등)가 적힌 매장은 그날 직원 배치 안 함
+  const need=k=>{const r=rec(k);return{o:(r.note_meraki||"").trim()?0:2,c:isWed(k)||(r.note_pouring||"").trim()?0:2}};
+  const fixed=days.map(k=>{const r=rec(k);return{off:new Set([...(r.off||[]).filter(p=>DRAFT_STAFF.includes(p)),...hopeOf(k)]),o:(r.m2||[]).filter(p=>DRAFT_STAFF.includes(p)),c:(r.b2||[]).filter(p=>DRAFT_STAFF.includes(p)),hope:new Set(hopeOf(k)),note:!!(r.note_meraki||r.note_pouring)}});
+  let best=null;
+  for(let trial=0;trial<400;trial++){
+    // 1) 휴무 정하기: 고정·희망휴무 먼저, 남은 자리는 휴무가 적은 사람부터 (일요일 쪽을 조금 더 선호)
+    const offCnt={};DRAFT_STAFF.forEach(p=>offCnt[p]=0);
+    const offs=days.map((k,i)=>{const s=new Set(fixed[i].off);s.forEach(p=>offCnt[p]++);return s});
+    days.forEach((k,i)=>{const f=fixed[i];const workNeed=need(k).o+need(k).c;const placed=new Set([...f.o,...f.c]);
+      let slack=DRAFT_STAFF.length-offs[i].size-workNeed;
+      while(slack>0){const cand=DRAFT_STAFF.filter(p=>!offs[i].has(p)&&!placed.has(p));if(!cand.length)break;
+        cand.sort((a,b)=>(offCnt[a]-offCnt[b])||(rand()-.5));const p=cand[0];offs[i].add(p);offCnt[p]++;slack--}});
+    // 2) 날마다 오픈/마감 나누기
+    const open={...base},last={...prevShift},plan=[];let score=0;const issues=[];
+    days.forEach((k,i)=>{const f=fixed[i],n=need(k);const tomorrowOff=p=>i<13&&offs[i+1].has(p);
+      const workers=DRAFT_STAFF.filter(p=>!offs[i].has(p));const free=workers.filter(p=>!f.o.includes(p)&&!f.c.includes(p));
+      const needO=Math.max(0,n.o-f.o.length),needC=Math.max(0,n.c-f.c.length);
+      let bestSplit=null;
+      const combos=(arr,m)=>m===0?[[]]:arr.flatMap((x,j)=>combos(arr.slice(j+1),m-1).map(c=>[x,...c]));
+      for(const oPick of combos(free,Math.min(needO,free.length))){const rest=free.filter(p=>!oPick.includes(p));const cPick=rest.slice(0,needC);
+        const O=[...f.o,...oPick],C=[...f.c,...cPick];let s=0;
+        if((O.includes("daseul")&&O.includes("junhyung"))||(C.includes("daseul")&&C.includes("junhyung")))s+=1000; // 규칙3
+        O.forEach(p=>{if(last[p]==="c"&&dow(k)!==1)s+=300; // 규칙4: 마감→오픈은 휴무 뒤·주말 지난 월요일에만
+          s+=open[p]*10});
+        C.forEach(p=>{if(tomorrowOff(p))s+=f.hope.has(p)||fixed[i+1]&&fixed[i+1].hope.has(p)?200:120}); // 규칙5: 쉬는 날 전날은 오픈
+        s+=rand();
+        if(!bestSplit||s<bestSplit.s)bestSplit={s,O,C}}
+      const O=bestSplit?bestSplit.O:f.o,C=bestSplit?bestSplit.C:f.c;score+=bestSplit?bestSplit.s:0;
+      O.forEach(p=>open[p]++);
+      DRAFT_STAFF.forEach(p=>{last[p]=O.includes(p)?"o":C.includes(p)?"c":"x"});
+      if(O.length<n.o||C.length<n.c)score+=500;
+      plan.push({k,O,C,off:[...offs[i]]})});
+    // 오픈 횟수 고르게 (지난 4주 + 이번 2주 누적의 차이)
+    const vals=DRAFT_STAFF.map(p=>open[p]);score+=(Math.max(...vals)-Math.min(...vals))*80;
+    const offV=DRAFT_STAFF.map(p=>offCnt[p]);score+=(Math.max(...offV)-Math.min(...offV))*60;
+    if(!best||score<best.score)best={score,plan,open,offCnt}}
+  // 못 지킨 규칙 정리
+  const issues=[];const nm=p=>(byKey[p]||{}).name||p;
+  best.plan.forEach((d,i)=>{const n=need(d.k);
+    if(d.O.length<n.o||d.C.length<n.c)issues.push(`${md(d.k)}: 사람이 모자라요 (오픈 ${d.O.length}/${n.o}, 마감 ${d.C.length}/${n.c})`);
+    if((d.O.includes("daseul")&&d.O.includes("junhyung"))||(d.C.includes("daseul")&&d.C.includes("junhyung")))issues.push(`${md(d.k)}: 다슬·준형이 같은 근무지예요`);
+    const prev=i?best.plan[i-1]:null;if(prev&&parse(d.k).getDay()!==1)d.O.forEach(p=>{if(prev.C.includes(p))issues.push(`${md(d.k)}: ${nm(p)} 마감 다음 날 오픈`)});
+    const nx=best.plan[i+1];if(nx)d.C.forEach(p=>{if(nx.off.includes(p))issues.push(`${md(d.k)}: ${nm(p)} 쉬는 날 전날인데 마감`)})});
+  const totalOff=DRAFT_STAFF.reduce((s,p)=>s+best.offCnt[p],0);
+  const lowOff=DRAFT_STAFF.filter(p=>best.offCnt[p]<4);
+  if(lowOff.length)issues.push(`휴무 4회(4주 8회)가 안 되는 사람: ${lowOff.map(p=>nm(p)+" "+best.offCnt[p]+"회").join(", ")} — 정직원 5명이 하루 4명씩 일하면 2주 휴무는 모두 합쳐 ${totalOff}회라 다 채울 수 없어요. 추가근무·승현 근무로 쉬는 날을 더 만들 수 있어요`);
+  return{...best,issues}}
+function draftSheet(hs){
+  let seed=Date.now()%2147483647;let res=draftHalf(hs,seed);const nm=p=>(byKey[p]||{}).name||p;
+  const box=el("div",{class:"draftbox"});
+  const drawRes=()=>{box.textContent="";
+    const t=el("table",{class:"oc draft"},el("thead",{},el("tr",{},el("th",{},"날짜"),el("th",{},"메라키 오픈"),el("th",{},"푸어링 마감"),el("th",{},"휴무"))));
+    const tb=el("tbody");res.plan.forEach(d=>{const hope=new Set(S.dayoffs.filter(x=>x.date===d.k).map(x=>x.staff));
+      const r=S.schedule.find(x=>x.id===d.k)||{};const nM=(r.note_meraki||"").trim(),nP=(r.note_pouring||"").trim();
+      tb.append(el("tr",{},el("td",{},mdw(d.k)),el("td",{},nM||d.O.map(nm).join(" ")),el("td",{},nP||(parse(d.k).getDay()===3?"휴무":d.C.map(nm).join(" "))),el("td",{},d.off.map(p=>nm(p)+(hope.has(p)?"★":"")).join(" "))))});
+    t.append(tb);box.append(t);
+    box.append(el("p",{class:"hint",style:"margin:10px 0 4px"},"오픈 횟수(지난 4주+이번 2주): "+DRAFT_STAFF.map(p=>`${nm(p)} ${res.open[p]}`).join(" · ")));
+    box.append(el("p",{class:"hint",style:"margin:0 0 4px"},"이번 2주 휴무: "+DRAFT_STAFF.map(p=>`${nm(p)} ${res.offCnt[p]}`).join(" · ")));
+    box.append(el("p",{class:"hint",style:"margin:0;white-space:pre-line"},res.issues.length?"못 지킨 부분\n· "+res.issues.join("\n· "):"모든 규칙을 지켰어요"))};
+  drawRes();
+  const again=el("button",{class:"btn ghost",type:"button",onclick:()=>{seed=(seed*48271)%2147483647;res=draftHalf(hs,seed);drawRes()}},"다시 만들기");
+  openSheet(`${md(hs)}~${md(addDays(hs,13))} 근무표 초안`,[el("p",{class:"hint",style:"margin:0"},"이미 적어 둔 칸과 희망휴무(★)는 그대로 두고 나머지만 채운 초안이에요. '근무표에 넣기'를 눌러도 공개 전까지 직원에게는 안 보여요"),box],async()=>{
+    return W(async()=>{for(const d of res.plan){const r=S.schedule.find(x=>x.id===d.k)||{};const wed=parse(d.k).getDay()===3;
+      await col("schedule").doc(d.k).set({...r,id:undefined,date:d.k,m1:(r.m1&&r.m1.length)?r.m1:["seunghyun"],m2:d.O,b1:wed?(r.b1||[]):((r.b1&&r.b1.length)?r.b1:["seunghyun"]),b2:wed?[]:d.C,off:d.off,editedBy:me,editedAt:now(),updatedAt:now()})}},"근무표에 초안을 넣었어요")},"근무표에 넣기",again)}
 function hopeCap(d){return parse(d).getDay()===3?3:1}
 function hopeBlocked(d,who){
   const taken=S.dayoffs.filter(x=>x.date===d&&x.staff!==who&&x.staff!=="seunghyun");
