@@ -512,7 +512,7 @@ button{-webkit-tap-highlight-color:transparent}
   .cl2 .add{flex-wrap:nowrap}.cl2 .add input{flex:1}.cl2 .add .btn{flex:0 0 auto}
   /* bottom tab bar */
   nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:7;border-bottom:0;border-top:.5px solid var(--line);background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding-bottom:max(env(safe-area-inset-bottom,0px),22px)} /* 아이폰 홈 바와 겹치지 않게 글씨를 위로 */
-  html.webapp nav.tabs{padding-bottom:max(calc(env(safe-area-inset-bottom,0px) - 22px),8px)} /* 새 주소(홈 화면 앱)는 화면 끝까지 쓰므로 여백을 조금 줄임 */
+  html.webapp nav.tabs{padding-bottom:max(calc(env(safe-area-inset-bottom,0px) - 18px),10px)} /* 새 주소(홈 화면 앱)는 화면 끝까지 쓰므로 여백을 조금 줄임 */
   nav.tabs .inner{padding-block:6px;gap:0}
   nav.tabs a{flex:1 1 0;text-align:center;font-size:14px;padding:10px 4px;border-radius:10px;color:var(--muted)}
   nav.tabs a[aria-current="page"]{background:none;color:var(--ink);box-shadow:inset 0 2px 0 var(--accent);border-radius:0}
@@ -1229,7 +1229,8 @@ function fitNameChips(box,lastKey="koha"){
     const rowW=()=>row1.reduce((s,c)=>s+c.getBoundingClientRect().width,0)+gap*(row1.length-1);
     let fs=13;const setF=()=>all.forEach(c=>{c.style.fontSize=fs+"px";c.style.paddingLeft=c.style.paddingRight="4px"});
     setF();while(rowW()>target&&fs>10){fs-=.25;setF()}
-    const extra=(target-rowW()-3)/(row1.length*2);if(extra>0)all.forEach(c=>{c.style.paddingLeft=c.style.paddingRight=(4+extra)+"px"})};
+    const extra=(target-rowW()-3)/(row1.length*2);if(extra>0)all.forEach(c=>{c.style.paddingLeft=c.style.paddingRight=(4+extra)+"px"});
+    box.style.justifyContent="space-between"}; // 첫 줄 오른쪽 끝을 창 오른쪽 끝에 딱 맞춤 (둘째 줄 한 개는 왼쪽)
   setTimeout(run,0);try{document.fonts&&document.fonts.ready.then(run)}catch(e){}setTimeout(run,400);setTimeout(run,900); // 창이 올라오는 동안·글꼴이 늦게 와도 다시 맞춤
   try{new ResizeObserver(()=>run()).observe(box)}catch(e){}}
 /* 홈 화면 아이콘 숫자 배지 (새 주소, 홈 화면 앱 + 알림 허용일 때): 안 읽은 새 글 수. 알림이 오면 서비스 워커가 하나씩 올림 */
@@ -1530,7 +1531,7 @@ function meSel(){
     // 맨 위 줄: "김승현(으)로 로그인되어 있어요" 옆에 "김승현 비밀번호 바꾸기" (누구 비밀번호인지 헷갈리지 않게)
     const nm=byKey[me].full||byKey[me].name;
     const chgMine=!NO_PIN&&(isBoss()||!ownerFlag)?el("button",{class:"btn ghost sm",type:"button",style:"flex:0 0 auto",onclick:()=>{closeSheet();pinSheet(me,true)}},"비밀번호 바꾸기"):null;
-    const pushRow=WEB&&myUid?(()=>{const b=el("button",{class:"btn ghost",type:"button"},"알림 확인 중…");let on=false;
+    const pushRow=WEB&&myUid?(()=>{const b=el("button",{class:"btn ghost",type:"button",style:"width:100%"},"알림 확인 중…");let on=false;
       const show=()=>{b.textContent=on?"이 기기 알림 끄기":"이 기기에서 알림 받기"};pushSub().then(s=>{on=!!s;show()}).catch(()=>{b.textContent="이 기기에서 알림 받기"});
       b.onclick=async()=>{b.disabled=true;if(on){await pushOffNow();on=false}else on=await pushOn();show();b.disabled=false};
       return el("div",{},el("div",{class:"lab"},"알림"),b,el("p",{class:"hint",style:"margin:6px 0 0"},isBoss()?"새 전달사항·체크리스트·회의록·발주 요청이 오면 알려 드려요":"새 전달사항·체크리스트·회의록이 오면 알려 드려요"))})():null;
@@ -1607,7 +1608,8 @@ async function importMove(){
         const {error}=await sb.from("store").upsert(rows.slice(i,i+200).map(r=>({col:r.col,id:r.id,data:r.data,updated_at:new Date().toISOString()})));if(error)throw error}
       st.textContent=`다 옮겼어요. 글 ${rows.length}개, 사진·영상 ${media.length-bad}개`+(bad?` (못 올린 것 ${bad}개)`:"")+". 화면을 새로 고쳐 주세요"}
     catch(e){st.textContent="옮기지 못했어요: "+((e&&e.message)||e);fi.disabled=false}}}
-function logout(){if(WEB&&sb){sb.auth.signOut().finally(()=>{try{localStorage.removeItem("pn.login")}catch(e){};location.reload()});return}me="";try{localStorage.removeItem("pn.login");sessionStorage.setItem("pn.noauto","1")}catch(e){};if(window.__updMe)__updMe();draw()}
+function logout(){if(WEB&&sb){try{localStorage.removeItem("pn.login")}catch(e){}; // 이 기기 로그인만 바로 지우고 새로 고침 (서버를 기다리지 않음)
+    sb.auth.signOut({scope:"local"}).catch(()=>{}).finally(()=>location.reload());setTimeout(()=>location.reload(),600);return}me="";try{localStorage.removeItem("pn.login");sessionStorage.setItem("pn.noauto","1")}catch(e){};if(window.__updMe)__updMe();draw()}
 async function pinHash(salt,pin){const data=new TextEncoder().encode(salt+":"+pin);
   try{const h=await crypto.subtle.digest("SHA-256",data);return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,"0")).join("")}
   catch(e){let h=5381;for(const c of data)h=((h<<5)+h+c)|0;return "d"+(h>>>0).toString(16)}}
@@ -1685,7 +1687,7 @@ function vLogin(v){
     const rowW=()=>row1.reduce((s,c)=>s+c.getBoundingClientRect().width,0)+gap*(row1.length-1);
     let fs=13;const setF=()=>all.forEach(c=>{c.style.fontSize=fs+"px";c.style.paddingLeft=c.style.paddingRight="4px";c.style.paddingTop=c.style.paddingBottom="5px"});
     setF();while(rowW()>target&&fs>10){fs-=.25;setF()}
-    const extra=(target-rowW()-3)/(row1.length*2);if(extra>0)all.forEach(c=>{c.style.paddingLeft=c.style.paddingRight=(4+extra)+"px"});
+    const extra=(target-rowW()-3)/(row1.length*2);if(extra>0)all.forEach(c=>{c.style.paddingLeft=c.style.paddingRight=(4+extra)+"px"});chips.style.justifyContent="space-between";
     const hn=card.querySelector(".tmp-hint");if(hn){let f=parseFloat(getComputedStyle(hn).fontSize);while(hn.scrollWidth>hn.clientWidth+1&&f>9){f-=.25;hn.style.fontSize=f+"px"}}};
   setTimeout(fitLogin,0);try{document.fonts&&document.fonts.ready.then(fitLogin)}catch(e){}setTimeout(fitLogin,400); // 글꼴이 늦게 와도 다시 맞춤
 }
