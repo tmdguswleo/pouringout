@@ -1353,11 +1353,13 @@ async function webLogin(key,pw){
   if(st==="new"){for(const p of tries){const ok=(await sb.rpc("check_temp",{p_key:key,p_pw:p})).data;
     if(ok){const r=await sb.auth.signUp({email:webEmail(key),password:p});if(r.error){flash("처음 로그인을 하지 못했어요. 다시 해 주세요",true);return}return afterWebLogin(key,p)}}}
   setStatus("");flash(st==="set"?"비밀번호가 맞지 않아요":"휴대폰 번호가 맞지 않아요",true)}
-async function afterWebLogin(key,usedPw){const s=(await sb.rpc("my_status")).data;const row=s&&s[0];
-  if(row&&row.must_change){setStatus("");loginPick="";pinSheet(key,false,usedPw);return} // 새 비밀번호를 정해야 앱으로 들어감
-  // 새로 고치지 않고 바로 앱으로 (화면 파일을 다시 받지 않아 빠름)
-  ownerFlag=!!(row&&row.is_boss);myUid=key;me=key;loginPick="";try{localStorage.setItem("pn.login",key)}catch(e){}
-  if(window.__updMe)__updMe();subAll();render()}
+async function afterWebLogin(key,usedPw){
+  if(/^\d{10,11}$/.test(usedPw||"")){const s=(await sb.rpc("my_status")).data;const row=s&&s[0]; // 휴대폰 번호처럼 생긴 비밀번호로 들어온 경우만 먼저 확인 (보통은 바로 들어감)
+    if(row&&row.must_change){setStatus("");loginPick="";pinSheet(key,false,usedPw);return}}
+  // 새로 고치지 않고 바로 앱으로. 저장해 둔 데이터가 있으면 그걸로 화면부터, 서버 값은 뒤에서 받음
+  ownerFlag=key==="seunghyun";myUid=key;me=key;loginPick="";try{localStorage.setItem("pn.login",key);localStorage.setItem("pn.uid",key)}catch(e){}
+  if(window.__updMe)__updMe();await loadCache(key);render();subAll();
+  sb.rpc("my_status").then(r=>{const row=r.data&&r.data[0];if(row&&row.must_change){me="";pinSheet(key,false,"");render()}}).catch(()=>{})}
 /* 푸시 알림 (새 주소만): 이 기기를 pushsubs/<내키>_<기기>에 등록 → 서버(notify 함수)가 새 글이 오면 알림 */
 const VAPID_PUB="BB8kfBFZbQfoZbZDq0it2Y_6_UryhM9Wzq1Ye8b9fbPRhdpJUyasclfNLgHcS1mcM3JQ3hW3HFnNHmmZJZwk_lY";
 const b64u=s=>{const b=atob((s+"=".repeat((4-s.length%4)%4)).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(b,c=>c.charCodeAt(0))};
@@ -1378,11 +1380,15 @@ async function webInit(){
   sb=window.supabase.createClient(SUPA_URL,SUPA_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"pn.sb"}});
   db=makeWebDb();assets=makeWebAssets();
   const {data:{session}}=await sb.auth.getSession();
+  // 로그인된 기기: 지난번 계정으로 저장해 둔 데이터를 먼저 보여 주고, 계정 확인(my_status)은 뒤에서
+  let fastKey="";try{fastKey=localStorage.getItem("pn.uid")||""}catch(e){}
+  if(session&&fastKey&&byKey[fastKey]){myUid=fastKey;ownerFlag=fastKey==="seunghyun";let saved="";try{saved=localStorage.getItem("pn.login")||""}catch(e){}
+    me=ownerFlag&&byKey[saved]?saved:fastKey;if(window.__updMe)__updMe();await loadCache(fastKey);render()}
   if(session){const s=(await sb.rpc("my_status")).data;const row=s&&s[0];
     if(!row){await sb.auth.signOut();me="";}
     else if(row.must_change){me="";pinSheet(row.key,false,"")}
     else{ownerFlag=!!row.is_boss;myUid=row.key;let saved="";try{saved=localStorage.getItem("pn.login")||""}catch(e){}
-      me=row.is_boss&&byKey[saved]?saved:row.key;try{localStorage.setItem("pn.login",me)}catch(e){}}}
+      me=row.is_boss&&byKey[saved]?saved:row.key;try{localStorage.setItem("pn.login",me);localStorage.setItem("pn.uid",row.key)}catch(e){}}}
   else{me="";try{localStorage.removeItem("pn.login")}catch(e){}}
   if(window.__updMe)__updMe();
   if(me)subAll();else{loaded=true;setStatus("")}
@@ -1616,7 +1622,7 @@ async function importMove(){
         const {error}=await sb.from("store").upsert(rows.slice(i,i+200).map(r=>({col:r.col,id:r.id,data:r.data,updated_at:new Date().toISOString()})));if(error)throw error}
       st.textContent=`다 옮겼어요. 글 ${rows.length}개, 사진·영상 ${media.length-bad}개`+(bad?` (못 올린 것 ${bad}개)`:"")+". 화면을 새로 고쳐 주세요"}
     catch(e){st.textContent="옮기지 못했어요: "+((e&&e.message)||e);fi.disabled=false}}}
-function logout(){if(WEB&&sb){try{localStorage.removeItem("pn.login")}catch(e){}; // 이 기기 로그인만 바로 지우고 새로 고침 (서버를 기다리지 않음)
+function logout(){if(WEB&&sb){try{localStorage.removeItem("pn.login");localStorage.removeItem("pn.uid")}catch(e){};try{caches.delete("po-data")}catch(e){}; // 로그아웃하면 저장해 둔 데이터도 지움 // 이 기기 로그인만 바로 지우고 새로 고침 (서버를 기다리지 않음)
     me="";try{closeSheet()}catch(e){};try{draw()}catch(e){} // 앱 화면을 남기지 않고 바로 로그인 화면
     sb.auth.signOut({scope:"local"}).catch(()=>{}).finally(()=>location.reload());setTimeout(()=>location.reload(),600);return}me="";try{localStorage.removeItem("pn.login");sessionStorage.setItem("pn.noauto","1")}catch(e){};if(window.__updMe)__updMe();draw()}
 async function pinHash(salt,pin){const data=new TextEncoder().encode(salt+":"+pin);
@@ -3586,6 +3592,13 @@ function escClose(e){if(e.key==="Escape"&&sheetDismiss)sheetDismiss()}
 function closeSheet(){sheetDismiss=null;$("sheetRoot").textContent="";document.documentElement.classList.remove("np-lock");document.removeEventListener("keydown",escClose);if(pendingRender)render()}
 
 /* ---------- data ---------- */
+/* 새 주소: 받은 데이터를 휴대폰에 저장해 두고, 다음에 열거나 로그인할 때 그걸로 화면부터 바로 보여 줌 (그다음 서버 값으로 바뀜) */
+const CACHE_COLS=["notices","checks","todos","schedule","dayoffs","closing","cleaning","cleanman","docs","extra","monthnotes","opencounts","orders"];
+let cacheT=null;
+function saveCacheSoon(){if(!WEB||!myUid||!("caches" in window))return;clearTimeout(cacheT);cacheT=setTimeout(()=>{try{const o={};CACHE_COLS.forEach(c=>o[c]=S[c]||[]);
+  caches.open("po-data").then(c=>c.put("/s-"+myUid,new Response(JSON.stringify(o),{headers:{"Content-Type":"application/json"}}))).catch(()=>{})}catch(e){}},1500)}
+async function loadCache(uid){if(!WEB||!uid||!("caches" in window))return false;try{const c=await caches.open("po-data");const r=await c.match("/s-"+uid);if(!r)return false;const o=await r.json();
+  let any=false;CACHE_COLS.forEach(k=>{if(Array.isArray(o[k])&&!(S[k]||[]).length){S[k]=o[k];any=true}});return any}catch(e){return false}}
 function subAll(){
   const specs={notices:["createdAt",1000],checks:["createdAt",400],todos:["createdAt",600],schedule:["date",500],dayoffs:["date",800],closing:["date",240],cleaning:[null,100],cleanman:[null,200],pins:[null,20],docs:["updatedAt",1000],extra:[null,60],monthnotes:[null,60],opencounts:[null,200],orders:["createdAt",400]};
   let ready=0;const total=Object.keys(specs).length;
@@ -3600,6 +3613,7 @@ function subAll(){
       for(const k of [...KNOWN.keys()])if(k.startsWith(name+"/"))KNOWN.delete(k); // 서버 값이 왔으니 그걸 믿음
       if(name==="dayoffs"&&window.__hopeCalDraw)try{window.__hopeCalDraw()}catch(e){}
       if(first){first=false;ready++;if(ready===total){loaded=true;clearTimeout(timer);setStatus("실시간 동기화 중")}}
+      saveCacheSoon();
       render();
     },err=>{if(err.code==="unavailable"){setStatus("연결이 끊겼어요. 다시 연결 중…",true);setTimeout(()=>go(name),3000)}else setStatus("일부 내용을 불러오지 못했어요",true)});
   };
