@@ -264,7 +264,6 @@ li.editing .iedit-bar{display:flex}
 .ie-pc{display:none!important}
 li.ie-chk .ie-pc{display:block!important}
 li.ie-nochk .chk{opacity:.25}
-.login-sec{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - var(--hh,90px) - 48px);min-height:calc(100dvh - var(--hh,90px) - 48px);box-sizing:border-box}
 .chiprow1{display:flex;flex:0 0 100%;justify-content:space-between;gap:4px;min-width:0} /* 내 계정 이름 첫 줄: 양끝 맞춤 */
 .sheet .panel.acct{padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))} /* 내 계정 창은 좌우 여백 넓게 */
 .sheet.autosave .panel{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
@@ -1683,10 +1682,9 @@ function vLogin(v){
       // 로그인 버튼 오른쪽 끝을 첫 줄 마지막 이름(최우준) 버튼 끝에 맞춤
       if(!isMob())setTimeout(()=>pin.focus(),30)} // 휴대폰은 저절로 칸을 누르지 않음 (아이폰이 화면을 키우는 것 방지)
   }
-  // 로그인 상자는 화면 상하좌우 가운데 (윗줄 제목 높이를 뺀 나머지 화면 기준)
-  const sec=el("section",{class:"login-sec",style:"max-width:460px;margin:0 auto"},card);v.append(sec);card.style.width="100%";
+  const sec=el("section",{style:"max-width:460px;margin:24px auto"},card);v.append(sec);
   // 이름을 누르기 전부터 같은 크기: 첫 줄 이름(김승현~koha)이 상자 안쪽 폭을 꽉 채우게 키움. 로그인 줄·안내 문구도 같은 폭
-  const fitLogin=()=>{if(!card.isConnected)return;sec.style.width="100%";
+  const fitLogin=()=>{if(!card.isConnected)return;sec.style.width="100%";sec.style.marginLeft="0";sec.style.marginRight="0";
     const brk=chips.querySelector(".lbrk");const all=[...chips.children].filter(c=>c.classList.contains("chip"));const row1=[];for(let n=chips.firstElementChild;n&&n!==brk;n=n.nextElementSibling)row1.push(n);if(!row1.length)return;
     const target=chips.clientWidth,gap=parseFloat(getComputedStyle(chips).columnGap)||0;
     const rowW=()=>row1.reduce((s,c)=>s+c.getBoundingClientRect().width,0)+gap*(row1.length-1);
