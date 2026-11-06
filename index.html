@@ -2800,6 +2800,7 @@ function vDocs(root){
   if(!allCats.includes(docCat))docCat=allCats[0]||"all";
   // 하위 폴더는 기본으로 접혀 있음. 펼친 폴더는 이 기기에만 기억
   const opened=folderOpenLoad();
+  if(isPart())["매뉴얼",PART_CAT].forEach(k=>opened.add(k)); // 파트타이머(koha): 매뉴얼 · 파트타이머 매뉴얼은 늘 펼쳐 둠
   const visible=k=>{if(k==="all")return true;const ps=k.split("/");for(let i=1;i<ps.length;i++)if(!opened.has(ps.slice(0,i).join("/")))return false;return true};
   const toggle=k=>{opened.has(k)?opened.delete(k):opened.add(k);folderOpenSave(opened);draw()};
   allCats.map(c=>[c,c]).forEach(([k,l])=>{
@@ -3104,7 +3105,7 @@ async function shareDoc(d){
 function pickFolder(cur,onPick){
   const box=el("div",{class:"np-movebox"},el("div",{class:"np-mh"},"메모 이동"));
   const ov=el("div",{class:"np-ov"},box);
-  docCats().filter(catOK).forEach(c=>{const dp=c.split("/").length-1;box.append(el("button",{class:"np-mi"+(c===cur?" on":""),type:"button",style:`padding-left:${16+dp*18}px`,onclick:()=>{ov.remove();if(c!==cur)onPick(c)}},el("span",{class:"np-ic"},svgI(IC.folder)),c.split("/").pop()))});
+  docCats().filter(catOK).filter(c=>c!==STAFF_MEMO).forEach(c=>{const dp=c.split("/").length-1;box.append(el("button",{class:"np-mi"+(c===cur?" on":""),type:"button",style:`padding-left:${16+dp*18}px`,onclick:()=>{ov.remove();if(c!==cur)onPick(c)}},el("span",{class:"np-ic"},svgI(IC.folder)),c.split("/").pop()))});
   ov.addEventListener("pointerdown",e=>{if(e.target===ov)ov.remove()});document.body.append(ov)}
 /* 지금 폴더 안에 새 하위 폴더 만들기 (바깥 여백·엔터·저장 → 저장 후 닫힘) */
 function addSubFolder(parent){
@@ -3342,7 +3343,9 @@ function notePage(d){
   const root=$("sheetRoot");root.textContent="";
   if(d&&me){const sl=seenLoad();sl.ids[d.id]=Date.now();seenSave();if(seenSnap&&seenSnap.ids)seenSnap.ids[d.id]=sl.ids[d.id];document.querySelectorAll(".newb[data-id=\""+CSS.escape(d.id)+"\"]").forEach(b=>b.remove());updBadges()} // 글을 열면 바로 읽음 처리 (빨간 숫자 바로 사라짐)
   const edit=canWrite;
-  const cl=docCats().filter(catOK);let cat=d?d.cat:(docCat!=="all"&&catOK(docCat)?docCat:cl[0]||docCats()[0]);
+  const cl=docCats().filter(catOK).filter(c=>c!==STAFF_MEMO);let cat=d?d.cat:(docCat!=="all"&&catOK(docCat)?docCat:cl[0]||docCats()[0]);
+  // 직원 메모장 맨 위 폴더에는 메모를 둘 수 없음 → 새 메모는 내 이름 폴더(없으면 첫 폴더)로
+  if(!d&&cat===STAFF_MEMO){const mine=STAFF_MEMO+"/"+((byKey[me]||{}).name||"");cat=docCats().includes(mine)&&catOK(mine)?mine:(cl[0]||cat)}
   // 제목은 따로 칸에. 예전 메모(titleSep 없음)는 본문 첫 줄이 제목이었으므로 본문에서 떼어냄
   const html0=d?(d.titleSep?docHtml(d):stripTitleBlock(docHtml(d))):"";
   const base=normDoc(html0).innerHTML;
