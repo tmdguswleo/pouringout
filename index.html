@@ -264,7 +264,7 @@ li.editing .iedit-bar{display:flex}
 .ie-pc{display:none!important}
 li.ie-chk .ie-pc{display:block!important}
 li.ie-nochk .chk{opacity:.25}
-.draftacts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.draftacts{display:grid;grid-template-columns:1fr 1fr;gap:6px}.draftacts .pubb:disabled{opacity:.4}
 .oc.draft td,.oc.draft th{font-size:12.5px;padding:5px 4px;text-align:left;white-space:nowrap}.oc.draft{table-layout:auto;width:100%}
 .chiprow1{display:flex;flex:0 0 100%;justify-content:space-between;gap:4px;min-width:0} /* 내 계정 이름 첫 줄: 양끝 맞춤 */
 .sheet .panel.acct{padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))} /* 내 계정 창은 좌우 여백 넓게 */
@@ -2307,9 +2307,12 @@ function vSchedule(v){
       askConfirm(nv?`${md(hs)}~${md(he)} 근무표를 직원들에게 공개할까요?`:`${md(hs)}~${md(he)} 근무표를 직원들에게서 숨길까요?`,()=>{const halves={...schedPub(),[hs]:nv};
         W(()=>col("monthnotes").doc("schedpub").set({halves,editedBy:me,editedAt:now(),updatedAt:now()}),nv?"근무표 공개됨":"근무표 숨김")},nv?"공개":"숨기기")}},
       `${md(hs)}~${md(he)} `,el("span",{},on?"공개 중":"공개하기"));
-    return b}),...[periodStart,addDays(periodStart,14)].map(hs=>draftOrig[hs]
-      ?el("div",{class:"draftacts"},el("button",{class:"chktog pubb",type:"button",onclick:()=>draftSheet(hs)},"다시 만들기"),el("button",{class:"chktog pubb",type:"button","aria-pressed":"true",onclick:()=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 초안을 확정할까요? 확정하면 다시 만들기를 할 수 없어요`,()=>draftConfirm(hs),"확정")},`확정하기${draftPinned[hs]&&draftPinned[hs].size?` (고정 ${draftPinned[hs].size}일)`:""}`))
-      :el("button",{class:"chktog pubb",type:"button",onclick:()=>draftSheet(hs)},"초안 만들기"))):null; // 사장만: 각 2주 공개 버튼 바로 아래 — 초안 만들기, 초안 중이면 다시 만들기·확정하기
+    return b}),...[periodStart,addDays(periodStart,14)].map(hs=>{const on=!!draftOrig[hs],pin=draftPinned[hs]&&draftPinned[hs].size;
+      const B=(t,f,dis,pr)=>el("button",{class:"chktog pubb",type:"button",disabled:dis,...(pr?{"aria-pressed":"true"}:{}),onclick:f},t);
+      return el("div",{class:"draftacts"},
+        B("초안 만들기",()=>draftSheet(hs),on),B("다시 만들기",()=>draftSheet(hs),!on),
+        B(`확정하기${pin?` (고정 ${pin}일)`:""}`,()=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 초안을 확정할까요? 확정하면 다시 만들기·비우기를 할 수 없어요`,()=>draftConfirm(hs),"확정"),!on,on),
+        B("비우기",()=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 초안으로 채운 칸을 비울까요? 직접 고쳐서 고정한 날은 그대로 둬요`,()=>draftClear(hs),"비우기"),!on))})):null; // 사장만: 각 2주 공개 버튼 바로 아래 — 초안 만들기, 초안 중이면 다시 만들기·확정하기
   v.append(el("section",{},el("h2",{},"4주 근무표",el("span",{class:"meta",style:"font-size:11.5px"},"왼쪽 메라키 · 오른쪽 본점 · 컬러 이름=휴무 · ★=희망휴무")),pubBar,zbar,wrap,
     isMob()?el("p",{class:"hint",style:"font-size:11.5px"},"두 손가락으로 늘리고, 커진 상태에서 옆으로 밀어 볼 수 있어요"):null)); // 희망휴무 안내와 같은 크기
   if(isMob())setupZoom(wrap,board,zbar);
@@ -2588,6 +2591,10 @@ const draftOrig={};
 // 초안을 넣은 뒤 사장이 직접 고친 날은 '고정' → 다시 만들기에서도 그대로 둠
 function draftPin(k){for(const hs of Object.keys(draftOrig))if(k in draftOrig[hs])(draftPinned[hs]=draftPinned[hs]||new Set()).add(k)} // 고친 내용은 다시 만들 때 그 순간의 달력 값으로 읽음
 const draftPinned={};
+async function draftClear(hs){const orig=draftOrig[hs];if(!orig)return;const pinned=draftPinned[hs]||new Set();
+  const ok=await W(async()=>{for(const k of Object.keys(orig)){if(pinned.has(k))continue;const r=orig[k];
+    if(r){const {id,_col,...base}=r;await col("schedule").doc(k).set(base)}else await col("schedule").doc(k).delete()}},"초안을 비웠어요");
+  if(ok){delete draftOrig[hs];delete draftPinned[hs];draw()}}
 function draftConfirm(hs){delete draftOrig[hs];delete draftPinned[hs];flash("초안을 확정했어요. 이제 '공개하기'만 누르면 돼요");draw()}
 async function draftApply(hs,seed){
   const days=[...Array(14)].map((_,i)=>addDays(hs,i));
