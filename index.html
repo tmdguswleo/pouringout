@@ -264,6 +264,8 @@ li.editing .iedit-bar{display:flex}
 .ie-pc{display:none!important}
 li.ie-chk .ie-pc{display:block!important}
 li.ie-nochk .chk{opacity:.25}
+.chiprow1{display:flex;flex:0 0 100%;justify-content:space-between;gap:4px;min-width:0} /* 내 계정 이름 첫 줄: 양끝 맞춤 */
+.sheet .panel.acct{padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))} /* 내 계정 창은 좌우 여백 넓게 */
 .sheet.autosave .panel{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
 body:not(.show-attr) .attr{display:none}
 html,body{touch-action:pan-x pan-y} /* 앱 화면 확대 막기 (사진 크게 보기만 따로 확대) */
@@ -1221,17 +1223,17 @@ const seenIO="IntersectionObserver" in window?new IntersectionObserver(es=>{es.f
 const newB=(it,manual)=>{const b=el("span",{class:"newb","aria-label":"새 글","data-id":it.id},"N");if(seenIO&&!manual)requestAnimationFrame(()=>seenIO.observe(b));return b};
 document.addEventListener("visibilitychange",()=>{if(!me||document.hidden)return;seenSnap=JSON.parse(JSON.stringify(seenLoad()));if(!busy())draw()});
 /* 이름 버튼 줄 맞추기: koha까지 한 줄(최우준 옆), 나머지는 다음 줄. 한 줄 폭에 꽉 차게 글씨·여백 조절 */
-function fitNameChips(box,lastKey="koha"){
-  const run=()=>{if(!box.isConnected)return;const all=[...box.children].filter(c=>c.classList.contains("chip"));if(!all.length)return;
-    let i=all.findIndex(c=>c.dataset.k===lastKey);if(i<0)return;const row1=all.slice(0,i+1);
-    let br=box.querySelector(".lbrk");if(!br){br=el("span",{class:"lbrk"});all[i].after(br)}
-    const target=box.clientWidth,gap=parseFloat(getComputedStyle(box).columnGap)||0;
+function fitNameChips(box,lastKey="koha"){ // 첫 줄(…koha)은 따로 묶어 양끝을 창 폭에 맞추고, 나머지(장호정)는 다음 줄 왼쪽부터
+  const run=()=>{if(!box.isConnected)return;let row=box.querySelector(".chiprow1");
+    if(!row){const all=[...box.children].filter(c=>c.classList&&c.classList.contains("chip"));const i=all.findIndex(c=>c.dataset.k===lastKey);if(i<0)return;
+      row=el("div",{class:"chiprow1"});box.insertBefore(row,all[0]);all.slice(0,i+1).forEach(c=>row.append(c))}
+    const row1=[...row.children],rest=[...box.querySelectorAll(":scope > .chip")],all=[...row1,...rest];
+    const target=row.clientWidth,gap=4;
     const rowW=()=>row1.reduce((s,c)=>s+c.getBoundingClientRect().width,0)+gap*(row1.length-1);
     let fs=13;const setF=()=>all.forEach(c=>{c.style.fontSize=fs+"px";c.style.paddingLeft=c.style.paddingRight="4px"});
     setF();while(rowW()>target&&fs>10){fs-=.25;setF()}
-    const extra=(target-rowW()-3)/(row1.length*2);if(extra>0)all.forEach(c=>{c.style.paddingLeft=c.style.paddingRight=(4+extra)+"px"});
-    box.style.justifyContent="space-between"}; // 첫 줄 오른쪽 끝을 창 오른쪽 끝에 딱 맞춤 (둘째 줄 한 개는 왼쪽)
-  setTimeout(run,0);try{document.fonts&&document.fonts.ready.then(run)}catch(e){}setTimeout(run,400);setTimeout(run,900); // 창이 올라오는 동안·글꼴이 늦게 와도 다시 맞춤
+    const extra=(target-rowW()-3)/(row1.length*2);if(extra>0)all.forEach(c=>{c.style.paddingLeft=c.style.paddingRight=(4+extra)+"px"})};
+  setTimeout(run,0);try{document.fonts&&document.fonts.ready.then(run)}catch(e){}setTimeout(run,400);setTimeout(run,900);
   try{new ResizeObserver(()=>run()).observe(box)}catch(e){}}
 /* 홈 화면 아이콘 숫자 배지 (새 주소, 홈 화면 앱 + 알림 허용일 때): 안 읽은 새 글 수. 알림이 오면 서비스 워커가 하나씩 올림 */
 let badgeLast=-1;
@@ -1558,7 +1560,7 @@ function meSel(){
       if(ownerFlag&&!WEB){const cb=el("input",{type:"checkbox",class:"chk"});cb.checked=!ownerAutoOff();
         cb.onchange=()=>W(()=>col("monthnotes").doc("ownerauto").set({off:!cb.checked,editedBy:me,editedAt:now(),updatedAt:now()}),cb.checked?"비밀번호 없이 들어가기 켬":"비밀번호 없이 들어가기 끔");
         parts.push(el("label",{class:"permrow"},cb,el("span",{},"이 Claude 계정으로 열면 비밀번호 없이 들어가기")),el("p",{class:"hint",style:"margin:0"},"직원이 이 Claude 계정을 같이 쓰는 기기에서는 꺼 주세요"))}}
-    openSheet("내 계정",parts,async()=>{logout();return true},"로그아웃")};
+    openSheet("내 계정",parts,async()=>{logout();return true},"로그아웃");const pn=document.querySelector(".sheet .panel");if(pn)pn.classList.add("acct")};
   window.__updMe=upd;
 }
 /* ---------- 새 주소로 옮기기: 예전 앱에서 '옮길 파일'(zip: data.json + 사진·영상) 만들기 → 새 앱에서 '옮겨 오기' ---------- */
@@ -1609,6 +1611,7 @@ async function importMove(){
       st.textContent=`다 옮겼어요. 글 ${rows.length}개, 사진·영상 ${media.length-bad}개`+(bad?` (못 올린 것 ${bad}개)`:"")+". 화면을 새로 고쳐 주세요"}
     catch(e){st.textContent="옮기지 못했어요: "+((e&&e.message)||e);fi.disabled=false}}}
 function logout(){if(WEB&&sb){try{localStorage.removeItem("pn.login")}catch(e){}; // 이 기기 로그인만 바로 지우고 새로 고침 (서버를 기다리지 않음)
+    me="";try{closeSheet()}catch(e){};try{draw()}catch(e){} // 앱 화면을 남기지 않고 바로 로그인 화면
     sb.auth.signOut({scope:"local"}).catch(()=>{}).finally(()=>location.reload());setTimeout(()=>location.reload(),600);return}me="";try{localStorage.removeItem("pn.login");sessionStorage.setItem("pn.noauto","1")}catch(e){};if(window.__updMe)__updMe();draw()}
 async function pinHash(salt,pin){const data=new TextEncoder().encode(salt+":"+pin);
   try{const h=await crypto.subtle.digest("SHA-256",data);return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,"0")).join("")}
