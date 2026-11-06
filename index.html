@@ -512,7 +512,7 @@ button{-webkit-tap-highlight-color:transparent}
   .cl2 .add{flex-wrap:nowrap}.cl2 .add input{flex:1}.cl2 .add .btn{flex:0 0 auto}
   /* bottom tab bar */
   nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:7;border-bottom:0;border-top:.5px solid var(--line);background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding-bottom:max(env(safe-area-inset-bottom,0px),22px)} /* 아이폰 홈 바와 겹치지 않게 글씨를 위로 */
-  html.webapp nav.tabs{padding-bottom:max(calc(env(safe-area-inset-bottom,0px) - 14px),12px)} /* 새 주소(홈 화면 앱)는 화면 끝까지 쓰므로 여백을 조금 줄임 */
+  html.webapp nav.tabs{padding-bottom:max(calc(env(safe-area-inset-bottom,0px) - 22px),8px)} /* 새 주소(홈 화면 앱)는 화면 끝까지 쓰므로 여백을 조금 줄임 */
   nav.tabs .inner{padding-block:6px;gap:0}
   nav.tabs a{flex:1 1 0;text-align:center;font-size:14px;padding:10px 4px;border-radius:10px;color:var(--muted)}
   nav.tabs a[aria-current="page"]{background:none;color:var(--ink);box-shadow:inset 0 2px 0 var(--accent);border-radius:0}
@@ -1230,7 +1230,8 @@ function fitNameChips(box,lastKey="koha"){
     let fs=13;const setF=()=>all.forEach(c=>{c.style.fontSize=fs+"px";c.style.paddingLeft=c.style.paddingRight="4px"});
     setF();while(rowW()>target&&fs>10){fs-=.25;setF()}
     const extra=(target-rowW()-3)/(row1.length*2);if(extra>0)all.forEach(c=>{c.style.paddingLeft=c.style.paddingRight=(4+extra)+"px"})};
-  setTimeout(run,0);try{document.fonts&&document.fonts.ready.then(run)}catch(e){}setTimeout(run,400)}
+  setTimeout(run,0);try{document.fonts&&document.fonts.ready.then(run)}catch(e){}setTimeout(run,400);setTimeout(run,900); // 창이 올라오는 동안·글꼴이 늦게 와도 다시 맞춤
+  try{new ResizeObserver(()=>run()).observe(box)}catch(e){}}
 /* 홈 화면 아이콘 숫자 배지 (새 주소, 홈 화면 앱 + 알림 허용일 때): 안 읽은 새 글 수. 알림이 오면 서비스 워커가 하나씩 올림 */
 let badgeLast=-1;
 function appBadge(){if(!WEB||!("setAppBadge" in navigator))return;let n=0;
