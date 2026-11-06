@@ -1021,7 +1021,7 @@ function editText(colName,it,title){
 }
 const STORES={pouring:"푸어링",meraki:"메라키"};
 const TABS=[["today","오늘"],["order","발주"],["todo","TO DO"],["schedule","근무표"],["docs","자료실"]];
-const STAFF_FROM="2026-11-01"; // 직원에게는 이 날부터의 희망휴무·오픈일수만 보여 줌 (예전 기록은 지우지 않음)
+const STAFF_FROM="2026-11-01"; const FULL_FROM="2026-11-07"; // 오늘 화면 전체 양식(체크리스트·발주 요청·재고·월간 청소)을 쓰기 시작한 날 // 직원에게는 이 날부터의 희망휴무·오픈일수만 보여 줌 (예전 기록은 지우지 않음)
 const SLOTS=[
   {k:"m1",store:"meraki",t:"8:00-10:30",n:1},{k:"m2",store:"meraki",t:"10:30-19:30",n:2},
   {k:"b1",store:"pouring",t:"10:30-13:30",n:1},{k:"b2",store:"pouring",t:"13:30-22:30",n:2}];
@@ -1829,6 +1829,7 @@ function vToday(root){
 
   // 공지
   if(can("today:notice"))v.append(el("section",{class:"notice-s"},el("h2",{},"전달사항"),noticeCard("","전달사항이 없어요","전달사항 쓰기")));
+  if(dayDate<FULL_FROM)return; // 11/6까지는 근무·전달사항만 (예전 메모장과 섞인 기간). 11/7부터 체크리스트·발주·재고·청소 모두
 
   // 매장 체크리스트 (매장 전달사항 + 체크 항목)
   const two=el("div",{class:"stores notice-s"});
