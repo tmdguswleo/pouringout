@@ -1343,15 +1343,21 @@ function loadScript(src){return new Promise((ok,no)=>{const s=document.createEle
 // 로그인: 이름 + 비밀번호. 처음엔 본인 휴대폰 번호 → 바로 새 비밀번호 정하기
 async function webLogin(key,pw){
   if(!pw){flash("비밀번호를 넣어 주세요",true);return}
+  setStatus("들어가는 중…");
+  // 먼저 바로 로그인 (대부분 여기서 끝남). 안 되면 그때 처음 로그인·휴대폰 번호 여부 확인
+  {const r=await sb.auth.signInWithPassword({email:webEmail(key),password:pw});if(!r.error)return afterWebLogin(key,pw)}
   const st=(await sb.rpc("login_state",{p_key:key})).data;
-  const tries=[pw];if(st!=="set"&&/-/.test(pw))tries.unshift(pw.replace(/\D/g,""));
-  for(const p of tries){const r=await sb.auth.signInWithPassword({email:webEmail(key),password:p});if(!r.error)return afterWebLogin(key,p)}
+  const alt=st!=="set"&&/-/.test(pw)?pw.replace(/\D/g,""):""; // 휴대폰 번호를 010-…처럼 적은 경우
+  if(alt&&st!=="new"){const r=await sb.auth.signInWithPassword({email:webEmail(key),password:alt});if(!r.error)return afterWebLogin(key,alt)}
+  const tries=alt?[alt,pw]:[pw];
   if(st==="new"){for(const p of tries){const ok=(await sb.rpc("check_temp",{p_key:key,p_pw:p})).data;
     if(ok){const r=await sb.auth.signUp({email:webEmail(key),password:p});if(r.error){flash("처음 로그인을 하지 못했어요. 다시 해 주세요",true);return}return afterWebLogin(key,p)}}}
-  flash(st==="set"?"비밀번호가 맞지 않아요":"휴대폰 번호가 맞지 않아요",true)}
+  setStatus("");flash(st==="set"?"비밀번호가 맞지 않아요":"휴대폰 번호가 맞지 않아요",true)}
 async function afterWebLogin(key,usedPw){const s=(await sb.rpc("my_status")).data;const row=s&&s[0];
-  if(row&&row.must_change){loginPick="";pinSheet(key,false,usedPw);return} // 새 비밀번호를 정해야 앱으로 들어감
-  try{localStorage.setItem("pn.login",key)}catch(e){};location.reload()}
+  if(row&&row.must_change){setStatus("");loginPick="";pinSheet(key,false,usedPw);return} // 새 비밀번호를 정해야 앱으로 들어감
+  // 새로 고치지 않고 바로 앱으로 (화면 파일을 다시 받지 않아 빠름)
+  ownerFlag=!!(row&&row.is_boss);myUid=key;me=key;loginPick="";try{localStorage.setItem("pn.login",key)}catch(e){}
+  if(window.__updMe)__updMe();subAll();render()}
 /* 푸시 알림 (새 주소만): 이 기기를 pushsubs/<내키>_<기기>에 등록 → 서버(notify 함수)가 새 글이 오면 알림 */
 const VAPID_PUB="BB8kfBFZbQfoZbZDq0it2Y_6_UryhM9Wzq1Ye8b9fbPRhdpJUyasclfNLgHcS1mcM3JQ3hW3HFnNHmmZJZwk_lY";
 const b64u=s=>{const b=atob((s+"=".repeat((4-s.length%4)%4)).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(b,c=>c.charCodeAt(0))};
@@ -1638,7 +1644,7 @@ function pinSheet(key,change,tempPin){ // tempPin: 휴대폰 번호 임시 비�
     if(WEB){ // 새 주소: Supabase 로그인 비밀번호를 바꿈 (6자 이상)
       if(a.length<6){flash("비밀번호는 6자 이상으로 정해 주세요",true);return false}
       const u=await sb.auth.updateUser({password:a});if(u.error){flash(/same/i.test(u.error.message)?"지금과 다른 비밀번호로 정해 주세요":"저장하지 못했어요. 다시 해 주세요",true);return false}
-      await sb.rpc("mark_changed");me=key;myUid=key;try{localStorage.setItem("pn.login",me)}catch(e){};flash("비밀번호가 저장됐어요");setTimeout(()=>location.reload(),400);return true}
+      await sb.rpc("mark_changed");flash("비밀번호가 저장됐어요");setTimeout(()=>afterWebLogin(key,""),0);return true} // 새로 고치지 않고 바로 앱으로
     if(!db){flash("로그인한 상태에서만 저장할 수 있어요",true);return false}
     const salt=newId();const hash=await pinHash(salt,a);
     try{await col("pins").doc(key).set({salt,hash,setAt:now()})}catch(e){
