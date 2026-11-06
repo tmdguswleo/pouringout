@@ -1,5 +1,5 @@
 /* 푸어링아웃 서비스 워커: 빠른 실행(화면 파일 저장) + 푸시 알림 */
-const CACHE = "po-v2";
+const CACHE = "po-v3";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon2-180.png", "./icon2-192.png", "./icon2-512.png",
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).catch(() => {})); self.skipWaiting(); });
@@ -10,7 +10,7 @@ self.addEventListener("fetch", e => {
   if (u.hostname.endsWith("supabase.co")) return; // 데이터·사진은 늘 서버에서
   const isPage = e.request.mode === "navigate" || u.pathname.endsWith("/") || u.pathname.endsWith(".html");
   if (isPage) { // 화면: 새 버전 먼저, 안 되면 저장해 둔 것
-    e.respondWith(fetch(e.request).then(r => { const c = r.clone(); caches.open(CACHE).then(x => x.put(e.request, c)); return r; })
+    e.respondWith(fetch(e.request, { cache: "no-cache" }).then(r => { const c = r.clone(); caches.open(CACHE).then(x => x.put(e.request, c)); return r; })
       .catch(() => caches.match(e.request).then(r => r || caches.match("./"))));
     return;
   }
