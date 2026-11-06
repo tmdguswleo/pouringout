@@ -2307,9 +2307,9 @@ function vSchedule(v){
       askConfirm(nv?`${md(hs)}~${md(he)} 근무표를 직원들에게 공개할까요?`:`${md(hs)}~${md(he)} 근무표를 직원들에게서 숨길까요?`,()=>{const halves={...schedPub(),[hs]:nv};
         W(()=>col("monthnotes").doc("schedpub").set({halves,editedBy:me,editedAt:now(),updatedAt:now()}),nv?"근무표 공개됨":"근무표 숨김")},nv?"공개":"숨기기")}},
       `${md(hs)}~${md(he)} `,el("span",{},on?"공개 중":"공개하기"));
-    return b}),...[periodStart,addDays(periodStart,14)].map(hs=>halfShown(hs)?el("span"):draftOrig[hs]
+    return b}),...[periodStart,addDays(periodStart,14)].map(hs=>draftOrig[hs]
       ?el("div",{class:"draftacts"},el("button",{class:"chktog pubb",type:"button",onclick:()=>draftSheet(hs)},"다시 만들기"),el("button",{class:"chktog pubb",type:"button","aria-pressed":"true",onclick:()=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 초안을 확정할까요? 확정하면 다시 만들기를 할 수 없어요`,()=>draftConfirm(hs),"확정")},`확정하기${draftPinned[hs]&&draftPinned[hs].size?` (고정 ${draftPinned[hs].size}일)`:""}`))
-      :el("button",{class:"chktog pubb",type:"button",onclick:()=>draftSheet(hs)},`${md(hs)}~ 초안 만들기`))):null; // 사장만: 공개 전 2주에만 초안 버튼, 초안 중이면 다시 만들기·확정하기
+      :el("button",{class:"chktog pubb",type:"button",onclick:()=>draftSheet(hs)},"초안 만들기"))):null; // 사장만: 각 2주 공개 버튼 바로 아래 — 초안 만들기, 초안 중이면 다시 만들기·확정하기
   v.append(el("section",{},el("h2",{},"4주 근무표",el("span",{class:"meta",style:"font-size:11.5px"},"왼쪽 메라키 · 오른쪽 본점 · 컬러 이름=휴무 · ★=희망휴무")),pubBar,zbar,wrap,
     isMob()?el("p",{class:"hint",style:"font-size:11.5px"},"두 손가락으로 늘리고, 커진 상태에서 옆으로 밀어 볼 수 있어요"):null)); // 희망휴무 안내와 같은 크기
   if(isMob())setupZoom(wrap,board,zbar);
