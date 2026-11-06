@@ -2306,7 +2306,7 @@ function vSchedule(v){
       askConfirm(nv?`${md(hs)}~${md(he)} 근무표를 직원들에게 공개할까요?`:`${md(hs)}~${md(he)} 근무표를 직원들에게서 숨길까요?`,()=>{const halves={...schedPub(),[hs]:nv};
         W(()=>col("monthnotes").doc("schedpub").set({halves,editedBy:me,editedAt:now(),updatedAt:now()}),nv?"근무표 공개됨":"근무표 숨김")},nv?"공개":"숨기기")}},
       `${md(hs)}~${md(he)} `,el("span",{},on?"공개 중":"공개하기"));
-    return b}),...[periodStart,addDays(periodStart,14)].map(hs=>el("button",{class:"chktog pubb",type:"button",disabled:halfShown(hs),onclick:()=>draftSheet(hs)},halfShown(hs)?"공개된 2주":"초안 만들기"))):null; // 사장만: 2주 초안
+    return b}),...[periodStart,addDays(periodStart,14)].map(hs=>halfShown(hs)?el("span"):el("button",{class:"chktog pubb",type:"button",onclick:()=>draftSheet(hs)},`${md(hs)}~ 초안 만들기`))):null; // 사장만: 공개 전 2주에만 초안 버튼
   v.append(el("section",{},el("h2",{},"4주 근무표",el("span",{class:"meta",style:"font-size:11.5px"},"왼쪽 메라키 · 오른쪽 본점 · 컬러 이름=휴무 · ★=희망휴무")),pubBar,zbar,wrap,
     isMob()?el("p",{class:"hint",style:"font-size:11.5px"},"두 손가락으로 늘리고, 커진 상태에서 옆으로 밀어 볼 수 있어요"):null)); // 희망휴무 안내와 같은 크기
   if(isMob())setupZoom(wrap,board,zbar);
@@ -2521,11 +2521,11 @@ const hopeGone=d=>isBoss()?halfFilled(d):halfShown(d); // 희망휴무 ★ 표�
    승현: 메라키 8:00-10:30(m1), 푸어링 10:30-13:30(b1, 수요일 제외). 수요일은 푸어링 휴무 → 메라키 2명만.
    이미 적어 둔 칸(이름·휴무)과 희망휴무(★)는 고정, 나머지만 채움. 여러 번 만들어 보고 점수가 가장 좋은 안을 고름. */
 const DRAFT_STAFF=["daseul","junhyung","jeonghan","wonseok","woojun"];
-function draftHalf(hs,seed){
+function draftHalf(hs,seed,orig){
   let rnd=seed||Date.now()%2147483647;const rand=()=>(rnd=rnd*16807%2147483647)/2147483647;
   const days=[...Array(14)].map((_,i)=>addDays(hs,i));
   const isWed=k=>parse(k).getDay()===3,dow=k=>parse(k).getDay();
-  const rec=k=>S.schedule.find(x=>x.id===k)||{};
+  const rec=k=>orig&&k in orig?(orig[k]||{}):(S.schedule.find(x=>x.id===k)||{}); // orig: 초안 넣기 전 원래 칸 (다시 만들기용)
   const hopeOf=k=>S.dayoffs.filter(x=>x.date===k&&DRAFT_STAFF.includes(x.staff)).map(x=>x.staff);
   // 지난 4주 오픈 횟수 (메라키 10:30 + 승현이 아닌 사람이 들어간 푸어링 10:30)
   const base={};DRAFT_STAFF.forEach(p=>base[p]=0);
@@ -2579,23 +2579,27 @@ function draftHalf(hs,seed){
   const lowOff=DRAFT_STAFF.filter(p=>best.offCnt[p]<4);
   if(lowOff.length)issues.push(`휴무 4회(4주 8회)가 안 되는 사람: ${lowOff.map(p=>nm(p)+" "+best.offCnt[p]+"회").join(", ")} — 정직원 5명이 하루 4명씩 일하면 2주 휴무는 모두 합쳐 ${totalOff}회라 다 채울 수 없어요. 추가근무·승현 근무로 쉬는 날을 더 만들 수 있어요`);
   return{...best,issues}}
-function draftSheet(hs){
-  let seed=Date.now()%2147483647;let res=draftHalf(hs,seed);const nm=p=>(byKey[p]||{}).name||p;
-  const box=el("div",{class:"draftbox"});
+/* 초안 만들기: 빈 칸을 바로 근무표에 채워 넣고(공개 전이라 직원에겐 안 보임), 결과·못 지킨 부분을 작은 창으로 알려 줌.
+   '다시 만들기'는 초안 넣기 전 원래 칸으로 되돌린 뒤 새 안으로 다시 채움 */
+const draftOrig={};
+async function draftApply(hs,seed){
+  const days=[...Array(14)].map((_,i)=>addDays(hs,i));
+  if(!draftOrig[hs]){draftOrig[hs]={};days.forEach(k=>{const r=S.schedule.find(x=>x.id===k);draftOrig[hs][k]=r?JSON.parse(JSON.stringify(r)):null})}
+  const orig=draftOrig[hs];const res=draftHalf(hs,seed,orig);
+  const ok=await W(async()=>{for(const d of res.plan){const r=orig[d.k]||{};const wed=parse(d.k).getDay()===3;const {id,_col,...base}=r;
+    await col("schedule").doc(d.k).set({...base,date:d.k,m1:(r.m1&&r.m1.length)?r.m1:["seunghyun"],m2:d.O,b1:wed?(r.b1||[]):((r.b1&&r.b1.length)?r.b1:["seunghyun"]),b2:wed?[]:d.C,off:d.off,editedBy:me,editedAt:now(),updatedAt:now()})}},"초안을 근무표에 넣었어요");
+  return ok?res:null}
+async function draftSheet(hs){
+  if(!draftOrig[hs]&&!(await new Promise(ok=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 빈 칸을 초안으로 채울까요? 이미 적어 둔 칸과 희망휴무는 그대로 둬요. 공개하기 전까지 직원에게는 안 보여요`,()=>ok(true),"채우기"))))return; // 닫기를 누르면 아무것도 안 함
+  let seed=Date.now()%2147483647;let res=await draftApply(hs,seed);if(!res)return;
+  const nm=p=>(byKey[p]||{}).name||p;const box=el("div",{});
   const drawRes=()=>{box.textContent="";
-    const t=el("table",{class:"oc draft"},el("thead",{},el("tr",{},el("th",{},"날짜"),el("th",{},"메라키 오픈"),el("th",{},"푸어링 마감"),el("th",{},"휴무"))));
-    const tb=el("tbody");res.plan.forEach(d=>{const hope=new Set(S.dayoffs.filter(x=>x.date===d.k).map(x=>x.staff));
-      const r=S.schedule.find(x=>x.id===d.k)||{};const nM=(r.note_meraki||"").trim(),nP=(r.note_pouring||"").trim();
-      tb.append(el("tr",{},el("td",{},mdw(d.k)),el("td",{},nM||d.O.map(nm).join(" ")),el("td",{},nP||(parse(d.k).getDay()===3?"휴무":d.C.map(nm).join(" "))),el("td",{},d.off.map(p=>nm(p)+(hope.has(p)?"★":"")).join(" "))))});
-    t.append(tb);box.append(t);
-    box.append(el("p",{class:"hint",style:"margin:10px 0 4px"},"오픈 횟수(지난 4주+이번 2주): "+DRAFT_STAFF.map(p=>`${nm(p)} ${res.open[p]}`).join(" · ")));
+    box.append(el("p",{class:"hint",style:"margin:0 0 4px"},"오픈 횟수(지난 4주+이번 2주): "+DRAFT_STAFF.map(p=>`${nm(p)} ${res.open[p]}`).join(" · ")));
     box.append(el("p",{class:"hint",style:"margin:0 0 4px"},"이번 2주 휴무: "+DRAFT_STAFF.map(p=>`${nm(p)} ${res.offCnt[p]}`).join(" · ")));
     box.append(el("p",{class:"hint",style:"margin:0;white-space:pre-line"},res.issues.length?"못 지킨 부분\n· "+res.issues.join("\n· "):"모든 규칙을 지켰어요"))};
   drawRes();
-  const again=el("button",{class:"btn ghost",type:"button",onclick:()=>{seed=(seed*48271)%2147483647;res=draftHalf(hs,seed);drawRes()}},"다시 만들기");
-  openSheet(`${md(hs)}~${md(addDays(hs,13))} 근무표 초안`,[el("p",{class:"hint",style:"margin:0"},"이미 적어 둔 칸과 희망휴무(★)는 그대로 두고 나머지만 채운 초안이에요. '근무표에 넣기'를 눌러도 공개 전까지 직원에게는 안 보여요"),box],async()=>{
-    return W(async()=>{for(const d of res.plan){const r=S.schedule.find(x=>x.id===d.k)||{};const wed=parse(d.k).getDay()===3;
-      await col("schedule").doc(d.k).set({...r,id:undefined,date:d.k,m1:(r.m1&&r.m1.length)?r.m1:["seunghyun"],m2:d.O,b1:wed?(r.b1||[]):((r.b1&&r.b1.length)?r.b1:["seunghyun"]),b2:wed?[]:d.C,off:d.off,editedBy:me,editedAt:now(),updatedAt:now()})}},"근무표에 초안을 넣었어요")},"근무표에 넣기",again)}
+  const again=el("button",{class:"btn ghost",type:"button",onclick:async()=>{again.disabled=true;seed=(seed*48271)%2147483647;const r=await draftApply(hs,seed);if(r){res=r;drawRes()}again.disabled=false}},"다시 만들기");
+  openSheet(`${md(hs)}~${md(addDays(hs,13))} 초안을 넣었어요`,[el("p",{class:"hint",style:"margin:0"},"근무표에서 확인하고 칸을 눌러 고친 뒤, 다 되면 '공개하기'를 눌러 주세요"),box],async()=>true,"확인",again)}
 function hopeCap(d){return parse(d).getDay()===3?3:1}
 function hopeBlocked(d,who){
   const taken=S.dayoffs.filter(x=>x.date===d&&x.staff!==who&&x.staff!=="seunghyun");
