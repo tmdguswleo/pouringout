@@ -7,6 +7,8 @@
   python3 tools/sync_minutes.py fill <sha>=<assetId> ...  → 새로 올린 사진의 저장소 id를 본문에 채움
   python3 tools/sync_minutes.py merge <앱 문서 json>  → 앱에서 체크된 항목은 체크 유지
   python3 tools/sync_minutes.py mark    → 방금 올린 내용을 '반영됨'으로 기록
+  python3 tools/sync_minutes.py push    → (새 주소) 확인 → 사진·영상 올리기 → 앱 체크 유지 → Supabase에 저장 → 반영됨 기록까지 한 번에
+     로그인 정보: ~/.config/pouringout/sync.json {"email","password"} (저장소 밖, 커밋 안 함)
 사진: 메모 속 사진은 JPEG로 바꿔 tools/.sync_img/<sha>.jpg 에 저장. 이미 올린 사진은 state의 imgs에 id가 있어 다시 안 올림.
 앱 DB에 쓰는 것은 Claude(ArtifactData)가 한다. 이 스크립트는 읽기와 변환만 한다.
 """
@@ -340,8 +342,72 @@ def place_videos(h, vids):
     return h, missing
 
 
+SUPA_URL = "https://wvmvsobyigsqmwvuepqk.supabase.co"
+SUPA_KEY = "sb_publishable_sVSKargypenzMn-XwEZLRw_y53zir3o"  # 공개용 키
+CRED = os.path.expanduser("~/.config/pouringout/sync.json")
+
+
+def _req(method, path, token=None, body=None, headers=None, raw=None):
+    import urllib.request, urllib.error
+    h = {"apikey": SUPA_KEY}
+    if token: h["Authorization"] = "Bearer " + token
+    data = None
+    if raw is not None: data = raw
+    elif body is not None: data = json.dumps(body).encode(); h["Content-Type"] = "application/json"
+    h.update(headers or {})
+    r = urllib.request.Request(SUPA_URL + path, data=data, headers=h, method=method)
+    try:
+        with urllib.request.urlopen(r, timeout=120) as res:
+            t = res.read(); return res.status, (json.loads(t) if t[:1] in (b"{", b"[") else t)
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode("utf8", "replace")
+
+
+def push():
+    """새 주소(Supabase)로 오늘 회의록을 바로 반영"""
+    import io, contextlib, secrets
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        sys.argv = [sys.argv[0], "check"]; main()
+    lines = buf.getvalue().strip().splitlines()
+    if not lines or not lines[0].startswith("CHANGED"):
+        print(lines[0] if lines else "NONE"); return
+    cred = json.load(open(CRED))
+    c, j = _req("POST", "/auth/v1/token?grant_type=password", body={"email": cred["email"], "password": cred["password"]})
+    if c != 200: sys.exit("ERROR 로그인 실패 " + str(c))
+    tok = j["access_token"]
+    st = json.load(open(STATE)) if os.path.exists(STATE) else {}
+    imgs = st.setdefault("imgs", {}); nimg = nvid = 0
+    for ln in lines[1:]:
+        if not ln.startswith("UPLOAD"): continue
+        _, sha, f = ln.split(" ", 2)
+        aid = secrets.token_hex(16); ct = "video/mp4" if f.endswith(".mp4") else "image/jpeg"
+        c, j = _req("POST", "/storage/v1/object/media/" + aid, tok, raw=open(f, "rb").read(), headers={"Content-Type": ct})
+        if c not in (200, 201): sys.exit("ERROR 사진 올리기 실패 " + str(c))
+        imgs[sha] = aid
+        if ct == "video/mp4": nvid += 1
+        else: nimg += 1
+    json.dump(st, open(STATE, "w"))
+    d = json.load(open(OUT))
+    d["html"] = re.sub(r"@@([0-9a-f]+)@@", lambda m: imgs.get(m.group(1), m.group(0)), d["html"])
+    did = "mt-" + d["date"]
+    c, rows = _req("GET", "/rest/v1/store?col=eq.notices&id=eq." + did + "&select=data", tok)
+    if c == 200 and rows:
+        app = rows[0]["data"]
+        done = {norm(html.unescape(re.sub(r"<[^>]+>", "", t))) for t in re.findall(r'<li class="ck done">(.*?)</li>', app.get("html") or "", re.S)}
+        d["html"] = re.sub(r'<li class="ck">(.*?)</li>', lambda m: '<li class="ck done">' + m.group(1) + "</li>" if norm(html.unescape(re.sub(r"<[^>]+>", "", m.group(1)))) in done else m.group(0), d["html"], flags=re.S)
+    json.dump(d, open(OUT, "w"), ensure_ascii=False)
+    c, j = _req("POST", "/rest/v1/store", tok, body={"col": "notices", "id": did, "data": d, "updated_at": datetime.datetime.utcnow().isoformat() + "Z"}, headers={"Prefer": "resolution=merge-duplicates"})
+    if c not in (200, 201, 204): sys.exit("ERROR 저장 실패 " + str(c) + " " + str(j)[:200])
+    st.update({"date": d["date"], "hash": d["srcHash"]}); json.dump(st, open(STATE, "w"))
+    print(f"PUSHED {d['date']} 사진 {nimg}장 영상 {nvid}개")
+    for ln in lines[1:]:
+        if ln.startswith("VIDEO_MISSING"): print(ln)
+
+
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "check"
+    if cmd == "push": return push()
     st = json.load(open(STATE)) if os.path.exists(STATE) else {}
     if cmd == "fill":
         imgs = st.setdefault("imgs", {})

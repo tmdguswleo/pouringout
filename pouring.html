@@ -1503,7 +1503,7 @@ function meSel(){
       parts.push(el("div",{},el("div",{class:"lab"},"다른 계정으로 바꾸기"),box))}
 
     if(isBoss()&&!NO_PIN){const box=el("div",{class:"chips"});STAFF.filter(x=>x.key!==me).forEach(x=>{const has=S.pins.some(p=>p.id===x.key&&p.hash);
-        box.append(el("button",{class:"chip",type:"button",onclick:()=>{closeSheet();setTimeout(()=>resetPin(x),0)}},(x.full||x.name)+(has?"":" (미설정)")))});
+        box.append(el("button",{class:"chip",type:"button",onclick:()=>{closeSheet();setTimeout(()=>resetPin(x),0)}},(x.full||x.name)+(WEB||has?"":" (미설정)")))});
       // 가입 현황: 직원이 첫 로그인해서 자기 비밀번호를 정했는지
       const st=el("div",{class:"pinst"});
       if(WEB&&sb)sb.rpc("staff_status").then(r=>{if(r.error||!st.isConnected)return;const m=Object.fromEntries((r.data||[]).map(x=>[x.key,x]));
@@ -1514,7 +1514,7 @@ function meSel(){
       parts.push(el("div",{},el("div",{class:"lab"},"새 주소로 옮기기"),WEB?el("button",{class:"btn ghost",type:"button",onclick:()=>{closeSheet();setTimeout(importMove,0)}},"예전 앱 데이터 옮겨 오기")
         :el("button",{class:"btn ghost",type:"button",onclick:()=>{closeSheet();setTimeout(exportForMove,0)}},"옮길 파일 만들기 (데이터 + 사진·영상)")));
       parts.push(el("div",{},el("div",{class:"lab"},"직원 비밀번호 초기화 (잊어버렸을 때)"),box))
-      if(ownerFlag){const cb=el("input",{type:"checkbox",class:"chk"});cb.checked=!ownerAutoOff();
+      if(ownerFlag&&!WEB){const cb=el("input",{type:"checkbox",class:"chk"});cb.checked=!ownerAutoOff();
         cb.onchange=()=>W(()=>col("monthnotes").doc("ownerauto").set({off:!cb.checked,editedBy:me,editedAt:now(),updatedAt:now()}),cb.checked?"비밀번호 없이 들어가기 켬":"비밀번호 없이 들어가기 끔");
         parts.push(el("label",{class:"permrow"},cb,el("span",{},"이 Claude 계정으로 열면 비밀번호 없이 들어가기")),el("p",{class:"hint",style:"margin:0"},"직원이 이 Claude 계정을 같이 쓰는 기기에서는 꺼 주세요"))}}
     openSheet("내 계정",parts,async()=>{logout();return true},"로그아웃")};
