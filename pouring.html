@@ -1219,7 +1219,15 @@ const seenIO="IntersectionObserver" in window?new IntersectionObserver(es=>{es.f
 // manual=true: 화면에 보이기만 해서는 읽음 처리 안 함 (자료실 메모는 열어 봐야 사라짐)
 const newB=(it,manual)=>{const b=el("span",{class:"newb","aria-label":"새 글","data-id":it.id},"N");if(seenIO&&!manual)requestAnimationFrame(()=>seenIO.observe(b));return b};
 document.addEventListener("visibilitychange",()=>{if(!me||document.hidden)return;seenSnap=JSON.parse(JSON.stringify(seenLoad()));if(!busy())draw()});
+/* 홈 화면 아이콘 숫자 배지 (새 주소, 홈 화면 앱 + 알림 허용일 때): 안 읽은 새 글 수. 알림이 오면 서비스 워커가 하나씩 올림 */
+let badgeLast=-1;
+function appBadge(){if(!WEB||!("setAppBadge" in navigator))return;let n=0;
+  try{if(me)tabList().filter(([k])=>k==="today"||can("tab:"+k)).forEach(([k])=>{n+=newCount(k)})}catch(e){}
+  if(n===badgeLast)return;badgeLast=n;
+  try{(n?navigator.setAppBadge(n):navigator.clearAppBadge()).catch(()=>{})}catch(e){}
+  try{caches.open("po-badge").then(c=>c.put("/badge",new Response(String(n)))).catch(()=>{})}catch(e){}}
 function drawTabs(){
+  setTimeout(appBadge,0);
   const t=$("tabs");t.textContent="";
   if(!can("tab:"+tab))tab="today";
   tabList().filter(([k])=>k==="today"||can("tab:"+k)).forEach(([k,l])=>{const n=me&&k!==tab?newCount(k):0;t.append(el("a",{href:"#"+k,"aria-current":k===tab?"page":false,onclick:k==="docs"?()=>{mView.docs="list";if(tab==="docs"){draw();window.scrollTo(0,0)}}
