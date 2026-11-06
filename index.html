@@ -1537,8 +1537,7 @@ function meSel(){
       STAFF.filter(x=>x.key!=="seunghyun").forEach(x=>{const p=S.pins.find(q=>q.id===x.key&&q.hash);
         const ok=!WEB&&p&&!p.temp;st.append(el("div",{class:"pinst-r","data-k":x.key},el("span",{},x.full||x.name,el("span",{class:"pres","data-k":x.key})),el("span",{class:ok?"pinst-ok":"pinst-no"},ok?`가입 완료${p.setAt?" · "+hm(p.setAt):""}`:"아직 첫 로그인 전")))});
       parts.push(el("div",{},el("div",{class:"lab"},"직원 가입 현황"),st));setTimeout(updPres,0);
-      parts.push(el("div",{},el("div",{class:"lab"},"새 주소로 옮기기"),WEB?el("button",{class:"btn ghost",type:"button",onclick:()=>{closeSheet();setTimeout(importMove,0)}},"예전 앱 데이터 옮겨 오기")
-        :el("button",{class:"btn ghost",type:"button",onclick:()=>{closeSheet();setTimeout(exportForMove,0)}},"옮길 파일 만들기 (데이터 + 사진·영상)")));
+      // 새 주소로 옮기기는 2026-11-06 끝남 → 버튼 뺌 (다시 옮겨 오면 새 글이 예전 내용으로 덮어써질 수 있음). 함수(exportForMove/importMove)는 남겨 둠
       parts.push(el("div",{},el("div",{class:"lab"},"직원 비밀번호 초기화 (잊어버렸을 때)"),box))
       if(ownerFlag&&!WEB){const cb=el("input",{type:"checkbox",class:"chk"});cb.checked=!ownerAutoOff();
         cb.onchange=()=>W(()=>col("monthnotes").doc("ownerauto").set({off:!cb.checked,editedBy:me,editedAt:now(),updatedAt:now()}),cb.checked?"비밀번호 없이 들어가기 켬":"비밀번호 없이 들어가기 끔");
