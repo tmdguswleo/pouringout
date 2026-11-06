@@ -264,7 +264,7 @@ li.editing .iedit-bar{display:flex}
 .ie-pc{display:none!important}
 li.ie-chk .ie-pc{display:block!important}
 li.ie-nochk .chk{opacity:.25}
-.draftacts{grid-column:1/-1;display:grid;grid-template-columns:1.3fr .8fr 1.1fr .9fr;gap:6px}.draftacts .pubb:disabled{opacity:.4}
+.draftacts{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr .8fr 1fr;gap:6px}.draftacts .pubb:disabled{opacity:.4}
 .oc.draft td,.oc.draft th{font-size:12.5px;padding:5px 4px;text-align:left;white-space:nowrap}.oc.draft{table-layout:auto;width:100%}
 .chiprow1{display:flex;flex:0 0 100%;justify-content:space-between;gap:4px;min-width:0} /* 내 계정 이름 첫 줄: 양끝 맞춤 */
 .sheet .panel.acct{padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))} /* 내 계정 창은 좌우 여백 넓게 */
@@ -2312,9 +2312,9 @@ function vSchedule(v){
       const on=!!draftOrig[hs],pin=draftPinned[hs]&&draftPinned[hs].size;
       const B=(t,f,dis,pr)=>el("button",{class:"chktog pubb",type:"button",disabled:dis,...(pr?{"aria-pressed":"true"}:{}),onclick:f},t);
       return el("div",{class:"draftacts"},
-        B("초안 만들기",()=>draftSheet(hs),on),B("다시",()=>draftSheet(hs),!on),
-        B(`확정하기${pin?` (${pin})`:""}`,()=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 초안을 확정할까요? 확정하면 다시 만들기·비우기를 할 수 없어요`,()=>draftConfirm(hs),"확정"),!on,on),
-        B("비우기",()=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 초안으로 채운 칸을 비울까요? 직접 고쳐서 고정한 날은 그대로 둬요`,()=>draftClear(hs),"비우기"),!on))})()):null; // 사장만: 각 2주 공개 버튼 바로 아래 — 초안 만들기, 초안 중이면 다시 만들기·확정하기
+        B("초안 만들기",()=>draftSheet(hs),on),B("다시 만들기",()=>draftSheet(hs),!on),
+        B("비우기",()=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 초안으로 채운 칸을 비울까요? 직접 고쳐서 고정한 날은 그대로 둬요`,()=>draftClear(hs),"비우기"),!on),
+        B(`확정하기${pin?` (${pin})`:""}`,()=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 초안을 확정할까요? 확정하면 다시 만들기·비우기를 할 수 없어요`,()=>draftConfirm(hs),"확정"),!on,on))})()):null; // 사장만: 각 2주 공개 버튼 바로 아래 — 초안 만들기, 초안 중이면 다시 만들기·확정하기
   v.append(el("section",{},el("h2",{},"4주 근무표",el("span",{class:"meta",style:"font-size:11.5px"},"왼쪽 메라키 · 오른쪽 본점 · 컬러 이름=휴무 · ★=희망휴무")),pubBar,zbar,wrap,
     isMob()?el("p",{class:"hint",style:"font-size:11.5px"},"두 손가락으로 늘리고, 커진 상태에서 옆으로 밀어 볼 수 있어요"):null)); // 희망휴무 안내와 같은 크기
   if(isMob())setupZoom(wrap,board,zbar);
@@ -2615,7 +2615,7 @@ async function draftSheet(hs){
     box.append(el("p",{class:"hint",style:"margin:0 0 4px"},"이번 2주 휴무: "+DRAFT_STAFF.map(p=>`${nm(p)} ${res.offCnt[p]}`).join(" · ")));
     box.append(el("p",{class:"hint",style:"margin:0;white-space:pre-line"},res.issues.length?"못 지킨 부분\n· "+res.issues.join("\n· "):"모든 규칙을 지켰어요"))};
   drawRes();
-  const again=el("button",{class:"btn ghost",type:"button",onclick:async()=>{again.disabled=true;seed=(seed*48271)%2147483647;const r=await draftApply(hs,seed);if(r){res=r;drawRes()}again.disabled=false}},"다시 만들기");
+  const again=el("button",{class:"btn ghost",type:"button",style:"margin-right:auto",onclick:async()=>{again.disabled=true;seed=(seed*48271)%2147483647;const r=await draftApply(hs,seed);if(r){res=r;drawRes()}again.disabled=false}},"다시 만들기");
   openSheet(`${md(hs)}~${md(addDays(hs,13))} 초안을 넣었어요`,[el("p",{class:"hint",style:"margin:0;white-space:pre-line"},"닫고 달력에서 칸을 눌러 고치면 그 날은 고정돼요. '다시 만들기'를 해도 고친 날은 그대로예요.\n다 됐으면 '확정하기' → '공개하기'를 눌러 주세요"),box],async()=>{draftConfirm(hs);return true},"확정하기",again);draw()}
 function hopeCap(d){return parse(d).getDay()===3?3:1}
 function hopeBlocked(d,who){
