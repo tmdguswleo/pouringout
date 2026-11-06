@@ -512,6 +512,7 @@ button{-webkit-tap-highlight-color:transparent}
   .cl2 .add{flex-wrap:nowrap}.cl2 .add input{flex:1}.cl2 .add .btn{flex:0 0 auto}
   /* bottom tab bar */
   nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:7;border-bottom:0;border-top:.5px solid var(--line);background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding-bottom:max(env(safe-area-inset-bottom,0px),22px)} /* 아이폰 홈 바와 겹치지 않게 글씨를 위로 */
+  html.webapp nav.tabs{padding-bottom:max(calc(env(safe-area-inset-bottom,0px) - 14px),12px)} /* 새 주소(홈 화면 앱)는 화면 끝까지 쓰므로 여백을 조금 줄임 */
   nav.tabs .inner{padding-block:6px;gap:0}
   nav.tabs a{flex:1 1 0;text-align:center;font-size:14px;padding:10px 4px;border-radius:10px;color:var(--muted)}
   nav.tabs a[aria-current="page"]{background:none;color:var(--ink);box-shadow:inset 0 2px 0 var(--accent);border-radius:0}
@@ -1219,6 +1220,17 @@ const seenIO="IntersectionObserver" in window?new IntersectionObserver(es=>{es.f
 // manual=true: 화면에 보이기만 해서는 읽음 처리 안 함 (자료실 메모는 열어 봐야 사라짐)
 const newB=(it,manual)=>{const b=el("span",{class:"newb","aria-label":"새 글","data-id":it.id},"N");if(seenIO&&!manual)requestAnimationFrame(()=>seenIO.observe(b));return b};
 document.addEventListener("visibilitychange",()=>{if(!me||document.hidden)return;seenSnap=JSON.parse(JSON.stringify(seenLoad()));if(!busy())draw()});
+/* 이름 버튼 줄 맞추기: koha까지 한 줄(최우준 옆), 나머지는 다음 줄. 한 줄 폭에 꽉 차게 글씨·여백 조절 */
+function fitNameChips(box,lastKey="koha"){
+  const run=()=>{if(!box.isConnected)return;const all=[...box.children].filter(c=>c.classList.contains("chip"));if(!all.length)return;
+    let i=all.findIndex(c=>c.dataset.k===lastKey);if(i<0)return;const row1=all.slice(0,i+1);
+    let br=box.querySelector(".lbrk");if(!br){br=el("span",{class:"lbrk"});all[i].after(br)}
+    const target=box.clientWidth,gap=parseFloat(getComputedStyle(box).columnGap)||0;
+    const rowW=()=>row1.reduce((s,c)=>s+c.getBoundingClientRect().width,0)+gap*(row1.length-1);
+    let fs=13;const setF=()=>all.forEach(c=>{c.style.fontSize=fs+"px";c.style.paddingLeft=c.style.paddingRight="4px"});
+    setF();while(rowW()>target&&fs>10){fs-=.25;setF()}
+    const extra=(target-rowW())/(row1.length*2)-.05;if(extra>0)all.forEach(c=>{c.style.paddingLeft=c.style.paddingRight=(4+extra)+"px"})};
+  setTimeout(run,0);try{document.fonts&&document.fonts.ready.then(run)}catch(e){}setTimeout(run,400)}
 /* 홈 화면 아이콘 숫자 배지 (새 주소, 홈 화면 앱 + 알림 허용일 때): 안 읽은 새 글 수. 알림이 오면 서비스 워커가 하나씩 올림 */
 let badgeLast=-1;
 function appBadge(){if(!WEB||!("setAppBadge" in navigator))return;let n=0;
@@ -1298,6 +1310,7 @@ const ownerAutoOff=()=>!!(S.monthnotes.find(x=>x.id==="ownerauto")||{}).off;
 const WEB=/github\.io$/.test(location.hostname)||/[?&]web=1/.test(location.search);
 const SUPA_URL="https://wvmvsobyigsqmwvuepqk.supabase.co",SUPA_KEY="sb_publishable_sVSKargypenzMn-XwEZLRw_y53zir3o"; // 공개용 키(브라우저에 넣는 키). 데이터는 서버 규칙(RLS)으로 막혀 있음
 const BLOB=WEB?SUPA_URL+"/storage/v1/object/public/media/":"/_blob/";
+if(WEB)document.documentElement.classList.add("webapp");
 let sb=null;
 const webEmail=k=>k+"@pouringout.app";
 const webErr=e=>{const m=(e&&e.message)||String(e||"");return{code:(e&&e.code==="42501")||/row-level security|permission/i.test(m)?"invalid_argument":"unavailable",message:m}};
@@ -1525,11 +1538,12 @@ function meSel(){
     const bossDev=isBoss()||ownerFlag;
     if(bossDev){const box=el("div",{class:"chips"});
       if(!isBoss())box.append(el("button",{class:"chip",type:"button","aria-pressed":"true",onclick:()=>{closeSheet();me="seunghyun";try{localStorage.setItem("pn.login",me)}catch(e){};upd();draw();window.scrollTo(0,0)}},"사장님 계정으로 돌아가기"));
-      STAFF.filter(x=>x.key!==me&&(isBoss()||x.key!=="seunghyun")).forEach(x=>box.append(el("button",{class:"chip",type:"button",onclick:()=>{closeSheet();me=x.key;try{localStorage.setItem("pn.login",me)}catch(e){};upd();draw();window.scrollTo(0,0)}},x.full||x.name)));
+      STAFF.filter(x=>x.key!==me&&(isBoss()||x.key!=="seunghyun")).forEach(x=>box.append(el("button",{class:"chip",type:"button","data-k":x.key,onclick:()=>{closeSheet();me=x.key;try{localStorage.setItem("pn.login",me)}catch(e){};upd();draw();window.scrollTo(0,0)}},x.full||x.name)));
+      if(isBoss())fitNameChips(box); // koha를 최우준 옆 한 줄로
       parts.push(el("div",{},el("div",{class:"lab"},"다른 계정으로 바꾸기"),box))}
 
     if(isBoss()&&!NO_PIN){const box=el("div",{class:"chips"});STAFF.filter(x=>x.key!==me).forEach(x=>{const has=S.pins.some(p=>p.id===x.key&&p.hash);
-        box.append(el("button",{class:"chip",type:"button",onclick:()=>{closeSheet();setTimeout(()=>resetPin(x),0)}},(x.full||x.name)+(WEB||has?"":" (미설정)")))});
+        box.append(el("button",{class:"chip",type:"button","data-k":x.key,onclick:()=>{closeSheet();setTimeout(()=>resetPin(x),0)}},(x.full||x.name)+(WEB||has?"":" (미설정)")))});
       // 가입 현황: 직원이 첫 로그인해서 자기 비밀번호를 정했는지
       const st=el("div",{class:"pinst"});
       if(WEB&&sb)sb.rpc("staff_status").then(r=>{if(r.error||!st.isConnected)return;const m=Object.fromEntries((r.data||[]).map(x=>[x.key,x]));
@@ -1538,7 +1552,7 @@ function meSel(){
         const ok=!WEB&&p&&!p.temp;st.append(el("div",{class:"pinst-r","data-k":x.key},el("span",{},x.full||x.name,el("span",{class:"pres","data-k":x.key})),el("span",{class:ok?"pinst-ok":"pinst-no"},ok?`가입 완료${p.setAt?" · "+hm(p.setAt):""}`:"아직 첫 로그인 전")))});
       parts.push(el("div",{},el("div",{class:"lab"},"직원 가입 현황"),st));setTimeout(updPres,0);
       // 새 주소로 옮기기는 2026-11-06 끝남 → 버튼 뺌 (다시 옮겨 오면 새 글이 예전 내용으로 덮어써질 수 있음). 함수(exportForMove/importMove)는 남겨 둠
-      parts.push(el("div",{},el("div",{class:"lab"},"직원 비밀번호 초기화 (잊어버렸을 때)"),box))
+      fitNameChips(box);parts.push(el("div",{},el("div",{class:"lab"},"직원 비밀번호 초기화 (잊어버렸을 때)"),box))
       if(ownerFlag&&!WEB){const cb=el("input",{type:"checkbox",class:"chk"});cb.checked=!ownerAutoOff();
         cb.onchange=()=>W(()=>col("monthnotes").doc("ownerauto").set({off:!cb.checked,editedBy:me,editedAt:now(),updatedAt:now()}),cb.checked?"비밀번호 없이 들어가기 켬":"비밀번호 없이 들어가기 끔");
         parts.push(el("label",{class:"permrow"},cb,el("span",{},"이 Claude 계정으로 열면 비밀번호 없이 들어가기")),el("p",{class:"hint",style:"margin:0"},"직원이 이 Claude 계정을 같이 쓰는 기기에서는 꺼 주세요"))}}
@@ -1672,7 +1686,7 @@ function vLogin(v){
     setF();while(rowW()>target&&fs>10){fs-=.25;setF()}
     const extra=(target-rowW())/(row1.length*2)-.05;if(extra>0)all.forEach(c=>{c.style.paddingLeft=c.style.paddingRight=(4+extra)+"px"});
     const hn=card.querySelector(".tmp-hint");if(hn){let f=parseFloat(getComputedStyle(hn).fontSize);while(hn.scrollWidth>hn.clientWidth+1&&f>9){f-=.25;hn.style.fontSize=f+"px"}}};
-  setTimeout(fitLogin,0);
+  setTimeout(fitLogin,0);try{document.fonts&&document.fonts.ready.then(fitLogin)}catch(e){}setTimeout(fitLogin,400); // 글꼴이 늦게 와도 다시 맞춤
 }
 
 function needMe(){if(!me){flash("먼저 로그인해 주세요",true);draw();return false}return true}
