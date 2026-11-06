@@ -17,3 +17,9 @@ secrets*
 .codex-review/
 *.log
 node_modules/
+
+# 회의록 동기화 임시 파일
+tools/.sync_*
+
+# 카톡 대화 내보내기(개인 대화) — git에 올리지 않음
+KakaoTalk_Chat_*
