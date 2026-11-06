@@ -1327,7 +1327,21 @@ async function webLogin(key,pw){
 async function afterWebLogin(key,usedPw){const s=(await sb.rpc("my_status")).data;const row=s&&s[0];
   if(row&&row.must_change){loginPick="";pinSheet(key,false,usedPw);return} // 새 비밀번호를 정해야 앱으로 들어감
   try{localStorage.setItem("pn.login",key)}catch(e){};location.reload()}
+/* 푸시 알림 (새 주소만): 이 기기를 pushsubs/<내키>_<기기>에 등록 → 서버(notify 함수)가 새 글이 오면 알림 */
+const VAPID_PUB="BB8kfBFZbQfoZbZDq0it2Y_6_UryhM9Wzq1Ye8b9fbPRhdpJUyasclfNLgHcS1mcM3JQ3hW3HFnNHmmZJZwk_lY";
+const b64u=s=>{const b=atob((s+"=".repeat((4-s.length%4)%4)).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(b,c=>c.charCodeAt(0))};
+const pushOK=()=>WEB&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+async function pushSub(){if(!pushOK())return null;const r=await navigator.serviceWorker.ready;return r.pushManager.getSubscription()}
+async function pushDocId(sub){const h=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(sub.endpoint));return myUid+"_"+[...new Uint8Array(h)].slice(0,6).map(b=>b.toString(16).padStart(2,"0")).join("")}
+async function pushOn(){
+  if(!pushOK()){alertBox("알림을 켤 수 없어요",/iPhone|iPad/.test(navigator.userAgent)?"아이폰은 Safari에서 '홈 화면에 추가'한 앱으로 열었을 때만 알림을 받을 수 있어요":"이 브라우저는 알림을 지원하지 않아요");return false}
+  const perm=await Notification.requestPermission();if(perm!=="granted"){flash("알림이 막혀 있어요. 휴대폰 설정에서 알림을 허용해 주세요",true);return false}
+  try{const r=await navigator.serviceWorker.ready;const s=(await r.pushManager.getSubscription())||await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
+    await db.collection("pushsubs").doc(await pushDocId(s)).set({k:myUid,sub:s.toJSON(),at:now(),ua:navigator.userAgent.slice(0,90)});flash("이 기기에서 알림을 받아요");return true}
+  catch(e){flash("알림을 켜지 못했어요. 다시 해 주세요",true);return false}}
+async function pushOffNow(){try{const s=await pushSub();if(s){try{await db.collection("pushsubs").doc(await pushDocId(s)).delete()}catch(e){};await s.unsubscribe()}flash("알림을 껐어요")}catch(e){flash("알림을 끄지 못했어요",true)}}
 async function webInit(){
+  if("serviceWorker" in navigator)try{navigator.serviceWorker.register("sw.js")}catch(e){} // 빠른 실행 + 알림
   setStatus("연결 중…");
   try{if(!window.supabase)await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js")}catch(e){setStatus("연결하지 못했어요. 인터넷을 확인하고 새로 고쳐 주세요",true);return}
   sb=window.supabase.createClient(SUPA_URL,SUPA_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"pn.sb"}});
@@ -1494,7 +1508,11 @@ function meSel(){
     // 맨 위 줄: "김승현(으)로 로그인되어 있어요" 옆에 "김승현 비밀번호 바꾸기" (누구 비밀번호인지 헷갈리지 않게)
     const nm=byKey[me].full||byKey[me].name;
     const chgMine=!NO_PIN&&(isBoss()||!ownerFlag)?el("button",{class:"btn ghost sm",type:"button",style:"flex:0 0 auto",onclick:()=>{closeSheet();pinSheet(me,true)}},"비밀번호 바꾸기"):null;
-    const parts=[el("div",{style:"display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap"},el("p",{style:"margin:0"},`${nm}(으)로 로그인되어 있어요`),chgMine)];
+    const pushRow=WEB&&myUid?(()=>{const b=el("button",{class:"btn ghost",type:"button"},"알림 확인 중…");let on=false;
+      const show=()=>{b.textContent=on?"이 기기 알림 끄기":"이 기기에서 알림 받기"};pushSub().then(s=>{on=!!s;show()}).catch(()=>{b.textContent="이 기기에서 알림 받기"});
+      b.onclick=async()=>{b.disabled=true;if(on){await pushOffNow();on=false}else on=await pushOn();show();b.disabled=false};
+      return el("div",{},el("div",{class:"lab"},"알림"),b,el("p",{class:"hint",style:"margin:6px 0 0"},isBoss()?"새 전달사항·체크리스트·회의록·발주 요청이 오면 알려 드려요":"새 전달사항·체크리스트·회의록이 오면 알려 드려요"))})():null;
+    const parts=[el("div",{style:"display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap"},el("p",{style:"margin:0"},`${nm}(으)로 로그인되어 있어요`),chgMine),pushRow].filter(Boolean);
     // 사장(또는 사장 Claude 계정으로 연 기기)은 비밀번호를 켜도 직원 비밀번호 없이 바로 다른 계정으로 바꿔 보기. 직원끼리는 안 됨
     const bossDev=isBoss()||ownerFlag;
     if(bossDev){const box=el("div",{class:"chips"});
@@ -2058,7 +2076,9 @@ function openOrderCat(mode){ // mode: "sup"=거래처 관리, "item"=품목 관�
       const how=el("select",{"aria-label":"주문 방법"},...Object.entries(OHOW).map(([k,l])=>el("option",{value:k},l)));how.value=s.how||"link";how.onchange=()=>{s.how=how.value;draw()};
       const info=s.how==="tel"||s.how==="kakao"?el("input",{type:"tel",value:s.tel||"",placeholder:"전화번호"}):s.how==="app"?el("input",{type:"url",value:s.url||"",placeholder:"어플 링크 (앱스토어 주소)"}):s.how==="link"||!s.how?el("input",{type:"url",value:s.url||"",placeholder:"주문 페이지 링크 (없으면 품목별로)"}):el("input",{type:"text",value:s.memo||"",placeholder:s.how==="app"?"어플 이름 (예: 쿠팡이츠 마트)":"메모 (예: 이마트 트레이더스)"});
       info.oninput=()=>{if(s.how==="tel"||s.how==="kakao")s.tel=info.value;else if(s.how==="visit")s.memo=info.value;else s.url=info.value};
-      const rw=el("div",{class:"ocat-row ocat-sup"},nm,how,el("button",{class:"x",type:"button","aria-label":"거래처 삭제",onclick:()=>{sups.splice(i,1);items.forEach(it=>{if(it.sup===s.id)it.sup=""});draw()}},"×"),info);
+      // 카톡 주문: 오픈채팅·카카오톡 채널 주소를 넣어 두면 발주 탭에 '카톡 열기' (개인 대화방은 주소가 없어 안 됨)
+      const kk=s.how==="kakao"?el("input",{type:"url",value:s.kakao||"",placeholder:"카톡 링크 (오픈채팅·채널 주소, 없으면 비워 두기)","aria-label":"카톡 링크"}):null;if(kk)kk.oninput=()=>s.kakao=kk.value.trim();
+      const rw=el("div",{class:"ocat-row ocat-sup"},nm,how,el("button",{class:"x",type:"button","aria-label":"거래처 삭제",onclick:()=>{sups.splice(i,1);items.forEach(it=>{if(it.sup===s.id)it.sup=""});draw()}},"×"),info,kk);
       rw._arr=sups;rw._i=i;rw.append(dragHandle(rw,box,draw));box.append(rw)}); // ≡ 끌어서 거래처 순서 바꾸기
     box.append(el("button",{class:"btn ghost sm ocat-sup",type:"button",onclick:()=>{sups.push({id:"s"+newId(),name:"",how:"link"});draw()}},"+ 거래처 추가"));return}
     // 분류별로 접어 둠. 분류를 누르면 펼쳐지고, ≡ 를 끌어 분류 안에서 순서 바꿈. 품목 이름을 누르면 분류·거래처·링크 칸이 나옴
@@ -2130,6 +2150,8 @@ function vOrder(v){
     if(isBoss()&&canWrite){const acts=el("div",{class:"osup-acts"});
       const msg=`안녕하세요, 푸어링아웃입니다. ${os.map(orderLabel).join(", ")} 주문 부탁드립니다.`;
       if(s.how==="kakao"||s.how==="tel"){acts.append(el("button",{class:"btn ghost sm",type:"button",onclick:()=>{try{navigator.clipboard.writeText(msg).then(()=>flash("주문 문자를 복사했어요"),()=>flash("복사가 막혀 있어요",true))}catch(e){flash("복사가 막혀 있어요",true)}}},"주문 문자 복사"));
+        const kurl=s.how==="kakao"&&safeUrl(s.kakao);
+        if(kurl)acts.append(el("a",{class:"btn ghost sm",href:kurl,target:"_blank",rel:"noopener noreferrer",onclick:()=>{try{navigator.clipboard.writeText(msg)}catch(e){}}},"카톡 열기")); // 누르면 주문 문자도 복사해 둠 → 대화방에 붙여 넣기
         if(s.tel)acts.append(el("a",{class:"btn ghost sm",href:(s.how==="kakao"?"sms:":"tel:")+s.tel.replace(/[^\d+]/g,"")},s.how==="kakao"?"문자":"전화"))}
       if(s.memo)acts.append(el("span",{class:"by"},s.memo));
       acts.append(el("button",{class:"btn sm",type:"button",style:"margin-left:auto",onclick:()=>markDone(os)},"모두 주문 완료"));card.append(acts)}
