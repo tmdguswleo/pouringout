@@ -1229,7 +1229,7 @@ function fitNameChips(box,lastKey="koha"){
     const rowW=()=>row1.reduce((s,c)=>s+c.getBoundingClientRect().width,0)+gap*(row1.length-1);
     let fs=13;const setF=()=>all.forEach(c=>{c.style.fontSize=fs+"px";c.style.paddingLeft=c.style.paddingRight="4px"});
     setF();while(rowW()>target&&fs>10){fs-=.25;setF()}
-    const extra=(target-rowW())/(row1.length*2)-.05;if(extra>0)all.forEach(c=>{c.style.paddingLeft=c.style.paddingRight=(4+extra)+"px"})};
+    const extra=(target-rowW()-3)/(row1.length*2);if(extra>0)all.forEach(c=>{c.style.paddingLeft=c.style.paddingRight=(4+extra)+"px"})};
   setTimeout(run,0);try{document.fonts&&document.fonts.ready.then(run)}catch(e){}setTimeout(run,400)}
 /* 홈 화면 아이콘 숫자 배지 (새 주소, 홈 화면 앱 + 알림 허용일 때): 안 읽은 새 글 수. 알림이 오면 서비스 워커가 하나씩 올림 */
 let badgeLast=-1;
@@ -1684,7 +1684,7 @@ function vLogin(v){
     const rowW=()=>row1.reduce((s,c)=>s+c.getBoundingClientRect().width,0)+gap*(row1.length-1);
     let fs=13;const setF=()=>all.forEach(c=>{c.style.fontSize=fs+"px";c.style.paddingLeft=c.style.paddingRight="4px";c.style.paddingTop=c.style.paddingBottom="5px"});
     setF();while(rowW()>target&&fs>10){fs-=.25;setF()}
-    const extra=(target-rowW())/(row1.length*2)-.05;if(extra>0)all.forEach(c=>{c.style.paddingLeft=c.style.paddingRight=(4+extra)+"px"});
+    const extra=(target-rowW()-3)/(row1.length*2);if(extra>0)all.forEach(c=>{c.style.paddingLeft=c.style.paddingRight=(4+extra)+"px"});
     const hn=card.querySelector(".tmp-hint");if(hn){let f=parseFloat(getComputedStyle(hn).fontSize);while(hn.scrollWidth>hn.clientWidth+1&&f>9){f-=.25;hn.style.fontSize=f+"px"}}};
   setTimeout(fitLogin,0);try{document.fonts&&document.fonts.ready.then(fitLogin)}catch(e){}setTimeout(fitLogin,400); // 글꼴이 늦게 와도 다시 맞춤
 }
