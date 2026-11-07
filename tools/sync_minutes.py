@@ -365,6 +365,9 @@ def _req(method, path, token=None, body=None, headers=None, raw=None):
 
 def push():
     """새 주소(Supabase)로 오늘 회의록을 바로 반영"""
+    # 2026-11-07부터 회의록은 앱에서 바로 씀 → 아이폰 메모 동기화 중단
+    if datetime.date.today() >= datetime.date(2026, 11, 7):
+        print("STOPPED 11/7부터 회의록은 앱에서 바로 써요"); return
     import io, contextlib, secrets
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
