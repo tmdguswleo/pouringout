@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T14:50:48Z";window.__APP_NOTE="TO DO에서 할 일을 올린 직후 참여 인원을 골라도 사라지지 않아요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T22:58:49Z";window.__APP_NOTE="날짜가 바뀌면 전날 전달사항과 체크 완료한 항목이 사라지고, 재고의 전 기록도 보이지 않아요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2085,8 +2085,8 @@ function enableDrag(ul,colOf){
       W(()=>Promise.all(arr.map((it,k)=>it.ord===k?null:col(it._col||colOf).doc(it.id).update({ord:k}))),"순서 바꿨어요")}
   })}
 function noticeCard(store,emptyText,placeholder,opt={}){
-  const nsN=S.notices.filter(n=>visN(n)&&n.date<=dayDate&&!(!store&&dayDate>TODAY&&n.date!==dayDate)&&(!n.past||n.date===dayDate)&&(n.store||"")===store&&!(n.check&&n.done&&n.doneAt&&iso(new Date(n.doneAt))<dayDate&&dayDate!==TODAY)).map(n=>({...n,...(opt.alwaysCheck&&!n.html?{check:true}:{}),_col:"notices"})); // 매장 체크리스트는 모두 체크 항목
-  const nsC=(opt.checks||[]).filter(c=>!c.done||!c.doneAt||dayDate===TODAY||iso(new Date(c.doneAt))>=dayDate).map(c=>({...c,check:true,date:"",_col:"checks"}));
+  const nsN=S.notices.filter(n=>visN(n)&&n.date<=dayDate&&!(!store&&dayDate>=TODAY&&n.date!==dayDate&&!(n.check&&(!n.done||n.doneAt&&iso(new Date(n.doneAt))>=dayDate)))&&(!n.past||n.date===dayDate)&&(n.store||"")===store&&!(n.check&&n.done&&n.doneAt&&iso(new Date(n.doneAt))<dayDate)).map(n=>({...n,...(opt.alwaysCheck&&!n.html?{check:true}:{}),_col:"notices"})); // 매장 체크리스트는 모두 체크 항목
+  const nsC=(opt.checks||[]).filter(c=>!c.done||!c.doneAt||iso(new Date(c.doneAt))>=dayDate).map(c=>({...c,check:true,date:"",_col:"checks"}));
   const ns=[...nsN,...nsC].sort((a,b)=>((!!a.check)-(!!b.check))||doneFirst(a,b));
   if(opt.defaultCheck&&noticeCheckMode[store||"all"]===undefined)noticeCheckMode[store||"all"]=true;
   if(opt.alwaysCheck)noticeCheckMode[store||"all"]=true; // 체크 표시 고르기 없음: 늘 체크 항목으로
@@ -2168,9 +2168,8 @@ function noticeCard(store,emptyText,placeholder,opt={}){
 }
 function closingCard(date,store="pouring"){
   const did=store==="pouring"?date:`${date}_meraki`;
-  const mineStore=c=>store==="pouring"?/^\d{4}-\d\d-\d\d$/.test(c.id):c.id.endsWith("_meraki");
   const rec=S.closing.find(c=>c.id===did)||{values:{}};
-  const prevRec=date>TODAY?null:S.closing.filter(c=>mineStore(c)&&(c.date||c.id)<date).sort((a,b)=>String(b.date||b.id).localeCompare(String(a.date||a.id)))[0];
+  const prevRec=null; // 전 기록은 보이지 않음 (2026-11-08 사용자 요청)
   const vals={...(rec.values||{})};
   const save=()=>W(()=>col("closing").doc(did).set({date,store,values:vals,by:me,updatedAt:now()}),"재고 기록 저장됨");
   const tb=el("tbody");
