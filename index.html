@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T03:23:44Z";window.__APP_NOTE="재고 입력칸(수량·통·보울)을 보틀 칸과 같은 크기로 맞췄어요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T03:27:31Z";window.__APP_NOTE="발주의 오프라인 거래처(다이소·사러가·동일마트 등)에 '직원 중 구매했다면 체크해 주세요' 안내를 넣었어요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -611,7 +611,8 @@ button{-webkit-tap-highlight-color:transparent}
 .oadd{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:18px;line-height:1;cursor:pointer;padding:0 0 2px}
 .ostep{display:inline-flex;align-items:center;gap:10px}.ostep button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--soft);color:var(--ink);font:inherit;font-size:17px;line-height:1;cursor:pointer;padding:0 0 2px}.ostep span{min-width:16px;text-align:center}
 .osend{width:100%;padding:12px;font-size:16px}.sheet .osend{position:sticky;bottom:0;z-index:2;box-shadow:0 -10px 14px var(--surface)}.sheet .osend:disabled{opacity:1;background:var(--soft);border-color:var(--line);color:var(--muted)} /* 품목이 많아도 요청 버튼은 항상 아래에 보이게 */.osend:disabled{opacity:.45}
-.osup{margin-top:10px}.osup-head{display:flex;align-items:center;gap:8px;padding:12px 14px 0;margin-bottom:-4px} /* 거래처 이름과 첫 품목 줄 사이 좁게 (품목 줄 높이는 그대로) */
+.osup{margin-top:10px}.buy-hint{font-size:11px;opacity:.75}
+.osup-head{display:flex;align-items:center;gap:8px;padding:12px 14px 0;margin-bottom:-4px} /* 거래처 이름과 첫 품목 줄 사이 좁게 (품목 줄 높이는 그대로) */
 .osup-empty{display:flex;align-items:center;gap:8px;padding:11px 14px;color:var(--muted)}
 .osup-acts{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px 12px;border-top:1px solid var(--line)}.osup-acts a{text-decoration:none}
 .osup .list>li{column-gap:12px} /* 발주 탭: 체크박스와 품목 사이 조금 좁게 */
@@ -2283,6 +2284,8 @@ function vOrder(v){
     const card=el("div",{class:"card osup"});
     card.append(el("div",{class:"osup-head"},el("span",{},s.name),s.how==="visit"?el("span",{class:"by",style:"opacity:.6"},OHOW[s.how]):null, /* 설명은 오프라인만 (조금 연하게) */el("span",{class:"meta",style:"margin-left:auto"},`${os.length}건`)));
     card.append(el("ul",{class:"list"},...os.map(row)));
+    const offHint=(s.how==="visit"||STAFF_BUY.test(String(s.name||"").replace(/\s/g,"")))?el("span",{class:"by buy-hint"},"직원 중 구매했다면 체크해 주세요"):null; // 오프라인(사러가·동일마트·다이소 등)
+    if(!(isBoss()&&canWrite)&&offHint)card.append(el("div",{class:"osup-acts"},offHint));
     if(isBoss()&&canWrite){const acts=el("div",{class:"osup-acts"});
       const msg=`안녕하세요, 푸어링아웃입니다. ${os.map(orderLabel).join(", ")} 주문 부탁드립니다.`;
       if(s.how==="kakao"||s.how==="tel"){acts.append(el("button",{class:"btn ghost sm",type:"button",onclick:()=>{try{navigator.clipboard.writeText(msg).then(()=>flash("주문 문자를 복사했어요"),()=>flash("복사가 막혀 있어요",true))}catch(e){flash("복사가 막혀 있어요",true)}}},"주문 문자 복사"));
@@ -2290,7 +2293,8 @@ function vOrder(v){
         if(kurl)acts.append(el("a",{class:"btn ghost sm",href:kurl,target:"_blank",rel:"noopener noreferrer",onclick:()=>{try{navigator.clipboard.writeText(msg)}catch(e){}}},"카톡 열기")); // 누르면 주문 문자도 복사해 둠 → 대화방에 붙여 넣기
         if(s.tel)acts.append(el("a",{class:"btn ghost sm",href:(s.how==="kakao"?"sms:":"tel:")+s.tel.replace(/[^\d+]/g,"")},s.how==="kakao"?"문자":"전화"))}
       if(s.memo)acts.append(el("span",{class:"by"},s.memo));
-      acts.append(el("button",{class:"btn sm",type:"button",style:"margin-left:auto",onclick:()=>markDone(os)},"모두 주문 완료"));card.append(acts)}
+      if(offHint)acts.append(el("span",{style:"margin-left:auto"}),offHint);
+      acts.append(el("button",{class:"btn sm",type:"button",style:offHint?"":"margin-left:auto",onclick:()=>markDone(os)},"모두 주문 완료"));card.append(acts)}
     sec.append(card)});
   if(!pend.length)sec.append(el("div",{class:"card"},el("div",{class:"empty"},"남은 발주 요청이 없어요")));
   v.append(sec);
