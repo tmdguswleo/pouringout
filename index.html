@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T11:42:03Z";window.__APP_NOTE="재고 수량 칸을 모두 조각 칸과 같은 크기로 맞췄어요. 조각 칸과 안내 문구도 조금 오른쪽으로 옮겨졌어요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T11:45:28Z";window.__APP_NOTE="내일 화면에서는 오늘 체크 완료한 체크리스트와 주문 완료한 발주 항목이 안 보여요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1970,7 +1970,7 @@ function vToday(root){
     const two=el("div",{class:"card cl-one"});
     // 두 칸의 줄 수를 같게 맞춰 머리줄·품목줄·+줄이 모두 같은 높이로 나란히 (짧은 칸은 빈 줄로 채움)
     const tIso=iso(new Date());const doneToday=S.orders.filter(o=>o.done&&o.doneAt&&iso(new Date(o.doneAt))===tIso);
-    const shown=[...pend,...doneToday].sort((a,b)=>tsOf(a.createdAt)-tsOf(b.createdAt));
+    const shown=[...pend,...(dayDate>TODAY?[]:doneToday)].sort((a,b)=>tsOf(a.createdAt)-tsOf(b.createdAt));
     const byStore=["pouring","meraki"].map(st=>shown.filter(o=>orderStores(o).includes(st)));const nRows=Math.max(...byStore.map(x=>x.length));
     ["pouring","meraki"].forEach((st,si)=>{const its=byStore[si];
       const ordCb=o=>{const cb=el("input",{type:"checkbox",class:"chk","aria-label":`${orderLabel(o)} 주문 완료`,disabled:!canDoneOrder(o)});cb.checked=!!o.done;
@@ -2036,8 +2036,8 @@ function enableDrag(ul,colOf){
       W(()=>Promise.all(arr.map((it,k)=>it.ord===k?null:col(it._col||colOf).doc(it.id).update({ord:k}))),"순서 바꿨어요")}
   })}
 function noticeCard(store,emptyText,placeholder,opt={}){
-  const nsN=S.notices.filter(n=>visN(n)&&n.date<=dayDate&&(!n.past||n.date===dayDate)&&(n.store||"")===store&&!(n.check&&n.done&&n.doneAt&&iso(new Date(n.doneAt))<dayDate&&dayDate<TODAY)).map(n=>({...n,...(opt.alwaysCheck&&!n.html?{check:true}:{}),_col:"notices"})); // 매장 체크리스트는 모두 체크 항목
-  const nsC=(opt.checks||[]).filter(c=>!c.done||!c.doneAt||dayDate>=TODAY||iso(new Date(c.doneAt))>=dayDate).map(c=>({...c,check:true,date:"",_col:"checks"}));
+  const nsN=S.notices.filter(n=>visN(n)&&n.date<=dayDate&&(!n.past||n.date===dayDate)&&(n.store||"")===store&&!(n.check&&n.done&&n.doneAt&&iso(new Date(n.doneAt))<dayDate&&dayDate!==TODAY)).map(n=>({...n,...(opt.alwaysCheck&&!n.html?{check:true}:{}),_col:"notices"})); // 매장 체크리스트는 모두 체크 항목
+  const nsC=(opt.checks||[]).filter(c=>!c.done||!c.doneAt||dayDate===TODAY||iso(new Date(c.doneAt))>=dayDate).map(c=>({...c,check:true,date:"",_col:"checks"}));
   const ns=[...nsN,...nsC].sort((a,b)=>((!!a.check)-(!!b.check))||doneFirst(a,b));
   if(opt.defaultCheck&&noticeCheckMode[store||"all"]===undefined)noticeCheckMode[store||"all"]=true;
   if(opt.alwaysCheck)noticeCheckMode[store||"all"]=true; // 체크 표시 고르기 없음: 늘 체크 항목으로
