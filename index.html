@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T00:55:32Z";window.__APP_NOTE="체크리스트에 'in'(예: 콜드브루in, 밀크티 in, 오시 in)을 적으면 다음 날 같은 매장 체크리스트에 'out'이 자동으로 생겨요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T00:58:28Z";window.__APP_NOTE="로그인 칸에서 엔터나 로그인 버튼을 누르면 바로 들어가요. 들어가는 동안 버튼에 '들어가는 중…'이 보여요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1727,9 +1727,16 @@ function vLogin(v){
   if(loginPick&&WEB){ // 새 주소: 비밀번호 확인은 Supabase에서 (처음엔 본인 휴대폰 번호)
     const pin=el("input",{type:"password",maxlength:"30",autocomplete:"current-password",placeholder:"비밀번호","aria-label":"비밀번호"});
     const pk=loginPick;sb.rpc("login_state",{p_key:pk}).then(r=>{if(pk!==loginPick||!pin.isConnected)return;if(r.data&&r.data!=="set"){pin.placeholder="휴대폰 번호 (- 없이)";pin.setAttribute("inputmode","numeric")}});
-    let busyL=false;const go=async()=>{if(busyL)return;busyL=true;try{await webLogin(pk,pin.value.trim())}finally{busyL=false}};
-    pin.onkeydown=e=>{if(e.key==="Enter")go()};
-    card.append(el("div",{class:"add",style:"border-top:0;padding:12px 0 0"},pwBox(pin),el("button",{class:"btn",type:"button",onclick:go},"로그인")));
+    // form으로 감싸서 엔터·로그인 버튼 모두 제출 (맥 Safari 자동 완성 창이 엔터를 가로채도 제출됨). 버튼에 진행 상태 표시, 오류는 알려 줌
+    const lbtn=el("button",{class:"btn",type:"submit"},"로그인");
+    let busyL=false;const go=async()=>{if(busyL)return;const v=pin.value.trim();if(!v){flash("비밀번호를 넣어 주세요",true);pin.focus();return}
+      busyL=true;lbtn.disabled=true;lbtn.textContent="들어가는 중…";
+      try{await webLogin(pk,v)}catch(e){setStatus("");flash("로그인하지 못했어요. 인터넷 연결을 확인하고 다시 해 주세요",true)}
+      finally{busyL=false;if(lbtn.isConnected){lbtn.disabled=false;lbtn.textContent="로그인"}}};
+    const user=el("input",{type:"text",name:"username",autocomplete:"username",value:webEmail(pk),hidden:true,tabindex:"-1","aria-hidden":"true"}); // 비밀번호 저장(키체인)용
+    pin.name="password";
+    const form=el("form",{class:"add",style:"border-top:0;padding:12px 0 0",onsubmit:e=>{e.preventDefault();go()}},user,pwBox(pin),lbtn);
+    card.append(form);
     if(!isMob())setTimeout(()=>pin.focus(),30)}
   else if(loginPick){
     const rec=S.pins.find(p=>p.id===loginPick&&p.hash);

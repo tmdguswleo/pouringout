@@ -1727,9 +1727,16 @@ function vLogin(v){
   if(loginPick&&WEB){ // 새 주소: 비밀번호 확인은 Supabase에서 (처음엔 본인 휴대폰 번호)
     const pin=el("input",{type:"password",maxlength:"30",autocomplete:"current-password",placeholder:"비밀번호","aria-label":"비밀번호"});
     const pk=loginPick;sb.rpc("login_state",{p_key:pk}).then(r=>{if(pk!==loginPick||!pin.isConnected)return;if(r.data&&r.data!=="set"){pin.placeholder="휴대폰 번호 (- 없이)";pin.setAttribute("inputmode","numeric")}});
-    let busyL=false;const go=async()=>{if(busyL)return;busyL=true;try{await webLogin(pk,pin.value.trim())}finally{busyL=false}};
-    pin.onkeydown=e=>{if(e.key==="Enter")go()};
-    card.append(el("div",{class:"add",style:"border-top:0;padding:12px 0 0"},pwBox(pin),el("button",{class:"btn",type:"button",onclick:go},"로그인")));
+    // form으로 감싸서 엔터·로그인 버튼 모두 제출 (맥 Safari 자동 완성 창이 엔터를 가로채도 제출됨). 버튼에 진행 상태 표시, 오류는 알려 줌
+    const lbtn=el("button",{class:"btn",type:"submit"},"로그인");
+    let busyL=false;const go=async()=>{if(busyL)return;const v=pin.value.trim();if(!v){flash("비밀번호를 넣어 주세요",true);pin.focus();return}
+      busyL=true;lbtn.disabled=true;lbtn.textContent="들어가는 중…";
+      try{await webLogin(pk,v)}catch(e){setStatus("");flash("로그인하지 못했어요. 인터넷 연결을 확인하고 다시 해 주세요",true)}
+      finally{busyL=false;if(lbtn.isConnected){lbtn.disabled=false;lbtn.textContent="로그인"}}};
+    const user=el("input",{type:"text",name:"username",autocomplete:"username",value:webEmail(pk),hidden:true,tabindex:"-1","aria-hidden":"true"}); // 비밀번호 저장(키체인)용
+    pin.name="password";
+    const form=el("form",{class:"add",style:"border-top:0;padding:12px 0 0",onsubmit:e=>{e.preventDefault();go()}},user,pwBox(pin),lbtn);
+    card.append(form);
     if(!isMob())setTimeout(()=>pin.focus(),30)}
   else if(loginPick){
     const rec=S.pins.find(p=>p.id===loginPick&&p.hash);
