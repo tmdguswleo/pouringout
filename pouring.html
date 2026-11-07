@@ -2036,7 +2036,7 @@ function enableDrag(ul,colOf){
       W(()=>Promise.all(arr.map((it,k)=>it.ord===k?null:col(it._col||colOf).doc(it.id).update({ord:k}))),"순서 바꿨어요")}
   })}
 function noticeCard(store,emptyText,placeholder,opt={}){
-  const nsN=S.notices.filter(n=>visN(n)&&n.date<=dayDate&&(!n.past||n.date===dayDate)&&(n.store||"")===store&&!(n.check&&n.done&&n.doneAt&&iso(new Date(n.doneAt))<dayDate&&dayDate!==TODAY)).map(n=>({...n,...(opt.alwaysCheck&&!n.html?{check:true}:{}),_col:"notices"})); // 매장 체크리스트는 모두 체크 항목
+  const nsN=S.notices.filter(n=>visN(n)&&n.date<=dayDate&&!(!store&&dayDate>TODAY&&n.date!==dayDate)&&(!n.past||n.date===dayDate)&&(n.store||"")===store&&!(n.check&&n.done&&n.doneAt&&iso(new Date(n.doneAt))<dayDate&&dayDate!==TODAY)).map(n=>({...n,...(opt.alwaysCheck&&!n.html?{check:true}:{}),_col:"notices"})); // 매장 체크리스트는 모두 체크 항목
   const nsC=(opt.checks||[]).filter(c=>!c.done||!c.doneAt||dayDate===TODAY||iso(new Date(c.doneAt))>=dayDate).map(c=>({...c,check:true,date:"",_col:"checks"}));
   const ns=[...nsN,...nsC].sort((a,b)=>((!!a.check)-(!!b.check))||doneFirst(a,b));
   if(opt.defaultCheck&&noticeCheckMode[store||"all"]===undefined)noticeCheckMode[store||"all"]=true;
@@ -2121,7 +2121,7 @@ function closingCard(date,store="pouring"){
   const did=store==="pouring"?date:`${date}_meraki`;
   const mineStore=c=>store==="pouring"?/^\d{4}-\d\d-\d\d$/.test(c.id):c.id.endsWith("_meraki");
   const rec=S.closing.find(c=>c.id===did)||{values:{}};
-  const prevRec=S.closing.filter(c=>mineStore(c)&&(c.date||c.id)<date).sort((a,b)=>String(b.date||b.id).localeCompare(String(a.date||a.id)))[0];
+  const prevRec=date>TODAY?null:S.closing.filter(c=>mineStore(c)&&(c.date||c.id)<date).sort((a,b)=>String(b.date||b.id).localeCompare(String(a.date||a.id)))[0];
   const vals={...(rec.values||{})};
   const save=()=>W(()=>col("closing").doc(did).set({date,store,values:vals,by:me,updatedAt:now()}),"재고 기록 저장됨");
   const tb=el("tbody");
