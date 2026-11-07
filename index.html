@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T01:08:43Z";window.__APP_NOTE="글 쓰는 칸에서 맞춤법이 틀리면 빨간 밑줄로 알려 줘요. 눌러서 추천을 볼 수 있고, 자동으로 바뀌지는 않아요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T01:18:42Z";window.__APP_NOTE="직원이 가입(새 비밀번호까지 정함)하면 사장님 화면에만 알림 창이 떠요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1296,8 +1296,20 @@ function verCheck(){const V=window.__APP_VER||"";if(!WEB||!V||!isBoss())return;
     if(j.v&&j.v!==V&&j.v!==verNew){verNew=j.v;const old=document.querySelector(".verbar");if(old)old.remove();
       document.body.append(el("button",{class:"verbar",type:"button",onclick:()=>location.reload()},"새 버전이 올라왔어요 · 눌러서 반영"))}}catch(e){}};
   setInterval(poll,120000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)poll()})}
+/* 직원 가입 알림(사장만, 새 주소): 직원이 휴대폰 번호로 처음 들어와 새 비밀번호까지 정하면 사장 화면에 창. 1분마다·앱으로 돌아올 때 확인.
+   이 기기에서 처음 켤 때는 지금 상태를 기억만 하고(이미 가입한 사람은 안 띄움) 그 뒤 새로 가입한 사람만 알림 */
+let joinPolling=false;
+async function joinCheck(){if(!WEB||!sb||!isBoss())return;
+  const r=await sb.rpc("staff_status");if(r.error||!r.data)return;
+  let seen=null;try{seen=JSON.parse(localStorage.getItem("pn.joinSeen")||"null")}catch(e){}
+  const now={};r.data.forEach(x=>{if(x.joined&&!x.must_change)now[x.key]=x.changed_at||"1"});
+  if(seen){const fresh=Object.keys(now).filter(k=>k!=="seunghyun"&&seen[k]!==now[k]);
+    if(fresh.length){const tm=k=>{const d=new Date(now[k]);return isNaN(d)?"":` (${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")})`};
+      alertBox("직원 가입 알림",fresh.map(k=>`${(byKey[k]||{}).full||(byKey[k]||{}).name||k} 님이 가입했어요${tm(k)}`).join("\n"),true)}}
+  try{localStorage.setItem("pn.joinSeen",JSON.stringify(now))}catch(e){}}
+function joinWatch(){if(joinPolling||!WEB||!isBoss())return;joinPolling=true;joinCheck();setInterval(joinCheck,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)joinCheck()})}
 function drawTabs(){
-  setTimeout(appBadge,0);setTimeout(verCheck,0);
+  setTimeout(appBadge,0);setTimeout(verCheck,0);setTimeout(joinWatch,1500);
   const t=$("tabs");t.textContent="";
   if(!can("tab:"+tab))tab="today";
   tabList().filter(([k])=>k==="today"||can("tab:"+k)).forEach(([k,l])=>{const n=me&&k!==tab?newCount(k):0;t.append(el("a",{href:"#"+k,"aria-current":k===tab?"page":false,onclick:k==="docs"?()=>{mView.docs="list";if(tab==="docs"){draw();window.scrollTo(0,0)}}
