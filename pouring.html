@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1094,6 +1094,11 @@ setInterval(()=>{const t=iso(new Date());let need=false;
   if(t!==TODAY){if(dayDate===TODAY)dayDate=t;TODAY=t;need=true}
   const nw=Date.now();if(S.notices&&S.notices.some(n=>n.showAt&&showTs(n)<=nw&&showTs(n)>nw-61000))need=true;
   if(need&&me)render()},60000);
+/* 맞춤법: 글 쓰는 칸은 기기 맞춤법 검사(빨간 밑줄 → 눌러서 추천 보기)만 켜고, 자동 고침·자동 대문자는 끔 */
+function spellOn(root){const q='input:not([type]),input[type=text],input[type=search],textarea,[contenteditable=""],[contenteditable=true]';
+  (root.matches&&root.matches(q)?[root]:[]).concat(root.querySelectorAll?[...root.querySelectorAll(q)]:[]).forEach(x=>{if(x.dataset.sp)return;x.dataset.sp="1";
+    x.setAttribute("spellcheck","true");x.setAttribute("autocorrect","off");x.setAttribute("autocapitalize","off");if(!x.lang)x.lang="ko"})}
+document.addEventListener("DOMContentLoaded",()=>{spellOn(document.body);new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1)spellOn(n)}))).observe(document.body,{childList:true,subtree:true})});
 const el=(tag,attrs={},...kids)=>{const e=document.createElement(tag);for(const [k,v] of Object.entries(attrs)){if(k==="class")e.className=v;else if(k==="style")e.style.cssText=v;else if(k.startsWith("on"))e[k]=v;else if(v!==false&&v!=null)e.setAttribute(k,v===true?"":v)}for(const c of kids.flat()){if(c==null||c===false)continue;e.append(c.nodeType?c:String(c))}return e};
 const nameEl=k=>byKey[k]?el("span",{class:"nm",style:`--c:var(--c-${k})`},byKey[k].name):el("span",{},k);
 const names=(arr,star)=>{const f=document.createDocumentFragment();[...(arr||[])].sort((a,b)=>ORD(a)-ORD(b)).forEach((k,i)=>{if(i)f.append(", ");const n=nameEl(k);if(star&&star.includes(k)){n.textContent="★"+n.textContent;n.classList.add("hope")}f.append(n)});return f};
