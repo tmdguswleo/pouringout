@@ -223,6 +223,9 @@ table.close td .x{margin-left:4px;vertical-align:middle}
 .pinst{display:flex;flex-direction:column;gap:6px;font-size:14px}.pinst-r{display:flex;justify-content:space-between;gap:10px}.pinst-ok{color:var(--ink)}.pinst-no{color:var(--muted)}
 .login .chips{flex-wrap:wrap;gap:6px 3px}.login .chips .lbrk{flex-basis:100%;height:0}.login .chip{padding:4px 4px;font-size:11.5px}@media (max-width:350px){.login .chip{padding:3px 4px;font-size:11px}} /* 이름: 첫 줄 김승현~최우준 6명, 둘째 줄 koha·장호정 */
 .login .tmp-hint{overflow:hidden;font-size:12px;line-height:1.55;white-space:nowrap}@media (max-width:350px){.login .tmp-hint{font-size:11px}}
+span.pwbox{position:relative;display:block;flex:1;min-width:0}span.pwbox input{width:100%;box-sizing:border-box;padding-right:40px;font-size:18px}
+.pweye{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0;color:var(--muted);cursor:pointer}
+.pweye svg{width:19px;height:19px}.pweye[aria-pressed="true"]{color:var(--ink)}
 .login input,.sheet input[type=password]{font-size:18px} /* 아이폰은 16px보다 작은 입력칸을 누르면 화면을 크게 키움 → 로그인·비밀번호 칸은 16px */
 #meBtn{padding:5px 10px}
 #meBtn[hidden],#searchBtn[hidden]{display:none}
@@ -1634,17 +1637,24 @@ async function pinHash(salt,pin){const data=new TextEncoder().encode(salt+":"+pi
 // 휴대폰 번호 확인은 서버(Supabase)에서만 함. 이 화면 코드에는 번호나 번호로 만든 값이 없음
 function resetPin(x){
   const inp=el("input",{type:"password",inputmode:"numeric",maxlength:"20",placeholder:"사장님 휴대폰 번호 (- 없이)","aria-label":"사장님 휴대폰 번호",style:"font-size:16px"});
-  openSheet(`${x.full||x.name} 비밀번호 초기화`,[el("p",{class:"hint",style:"margin:0"},`확인을 위해 사장님 휴대폰 번호를 적어 주세요. 초기화하면 ${x.name} 님은 다음 로그인 때 본인 휴대폰 번호로 들어와서 새 비밀번호를 정해요`),inp],async()=>{
+  openSheet(`${x.full||x.name} 비밀번호 초기화`,[el("p",{class:"hint",style:"margin:0"},`확인을 위해 사장님 휴대폰 번호를 적어 주세요. 초기화하면 ${x.name} 님은 다음 로그인 때 본인 휴대폰 번호로 들어와서 새 비밀번호를 정해요`),pwBox(inp)],async()=>{
     const v=inp.value.replace(/\D/g,"");
     if(!WEB||!sb){flash("새 주소에서만 초기화할 수 있어요",true);return false}
     const ok=await sb.rpc("verify_boss_phone",{p_pw:v});if(ok.error||!ok.data){flash("사장님 휴대폰 번호가 맞지 않아요",true);inp.value="";return false}
     const r=await sb.rpc("reset_staff",{p_key:x.key});if(r.error){flash("초기화하지 못했어요. 다시 해 주세요",true);return false}
     flash("비밀번호 초기화됨");return true},"초기화")}
+// 비밀번호 칸 + 오른쪽 눈 버튼(누르면 적은 글자 보기/숨기기)
+const EYE_ON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.6 8.5 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+function pwBox(inp){const b=el("button",{class:"pweye",type:"button","aria-label":"비밀번호 보기","aria-pressed":"false",tabindex:"-1"});b.innerHTML=EYE_OFF;
+  b.onmousedown=e=>e.preventDefault(); // 칸의 커서·키보드 유지
+  b.onclick=()=>{const show=inp.type==="password";inp.type=show?"text":"password";b.setAttribute("aria-pressed",String(show));b.setAttribute("aria-label",show?"비밀번호 숨기기":"비밀번호 보기");b.innerHTML=show?EYE_ON:EYE_OFF};
+  return el("span",{class:"pwbox"},inp,b)}
 function pinSheet(key,change,tempPin){ // tempPin: 휴대폰 번호 임시 비밀번호로 처음 들어온 경우 → 새 비밀번호를 정해야 들어가짐
   const st=byKey[key];const rec=S.pins.find(p=>p.id===key&&p.hash);
   const p1=el("input",{type:"password",maxlength:"30",autocomplete:"new-password",placeholder:WEB?"새 비밀번호 (6자 이상, 특수문자 가능)":"새 비밀번호 (4자 이상, 특수문자 가능)"});
   const p2=el("input",{type:"password",maxlength:"30",autocomplete:"new-password",placeholder:"한 번 더"});
-  openSheet(change?"비밀번호 바꾸기":`${st.full||st.name} 비밀번호 정하기`,[el("p",{class:"hint",style:"margin:0"},change?"새 비밀번호를 정해주세요":tempPin?"처음 로그인이에요. 휴대폰 번호 대신 앞으로 쓸 새 비밀번호를 정해 주세요":"처음 로그인이에요. 앞으로 쓸 비밀번호를 정해주세요"),p1,p2],async()=>{
+  openSheet(change?"비밀번호 바꾸기":`${st.full||st.name} 비밀번호 정하기`,[el("p",{class:"hint",style:"margin:0"},change?"새 비밀번호를 정해주세요":tempPin?"처음 로그인이에요. 휴대폰 번호 대신 앞으로 쓸 새 비밀번호를 정해 주세요":"처음 로그인이에요. 앞으로 쓸 비밀번호를 정해주세요"),pwBox(p1),pwBox(p2)],async()=>{
     const a=p1.value.trim(),b2=p2.value.trim();
     if(tempPin&&a.replace(/\D/g,"")===tempPin.replace(/\D/g,"")){flash("임시 비밀번호(휴대폰 번호)와 다른 비밀번호로 정해 주세요",true);return false}
     if(a.length<4||a.length>30||/\s/.test(a)){flash("띄어쓰기 없이 4~30자로 정해주세요",true);return false}
@@ -1677,7 +1687,7 @@ function vLogin(v){
     const pk=loginPick;sb.rpc("login_state",{p_key:pk}).then(r=>{if(pk!==loginPick||!pin.isConnected)return;if(r.data&&r.data!=="set"){pin.placeholder="휴대폰 번호 (- 없이)";pin.setAttribute("inputmode","numeric")}});
     let busyL=false;const go=async()=>{if(busyL)return;busyL=true;try{await webLogin(pk,pin.value.trim())}finally{busyL=false}};
     pin.onkeydown=e=>{if(e.key==="Enter")go()};
-    card.append(el("div",{class:"add",style:"border-top:0;padding:12px 0 0"},pin,el("button",{class:"btn",type:"button",onclick:go},"로그인")));
+    card.append(el("div",{class:"add",style:"border-top:0;padding:12px 0 0"},pwBox(pin),el("button",{class:"btn",type:"button",onclick:go},"로그인")));
     if(!isMob())setTimeout(()=>pin.focus(),30)}
   else if(loginPick){
     const rec=S.pins.find(p=>p.id===loginPick&&p.hash);
@@ -1691,7 +1701,7 @@ function vLogin(v){
         if(rec.temp){pinSheet(loginPick,false,pin.value.trim());return} // 임시 비밀번호(휴대폰 번호)면 새 비밀번호부터
         me=loginPick;loginPick="";try{localStorage.setItem("pn.login",me)}catch(e){};if(window.__updMe)__updMe();draw()};
       pin.onkeydown=e=>{if(e.key==="Enter")go()};
-      const lrow=el("div",{class:"add",style:"border-top:0;padding:12px 0 0"},pin,el("button",{class:"btn",type:"button",onclick:go},"로그인"));card.append(lrow);
+      const lrow=el("div",{class:"add",style:"border-top:0;padding:12px 0 0"},pwBox(pin),el("button",{class:"btn",type:"button",onclick:go},"로그인"));card.append(lrow);
 
       // 로그인 버튼 오른쪽 끝을 첫 줄 마지막 이름(최우준) 버튼 끝에 맞춤
       if(!isMob())setTimeout(()=>pin.focus(),30)} // 휴대폰은 저절로 칸을 누르지 않음 (아이폰이 화면을 키우는 것 방지)
