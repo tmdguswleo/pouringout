@@ -301,6 +301,7 @@ li.ldrag{transition:none;position:relative;z-index:3;background:var(--surface);b
 .chip:disabled,.chip.blocked{opacity:.35}
 .alertov{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.4);display:grid;place-items:center;padding:24px}
 .alertov .ap{background:var(--surface);color:var(--ink);border-radius:14px;max-width:300px;width:100%;padding:18px 18px 12px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.verbar{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);transform:translateX(-50%);z-index:60;border:0;border-radius:18px;padding:8px 16px;background:var(--ink);color:var(--bg);font:inherit;font-size:13px;font-weight:400;box-shadow:0 4px 14px rgba(0,0,0,.25);white-space:nowrap}
 .alertov h4{margin:0 0 6px;font-size:16px;font-weight:500}.alertov p{margin:0 0 14px;font-size:14px;color:var(--muted);white-space:pre-line}
 .alertov button{width:100%}
 .fw-snote{font-size:9.5px;color:var(--accent);text-align:right;padding:0 4px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1247,8 +1248,21 @@ function appBadge(){if(!WEB||!("setAppBadge" in navigator))return;let n=0;
   if(n===badgeLast)return;badgeLast=n;
   try{(n?navigator.setAppBadge(n):navigator.clearAppBadge()).catch(()=>{})}catch(e){}
   try{caches.open("po-badge").then(c=>c.put("/badge",new Response(String(n)))).catch(()=>{})}catch(e){}}
+/* 새 버전 반영 알림(사장만, 새 주소). build_web.py가 index.html에 __APP_VER(올린 시각)·__APP_NOTE(바뀐 내용)를 넣고 version.json도 씀.
+   - 새 버전으로 처음 열면: '새 버전이 반영됐어요' 창
+   - 앱을 켜 둔 동안 새 버전이 올라오면: 위쪽에 '새 버전이 올라왔어요' 띠 → 누르면 새로 고침 */
+let verShown=false,verPolling=false,verNew="";
+const verWhen=v=>{const d=new Date(v);return isNaN(d)?"":`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")} 반영`};
+function verCheck(){const V=window.__APP_VER||"";if(!WEB||!V||!isBoss())return;
+  if(!verShown){verShown=true;let seen="";try{seen=localStorage.getItem("pn.seenVer")||""}catch(e){}
+    if(seen!==V){try{localStorage.setItem("pn.seenVer",V)}catch(e){}setTimeout(()=>alertBox("새 버전이 반영됐어요",[window.__APP_NOTE||"앱이 새로 바뀌었어요",verWhen(V)].filter(Boolean).join("\n\n")),700)}}
+  if(verPolling)return;verPolling=true;
+  const poll=async()=>{if(!isBoss())return;try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});const j=await r.json();
+    if(j.v&&j.v!==V&&j.v!==verNew){verNew=j.v;const old=document.querySelector(".verbar");if(old)old.remove();
+      document.body.append(el("button",{class:"verbar",type:"button",onclick:()=>location.reload()},"새 버전이 올라왔어요 · 눌러서 반영"))}}catch(e){}};
+  setInterval(poll,120000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)poll()})}
 function drawTabs(){
-  setTimeout(appBadge,0);
+  setTimeout(appBadge,0);setTimeout(verCheck,0);
   const t=$("tabs");t.textContent="";
   if(!can("tab:"+tab))tab="today";
   tabList().filter(([k])=>k==="today"||can("tab:"+k)).forEach(([k,l])=>{const n=me&&k!==tab?newCount(k):0;t.append(el("a",{href:"#"+k,"aria-current":k===tab?"page":false,onclick:k==="docs"?()=>{mView.docs="list";if(tab==="docs"){draw();window.scrollTo(0,0)}}

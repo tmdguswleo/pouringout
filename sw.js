@@ -8,6 +8,7 @@ self.addEventListener("fetch", e => {
   const u = new URL(e.request.url);
   if (e.request.method !== "GET") return;
   if (u.hostname.endsWith("supabase.co")) return; // 데이터·사진은 늘 서버에서
+  if (u.pathname.endsWith("version.json")) return; // 새 버전 확인은 늘 서버에서
   const isPage = e.request.mode === "navigate" || u.pathname.endsWith("/") || u.pathname.endsWith(".html");
   if (isPage) { // 화면: 새 버전 먼저, 안 되면 저장해 둔 것
     e.respondWith(fetch(e.request, { cache: "no-cache" }).then(r => { const c = r.clone(); caches.open(CACHE).then(x => x.put(e.request, c)); return r; })
