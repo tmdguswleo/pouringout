@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T03:03:57Z";window.__APP_NOTE="재고의 뱅쇼(푸어링·메라키), 콜드브루, 디카페인 옆에 '여유가 많으면 적지 않아도 괜찮아요' 안내를 넣었어요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T03:05:17Z";window.__APP_NOTE="근무표 메모 글씨를 직원 화면과 같은 크기로 맞췄어요. 누르면 고칠 수 있어요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2430,8 +2430,12 @@ function vSchedule(v){
   if(isBoss()){
     const ta=el("textarea",{class:"memo-ta",placeholder:"메모 쓰기","aria-label":"근무표 메모"});ta.value=mn&&mn.text||"";
     const fit=()=>{ta.style.height="auto";ta.style.height=ta.scrollHeight+"px"};ta.oninput=fit;requestAnimationFrame(fit);
-    ta.onblur=()=>{const t=ta.value;if(t===((mn&&mn.text)||""))return;W(()=>col("monthnotes").doc("current").set({text:t,editedBy:me,editedAt:now(),updatedAt:now()}),"메모 저장됨")};
-    memo.append(ta);if(mby)memo.append(mby);
+    // 보통은 직원 화면과 같은 글씨(13px)로 보여 주고, 누르면 고치는 칸으로 바꿈 (휴대폰은 입력칸이 16px이어야 화면이 커지지 않음)
+    const view=el("div",{class:"empty prebody memo-view",style:"color:var(--ink);cursor:text"},mn&&mn.text?mn.text:"메모 쓰기");if(!(mn&&mn.text))view.style.color="var(--muted)";
+    ta.style.display="none";
+    view.onclick=()=>{view.style.display="none";ta.style.display="block";fit();ta.focus()};
+    ta.onblur=()=>{const t=ta.value;ta.style.display="none";view.style.display="";if(t===((mn&&mn.text)||""))return;view.textContent=t||"메모 쓰기";W(()=>col("monthnotes").doc("current").set({text:t,editedBy:me,editedAt:now(),updatedAt:now()}),"메모 저장됨")};
+    memo.append(view,ta);if(mby)memo.append(mby);
   }else{memo.append(el("div",{class:"empty prebody",style:"color:var(--ink)"},mn&&mn.text?mn.text:"메모가 없어요"));if(mby)memo.append(mby)}
   v.append(el("section",{class:"mini"},el("h2",{},el("span",{},"메모",mn&&mn.id==="current"&&isNew(mn)?newB(mn):null)),memo));
 }
