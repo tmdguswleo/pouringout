@@ -619,7 +619,7 @@ button{-webkit-tap-highlight-color:transparent}
 /* 발주 요청 창: 창 높이 고정, 목록만 스크롤 (글자를 칠 때 검색칸이 움직이지 않게) */
 .sheet.fit .panel{height:88%;max-height:none;overflow:auto}.sheet.fit .panel>*{flex:none}.sheet.fit .olist{display:block;flex:1 1 0;min-height:0;overflow:auto;overscroll-behavior:contain}.sheet.fit .olist:empty{display:block}
 .osend{width:100%;padding:12px;font-size:16px}.sheet .osend{position:sticky;bottom:0;z-index:2;box-shadow:0 -10px 14px var(--surface)}.sheet .osend:disabled{opacity:1;background:var(--soft);border-color:var(--line);color:var(--muted)} /* 품목이 많아도 요청 버튼은 항상 아래에 보이게 */.osend:disabled{opacity:.45}
-.osup{margin-top:10px}.todo-team{flex:none;align-self:center;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;max-width:55%}.todo-team .np-teambtn{white-space:nowrap}
+.osup{margin-top:10px}.todo-team{flex:none;align-self:center;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;max-width:55%}.todo-team .np-teambtn{white-space:nowrap}.nadd-tools{display:inline-flex;align-items:center;gap:8px}.nadd-join{max-width:none;margin-left:6px}
 .ckpin{padding:10px 12px;border-bottom:1px solid var(--line);min-height:21px}.ckpin-t{outline:none;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.45em;cursor:text}
 .buy-hint{font-size:11px;opacity:.75;padding:6px 14px 0}
 .osup-head{display:flex;align-items:center;gap:8px;padding:12px 14px 0;margin-bottom:-4px} /* 거래처 이름과 첫 품목 줄 사이 좁게 (품목 줄 높이는 그대로) */
@@ -1239,7 +1239,7 @@ const now=()=>new Date().toISOString();
 /* ---------- render plumbing ---------- */
 let pendingRender=false;
 let docDragBusy=false; // 자료실 메모를 끄는 중·순서 저장 중에는 화면을 다시 그리지 않음
-function busy(){if(docDragBusy)return true;const a=document.activeElement;return a&&$("view").contains(a)&&(a.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=="checkbox")}
+function busy(){if(docDragBusy||document.querySelector(".np-teambox"))return true;const a=document.activeElement;return a&&$("view").contains(a)&&(a.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=="checkbox")}
 // 엔터로 이어 쓰기: 방금 엔터로 저장한 입력칸이면, 새 항목을 바로 보여주고 같은 칸에서 계속 쓰게 (키보드 안 닫히게 잠깐 다른 칸에 맡겼다가 돌려줌)
 let addCont=null;
 function contDraw(key){const k=$("kbKeep");try{k.focus({preventScroll:true})}catch(e){}const y=scrollY;pendingRender=false;draw();scrollTo(0,y);
@@ -1581,7 +1581,7 @@ function enhanceAdds(root){const seen={};
     a.before(b);a.classList.add("collapsed");card.classList.add("has-plus");
     b.onclick=()=>{a.classList.remove("collapsed");b.hidden=true;inp.focus()};
     const close=()=>{a.classList.add("collapsed");b.hidden=false;if(document.activeElement===inp)inp.blur()};
-    a._out=()=>{if(a.classList.contains("collapsed")||a._busy)return;
+    a._out=()=>{if(a.classList.contains("collapsed")||a._busy||document.querySelector(".np-teambox"))return; // 참여 인원 고르는 중엔 닫거나 올리지 않음
       if(inp.value.trim()){const btns=[...a.querySelectorAll("button")];const go=btns.find(x=>x.textContent.trim()==="추가")||btns[btns.length-1];
         if(go){a._busy=true;go.click();setTimeout(()=>{a._busy=false;if(!inp.value.trim())close()},600)}return}
       close()};
@@ -1819,8 +1819,8 @@ function needMe(){if(!me){flash("먼저 로그인해 주세요",true);draw();ret
 
 /* ---------- generic checklist ---------- */
 // 참여 인원 고르기 (자료실 메모와 같은 창). 바꾼 게 있으면 onDone(새 목록)
-function teamPicker(init,onDone){const sel=[...init];const box=el("div",{class:"np-movebox np-teambox"});let ov;
-  const done=()=>{ov.remove();if(sel.join(",")!==init.join(","))onDone(sel)};
+function teamPicker(init,onDone,onClose){const sel=[...init];const box=el("div",{class:"np-movebox np-teambox"});let ov;
+  const done=()=>{ov.remove();if(sel.join(",")!==init.join(","))onDone(sel);if(onClose)onClose()};
   const draw2=()=>{box.textContent="";box.append(el("div",{class:"np-mh"},"참여 인원 고르기"),
     el("div",{class:"chips",style:"padding:0 16px 12px"},...STAFF.filter(x=>x.key!=="hojeong"&&x.key!=="koha").map(st=>el("button",{class:"chip",type:"button",style:`--c:var(--c-${st.key})`,"aria-pressed":String(sel.includes(st.key)),
       onclick:()=>{const i=sel.indexOf(st.key);i<0?sel.push(st.key):sel.splice(i,1);sel.sort((x,y)=>ORD(x)-ORD(y));draw2()}},st.name))),
@@ -1849,17 +1849,20 @@ function checkList(items,{colName,emptyText,placeholder,base,showBy=true,showReq
     if(at) txt.append(at);
     const x=el("button",{class:"x","aria-label":"삭제",title:"삭제"},"×");
     x.onclick=()=>W(()=>col(colName).doc(it.id).delete(),"삭제됨");
-    // + 참여: 자료실 메모처럼 오른쪽 끝에 참여 인원(작은 색 칩) + '+ 참여' → 누르면 인원 고르기
-    const jb=join?el("span",{class:"todo-team"},...W2.map(k=>el("span",{class:"chip on nr-chip",style:`--c:var(--c-${k})`},byKey[k].name)),
-      canWrite?el("button",{class:"np-teambtn",type:"button",onclick:e=>{e.stopPropagation();teamPicker(W2,nx=>W(()=>col(colName).doc(it.id).update({with:nx,editedBy:me,editedAt:now()}),"참여 인원 저장됨"))}},"+ 참여"):null):null;
+    // 참여 인원: 글 오른쪽 × 바로 옆에 작은 색 이름 (고르기는 새 할 일 쓰는 칸의 '+ 참여')
+    const jb=join&&W2.length?el("span",{class:"todo-team"},...W2.map(k=>el("span",{class:"chip on nr-chip",style:`--c:var(--c-${k})`},byKey[k].name))):null;
     const li=el("li",{class:it.done?"done":""},cb,txt,jb,x);li._it=it;li._grp=it.done?null:"u";inlineEdit(li,sp,it,colName,{media});ul.append(li);
   });
   if(sorted.length){card.append(ul);enableDrag(ul,colName)}
   const inp=el("input",{type:"text",placeholder:placeholder||"새 항목 추가","aria-label":placeholder||"새 항목"});
   const add=el("button",{class:"btn"},"추가");
   // 엔터: 서버를 기다리지 않고 바로 목록에 보여줌 (저장 실패하면 다시 뺌)
+  let newWith=[];const withUp=()=>{const w=newWith;newWith=[];if(joinTools)drawJoin();return w.length?{with:w}:{}}; // 새 할 일 참여 인원 (+ 참여로 고름)
+  let joinTools=null;const drawJoin=()=>{if(!joinTools)return;joinTools.textContent="";
+    joinTools.append(...newWith.map(k=>el("span",{class:"chip on nr-chip",style:`--c:var(--c-${k})`},byKey[k].name)),
+      el("button",{class:"np-teambtn",type:"button",onclick:()=>teamPicker(newWith,nx=>{newWith=nx;drawJoin()},()=>inp.focus())},"+ 참여"))};
   const go=()=>{const v=inp.value.trim();if(!v)return;const P=parse(v);if(!P)return;inp.value="";
-    const id=newId(),data={...P.base,text:P.text,done:false,createdAt:now(),by:me};
+    const id=newId(),data={...P.base,text:P.text,...withUp(),done:false,createdAt:now(),by:me};
     optimisticAdd(colName,id,data,inp);
     W(()=>col(colName).doc(id).set(data)).then(ok=>{ok?optimisticDone(colName,id):optimisticDrop(colName,id)})};
   add.onclick=go;inp.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing)go()};
@@ -1873,11 +1876,12 @@ function checkList(items,{colName,emptyText,placeholder,base,showBy=true,showReq
       const P0=parse(inp.value.trim());if(!P0)return;
       const m=await uploadAny(f);if(!m)return;const P=parse(inp.value.trim())||P0;const t=P.text;inp.value="";
       const up=mediaUp(m);Object.keys(up).forEach(k=>{if(!up[k])delete up[k]});
-      const nid=newId();await W(()=>col(colName).doc(nid).set({...P.base,text:t,...up,done:false,createdAt:now(),by:me}),"첨부됨");afterPoster(m,pid=>{const cur=(S[colName]||[]).find(x=>x.id===nid);if(!cur||cur.video===m.id)W(()=>col(colName).doc(nid).update({posterId:pid}))})}}
-  const box=el("div",{class:"add nadd"},inp,el("div",{class:"nadd-bar"},el("span",{class:"nadd-tools"},mbtn),add));
+      const nid=newId();const wu=withUp();await W(()=>col(colName).doc(nid).set({...P.base,text:t,...up,...wu,done:false,createdAt:now(),by:me}),"첨부됨");afterPoster(m,pid=>{const cur=(S[colName]||[]).find(x=>x.id===nid);if(!cur||cur.video===m.id)W(()=>col(colName).doc(nid).update({posterId:pid}))})}}
+  if(join&&canWrite){joinTools=el("span",{class:"todo-team nadd-join"});drawJoin()}
+  const box=el("div",{class:"add nadd"},inp,el("div",{class:"nadd-bar"},el("span",{class:"nadd-tools"},mbtn,joinTools),add));
   box.querySelectorAll("button").forEach(b=>b.addEventListener("mousedown",e=>e.preventDefault()));
   inp.addEventListener("focus",()=>box.classList.add("open"));
-  inp.addEventListener("blur",()=>setTimeout(()=>{if(!box.contains(document.activeElement)&&!inp.value.trim())box.classList.remove("open")},250));
+  inp.addEventListener("blur",()=>setTimeout(()=>{if(!box.contains(document.activeElement)&&!inp.value.trim()&&!newWith.length&&!document.querySelector(".np-teambox"))box.classList.remove("open")},250));
   card.append(box);
   return card;
 }
@@ -2378,7 +2382,7 @@ function vTodo(v){
   const order=keys.includes(me)?[me,...keys.filter(k=>k!==me)]:keys;
   order.forEach(k=>{
     const items=S.todos.filter(t=>t.owner===k);
-    v.append(el("section",{},el("h2",{},el("span",{},nameEl(k),k===me?" (나)":""),el("span",{class:"meta"},`${items.filter(i=>!i.done).length}개 남음`)),checkList(items,{colName:"todos",media:true,base:{owner:k},placeholder:`${byKey[k].name}에게 할 일 추가`,emptyText:"할 일이 없어요"})));
+    v.append(el("section",{},el("h2",{},el("span",{},nameEl(k),k===me?" (나)":""),el("span",{class:"meta"},`${items.filter(i=>!i.done).length}개 남음`)),checkList(items,{colName:"todos",media:true,join:true,base:{owner:k},placeholder:`${byKey[k].name}에게 할 일 추가`,emptyText:"할 일이 없어요"})));
   });
 }
 
