@@ -268,6 +268,7 @@ li.editing .iedit-bar{display:flex}
 .ie-pc{display:none!important}
 li.ie-chk .ie-pc{display:block!important}
 li.ie-nochk .chk{opacity:.25}
+.dreq{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:end}.dreq-in{display:block;width:100%;box-sizing:border-box;height:36px;font:inherit;font-size:16px;line-height:1.3;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--bg);color:var(--ink);resize:none;overflow:hidden}.dreq-btn{height:36px;padding:0 16px;font-size:12.5px;width:auto}
 .draftacts{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.draftacts .pubb:disabled{opacity:.4}
 .oc.draft td,.oc.draft th{font-size:12.5px;padding:5px 4px;text-align:left;white-space:nowrap}.oc.draft{table-layout:auto;width:100%}
 .chiprow1{display:flex;flex:0 0 100%;justify-content:space-between;gap:4px;min-width:0} /* 내 계정 이름 첫 줄: 양끝 맞춤 */
@@ -2394,10 +2395,10 @@ function vSchedule(v){
       const hs=[periodStart,addDays(periodStart,14)].find(x=>draftOn(x))||[periodStart,addDays(periodStart,14)].find(x=>!halfShown(x))||addDays(periodStart,14);
       const on=draftOn(hs),pin=draftPinCount(hs);
       const B=(t,f,dis,pr)=>el("button",{class:"chktog pubb",type:"button",disabled:dis,...(pr?{"aria-pressed":"true"}:{}),onclick:f},t);
-      return el("div",{class:"draftacts"},
+      return draftWrap(hs,on,el("div",{class:"draftacts"},
         B("초안 만들기",()=>draftSheet(hs),on),B("다시 만들기",()=>draftSheet(hs),!on),
         B("비우기",()=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 초안으로 채운 칸을 비울까요? 직접 고쳐서 고정한 날은 그대로 둬요`,()=>draftClear(hs),"비우기"),!on),
-        B(`확정하기${pin?` (${pin})`:""}`,()=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 초안을 확정할까요? 확정하면 다시 만들기·비우기를 할 수 없어요`,()=>draftConfirm(hs),"확정"),!on,on))})()):null; // 사장만: 각 2주 공개 버튼 바로 아래 — 초안 만들기, 초안 중이면 다시 만들기·확정하기
+        B(`확정하기${pin?` (${pin})`:""}`,()=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 초안을 확정할까요? 확정하면 다시 만들기·비우기를 할 수 없어요`,()=>draftConfirm(hs),"확정"),!on,on)))})()):null; // 사장만: 각 2주 공개 버튼 바로 아래 — 초안 만들기, 초안 중이면 다시 만들기·확정하기
   v.append(el("section",{},el("h2",{},"4주 근무표",el("span",{class:"meta",style:"font-size:11.5px"},"왼쪽 메라키 · 오른쪽 본점 · 컬러 이름=휴무 · ★=희망휴무")),pubBar,zbar,wrap,
     isMob()?el("p",{class:"hint",style:"font-size:11.5px"},"두 손가락으로 늘리고, 커진 상태에서 옆으로 밀어 볼 수 있어요"):null)); // 희망휴무 안내와 같은 크기
   if(isMob())setupZoom(wrap,board,zbar);
@@ -2723,10 +2724,27 @@ async function draftApply(hs,seed,req){
   return ok?res:null}
 function draftPin(){} // 고정은 draftBase가 빠지는 것으로 처리
 // 초안 요청 글은 monthnotes/draftreq 에 2주 시작일별로 저장 (다시 만들기 때도 반영)
+// 초안 작업 중에는 근무표 위(버튼 줄 아래)에 '더 반영할 내용' 칸을 늘 보여 줌 → 달력을 보면서 바로 적고 반영
+const draftLast={}; // 2주별 마지막 결과(반영한 요청·못 지킨 부분) — 이 기기에서만
+function draftWrap(hs,on,acts){if(!on)return acts;
+  const inp=el("textarea",{rows:"1",class:"dreq-in",placeholder:"더 반영할 내용 (예: 다슬 오픈 하루 줄여 줘)"});
+  inp.value=draftReqText(hs);const fit=()=>{inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight+2,120)+"px"};inp.addEventListener("input",fit);setTimeout(fit,0);
+  const btn=el("button",{class:"chktog dreq-btn",type:"button"},"반영");
+  btn.onclick=async()=>{btn.disabled=true;btn.textContent="만드는 중…";await draftReqRun(hs,inp.value.trim());btn.disabled=false;btn.textContent="반영"};
+  const L=draftLast[hs],lines=[];
+  if(L){if(L.req.said.length)lines.push("반영한 요청: "+L.req.said.join(" · "));if(L.req.unknown)lines.push(`이해하지 못한 부분: '${L.req.unknown}'`);
+    lines.push("오픈(지난 4주+이번 2주): "+DRAFT_STAFF.map(p=>`${(byKey[p]||{}).name} ${L.res.open[p]}`).join(" · "));
+    const I=L.res.issues;if(I.length)lines.push("못 지킨 부분: "+I.slice(0,3).join(" / ")+(I.length>3?` 외 ${I.length-3}개`:""))}
+  return el("div",{style:"grid-column:1/-1;display:grid;gap:6px"},acts,el("div",{class:"dreq"},inp,btn),
+    lines.length?el("p",{class:"hint",style:"margin:0;white-space:pre-line;font-size:12px"},lines.join("\n")):null)}
+async function draftReqRun(hs,t){const cur=((S.monthnotes||[]).find(x=>x.id==="draftreq")||{}).req||{};
+  await W(()=>col("monthnotes").doc("draftreq").set({req:{...cur,[hs]:t},editedBy:me,editedAt:now(),updatedAt:now()}),null);
+  const req=draftReqParse(t,hs);const res=await draftApply(hs,Date.now()%2147483647,req);if(!res)return null;
+  draftLast[hs]={req,res};flash(req.unknown?"일부만 반영했어요. 이해하지 못한 부분을 확인해 주세요":"요청을 반영해서 다시 만들었어요",!!req.unknown);draw();return{req,res}}
 const draftReqText=hs=>{const d=S.monthnotes&&S.monthnotes.find(x=>x.id==="draftreq");return d&&d.req&&d.req[hs]||""};
 async function draftSheet(hs){
   if(!draftOn(hs)&&!(await new Promise(ok=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 빈 칸을 초안으로 채울까요? 이미 적어 둔 칸과 희망휴무는 그대로 둬요. 공개하기 전까지 직원에게는 안 보여요`,()=>ok(true),"채우기"))))return; // 닫기를 누르면 아무것도 안 함
-  let seed=Date.now()%2147483647;let req=draftReqParse(draftReqText(hs),hs);let res=await draftApply(hs,seed,req);if(!res)return;
+  let seed=Date.now()%2147483647;let req=draftReqParse(draftReqText(hs),hs);let res=await draftApply(hs,seed,req);if(!res)return;draftLast[hs]={req,res};
   const nm=p=>(byKey[p]||{}).name||p;const box=el("div",{});
   const drawRes=()=>{box.textContent="";
     box.append(el("p",{class:"hint",style:"margin:0 0 4px"},"오픈 횟수(지난 4주+이번 2주): "+DRAFT_STAFF.map(p=>`${nm(p)} ${res.open[p]}`).join(" · ")));
@@ -2738,13 +2756,11 @@ async function draftSheet(hs){
   // 맨 아래: 더 반영할 내용 적기 → '반영해서 다시 만들기'
   const ta=el("textarea",{rows:"2",placeholder:"더 반영할 내용 (예: 다슬 오픈 하루 줄이고 정한 오픈 하루 늘려 줘 · 11/20 원석 휴무)",style:"width:100%;box-sizing:border-box;font:inherit;font-size:16px;resize:vertical"});ta.value=draftReqText(hs);
   const go=el("button",{class:"btn",type:"button",style:"margin-top:8px;width:100%",onclick:async()=>{go.disabled=true;go.textContent="만드는 중…";
-    const t=ta.value.trim();const cur=(S.monthnotes.find(x=>x.id==="draftreq")||{}).req||{};
-    await W(()=>col("monthnotes").doc("draftreq").set({req:{...cur,[hs]:t},editedBy:me,editedAt:now(),updatedAt:now()}),null);
-    req=draftReqParse(t,hs);seed=(seed*48271)%2147483647;const r=await draftApply(hs,seed,req);if(r){res=r;drawRes()}
+    const r=await draftReqRun(hs,ta.value.trim());if(r){req=r.req;res=r.res;drawRes()}
     go.disabled=false;go.textContent="반영해서 다시 만들기"}},"반영해서 다시 만들기");
   const reqBox=el("div",{style:"margin-top:4px;border-top:1px solid var(--line);padding-top:12px"},el("div",{class:"lab"},"더 반영할 내용"),ta,go);
   // 바깥을 누르면 닫힘. 다시 만들기·비우기·확정하기는 근무표 위 버튼으로
-  openSheet(`${md(hs)}~${md(addDays(hs,13))} 초안을 넣었어요`,[el("p",{class:"hint",style:"margin:0;white-space:pre-line"},"달력에서 칸을 눌러 고치면 그 날은 고정돼요. '다시 만들기'를 해도 고친 날은 그대로예요.\n다 됐으면 '확정하기' → '공개하기'를 눌러 주세요"),box,reqBox],async()=>true,"",null,{autosave:true});draw()}
+  openSheet(`${md(hs)}~${md(addDays(hs,13))} 초안을 넣었어요`,[el("p",{class:"hint",style:"margin:0;white-space:pre-line"},"달력에서 칸을 눌러 고치면 그 날은 고정돼요. '다시 만들기'를 해도 고친 날은 그대로예요.\n창을 닫은 뒤에도 근무표 위 '더 반영할 내용' 칸에 적을 수 있어요.\n다 됐으면 '확정하기' → '공개하기'를 눌러 주세요"),box,reqBox],async()=>true,"",null,{autosave:true});draw()}
 function hopeCap(d){return parse(d).getDay()===3?3:1}
 function hopeBlocked(d,who){
   const taken=S.dayoffs.filter(x=>x.date===d&&x.staff!==who&&x.staff!=="seunghyun");
