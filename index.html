@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon2-180.png"><link rel="icon" href="icon2-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T00:20:14Z";window.__APP_NOTE="고친 내용이 앱에 반영되면 사장님 화면에만 이렇게 알려 드려요. 비밀번호 칸 보기(눈) 버튼도 들어갔어요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon2-180.png"><link rel="icon" href="icon2-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T00:22:31Z";window.__APP_NOTE="새 버전 알림 창에서 확인 버튼을 없앴어요. 바깥 여백을 누르면 닫혀요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -302,6 +302,7 @@ li.ldrag{transition:none;position:relative;z-index:3;background:var(--surface);b
 .alertov{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.4);display:grid;place-items:center;padding:24px}
 .alertov .ap{background:var(--surface);color:var(--ink);border-radius:14px;max-width:300px;width:100%;padding:18px 18px 12px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 .verbar{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);transform:translateX(-50%);z-index:60;border:0;border-radius:18px;padding:8px 16px;background:var(--ink);color:var(--bg);font:inherit;font-size:13px;font-weight:400;box-shadow:0 4px 14px rgba(0,0,0,.25);white-space:nowrap}
+.alertov .ap.nobtn{padding-bottom:4px}
 .alertov h4{margin:0 0 6px;font-size:16px;font-weight:500}.alertov p{margin:0 0 14px;font-size:14px;color:var(--muted);white-space:pre-line}
 .alertov button{width:100%}
 .fw-snote{font-size:9.5px;color:var(--accent);text-align:right;padding:0 4px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1255,7 +1256,7 @@ let verShown=false,verPolling=false,verNew="";
 const verWhen=v=>{const d=new Date(v);return isNaN(d)?"":`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")} 반영`};
 function verCheck(){const V=window.__APP_VER||"";if(!WEB||!V||!isBoss())return;
   if(!verShown){verShown=true;let seen="";try{seen=localStorage.getItem("pn.seenVer")||""}catch(e){}
-    if(seen!==V){try{localStorage.setItem("pn.seenVer",V)}catch(e){}setTimeout(()=>alertBox("새 버전이 반영됐어요",[window.__APP_NOTE||"앱이 새로 바뀌었어요",verWhen(V)].filter(Boolean).join("\n\n")),700)}}
+    if(seen!==V){try{localStorage.setItem("pn.seenVer",V)}catch(e){}setTimeout(()=>alertBox("새 버전이 반영됐어요",[window.__APP_NOTE||"앱이 새로 바뀌었어요",verWhen(V)].filter(Boolean).join("\n\n"),true),700)}}
   if(verPolling)return;verPolling=true;
   const poll=async()=>{if(!isBoss())return;try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});const j=await r.json();
     if(j.v&&j.v!==V&&j.v!==verNew){verNew=j.v;const old=document.querySelector(".verbar");if(old)old.remove();
@@ -3722,7 +3723,8 @@ function openSheet(title,parts,onSave,saveLabel="저장",extraBtn,opts={}){
   document.addEventListener("keydown",escClose);
 }
 const eunNeun=n=>{const c=n.charCodeAt(n.length-1)-0xAC00;return n+(c>=0&&c<11172&&c%28?"은":"는")};
-function alertBox(t,m){const ov=el("div",{class:"alertov",role:"alertdialog","aria-label":t},el("div",{class:"ap"},el("h4",{},t),el("p",{},m),el("button",{class:"btn",type:"button",onclick:()=>ov.remove()},"확인")));ov.onclick=e=>{if(e.target===ov)ov.remove()};document.body.append(ov);ov.querySelector("button").focus()}
+function alertBox(t,m,noBtn){ // noBtn: 확인 버튼 없이 바깥(여백)을 누르면 닫힘
+  const ov=el("div",{class:"alertov",role:"alertdialog","aria-label":t},el("div",{class:"ap"+(noBtn?" nobtn":"")},el("h4",{},t),el("p",{},m),noBtn?null:el("button",{class:"btn",type:"button",onclick:()=>ov.remove()},"확인")));ov.onclick=e=>{if(e.target===ov)ov.remove()};document.body.append(ov);const b=ov.querySelector("button");if(b)b.focus()}
 function askConfirm(msg,fn,yes="지우기"){openSheet("확인",[el("p",{style:"margin:0"},msg)],async()=>{await fn();return true},yes)}
 function escClose(e){if(e.key==="Escape"&&sheetDismiss)sheetDismiss()}
 function closeSheet(){sheetDismiss=null;$("sheetRoot").textContent="";document.documentElement.classList.remove("np-lock");document.removeEventListener("keydown",escClose);if(pendingRender)render()}
