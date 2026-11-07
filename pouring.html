@@ -1257,6 +1257,17 @@ function optimisticAdd(c,id,data,inp){if(!S[c]||!canWrite||!db||!me)return;(PEND
   const ad=inp&&inp.closest(".add[data-key]");if(ad&&document.activeElement===inp){addCont={key:ad.dataset.key,until:Date.now()+6000};contDraw(ad.dataset.key)}else render()}
 function optimisticDrop(c,id){if(PENDING[c])PENDING[c].delete(id);if(!S[c])return;S[c]=S[c].filter(x=>x.id!==id);render()}
 function optimisticDone(c,id){if(PENDING[c])PENDING[c].delete(id)}
+// 저장 중인 수정(체크 등): 서버를 기다리지 않고 화면부터 바꿈. 구독이 예전 값으로 먼저 와도 유지, 서버 값이 같아지면 끝. 실패하면 원래대로
+// 저장이 끝나도 서버 값이 같아질 때까지(최대 15초) 화면 값 유지 → 늦게 온 예전 값에 다시 미완료로 보이지 않게
+const PATCH={};let patchSeq=0;
+function optimisticPatch(c,ids,patch){if(!S[c]||!canWrite||!db||!me)return null;const M=PATCH[c]=PATCH[c]||new Map();const tok=++patchSeq;const prev={};
+  S[c]=S[c].map(x=>{if(!ids.includes(x.id))return x;prev[x.id]={};Object.keys(patch).forEach(k=>prev[x.id][k]=x[k]);M.set(x.id,{p:patch,tok,at:Date.now()});return {...x,...patch}});render();return {tok,prev}}
+// 구독으로 서버 값이 왔을 때: 저장 중인 화면 값을 덮어 둠 (서버 값이 같아졌거나 15초 지나면 해제)
+function patchMerge(c){const M=PATCH[c];if(!M||!M.size||!S[c])return;
+  S[c]=S[c].map(x=>{const e=M.get(x.id);if(!e)return x;if(Object.keys(e.p).every(k=>x[k]===e.p[k])||Date.now()-e.at>15000){M.delete(x.id);return x}return {...x,...e.p}})}
+// failed: 저장 못 한 id들 → 그 항목만, 그리고 그 뒤에 다시 누르지 않았을 때만 원래대로
+function patchEnd(c,failed,st){const M=PATCH[c];if(!st||!M||!S[c])return;let ch=false;
+  failed.forEach(id=>{const e=M.get(id);if(!e||e.tok!==st.tok)return;M.delete(id);const pv=st.prev[id];if(!pv)return;S[c]=S[c].map(x=>x.id===id?{...x,...pv}:x);ch=true});if(ch)render()}
 function render(){if(busy()){const a=document.activeElement;const ad=a&&a.closest&&a.closest(".add[data-key]");
     if(ad&&addCont&&addCont.key===ad.dataset.key&&Date.now()<addCont.until&&!a.value){contDraw(ad.dataset.key);return}
     pendingRender=true;return}pendingRender=false;draw()}
@@ -2306,10 +2317,15 @@ function vOrder(v){
   const pend=S.orders.filter(o=>!o.done).sort((a,b)=>tsOf(a.createdAt)-tsOf(b.createdAt));
   const mAgo=Date.now()-31*864e5; // 구매 완료는 한 달치만 보여 줌
   const done=S.orders.filter(o=>o.done&&(!o.doneAt||tsOf(o.doneAt)>=mAgo)).sort((a,b)=>tsOf(b.doneAt)-tsOf(a.doneAt));
-  const markDone=os=>W(()=>Promise.all(os.map(o=>col("orders").doc(o.id).update({done:true,doneBy:me,doneAt:now()}))),`${os.length}개 주문 완료`);
+  // 체크·모두 주문 완료: 화면부터 바로 구매 완료로 (저장은 뒤에서, 실패하면 되돌림)
+  const setDone=(os,on,msg)=>{const patch={done:on,doneBy:on?me:"",doneAt:on?now():""};const ids=os.map(o=>o.id);const st=optimisticPatch("orders",ids,patch);
+    let failed=ids; // W가 저장을 시작하지 못하면 모두 실패
+    return W(async()=>{const rs=await Promise.allSettled(ids.map(id=>col("orders").doc(id).update(patch)));failed=ids.filter((id,i)=>rs[i].status!=="fulfilled");
+      if(failed.length)throw rs.find(r=>r.status!=="fulfilled").reason},msg).then(ok=>{patchEnd("orders",ok?[]:failed,st);return ok})};
+  const markDone=os=>setDone(os,true,`${os.length}개 주문 완료`);
   const row=o=>{const link=safeUrl((itemOf(o)||{}).url)||orderLinkOf(o);
     const cb=el("input",{type:"checkbox",class:"chk","aria-label":"주문 완료",disabled:!canDoneOrder(o)});cb.checked=!!o.done;
-    cb.onchange=()=>W(()=>col("orders").doc(o.id).update({done:cb.checked,doneBy:cb.checked?me:"",doneAt:cb.checked?now():""}),cb.checked?"주문 완료":"요청으로 되돌림");
+    cb.onchange=()=>setDone([o],cb.checked,cb.checked?"주문 완료":"요청으로 되돌림");
     const at=staffBuy(o)?el("span",{class:"by ord-who",style:"display:inline-block;margin-left:8px;white-space:nowrap"},buyLine(o)):el("span",{class:"by ord-who",style:"display:inline-block;margin-left:8px;white-space:nowrap"},`${fwho(o.by)||"?"} 요청${o.createdAt?" "+hm(o.createdAt):""}`,o.done?el("span",{class:"ord-done"},` · ${o.doneAt?md(iso(new Date(o.doneAt)))+" ":""}주문 완료`):null);
     const txt=el("div",{class:"txt"},el("div",{},...orderStores(o).map(st=>el("span",{class:"pill "+st},STORES[st])),el("span",{},orderLabel(o)),at));
     // 어플 주문 거래처(예: 마켓봄)는 품목 줄 같은 자리에 "어플 열기 ›"
@@ -4025,6 +4041,7 @@ function subAll(){
     q.onSnapshot(snap=>{
       S[name]=snap.docs.map(d=>({id:d.id,...(d.data()||{})}));
       if(PENDING[name]&&PENDING[name].size){const have=new Set(S[name].map(x=>x.id));for(const [id,it] of PENDING[name]){if(have.has(id))PENDING[name].delete(id);else S[name].push(it)}}
+      patchMerge(name);
       SRV[name]=new Map(snap.docs.map(d=>[d.id,d.data()||{}])); // 되돌리기용: 앱이 미리 바꿔 둔 화면 값이 아닌 서버 값
       for(const k of [...KNOWN.keys()])if(k.startsWith(name+"/"))KNOWN.delete(k); // 서버 값이 왔으니 그걸 믿음
       if(name==="dayoffs"&&window.__hopeCalDraw)try{window.__hopeCalDraw()}catch(e){}
