@@ -2357,7 +2357,7 @@ function vTodo(v){
   const order=keys.includes(me)?[me,...keys.filter(k=>k!==me)]:keys;
   order.forEach(k=>{
     const items=S.todos.filter(t=>t.owner===k);
-    v.append(el("section",{},el("h2",{},el("span",{},nameEl(k),k===me?" (나)":""),el("span",{class:"meta"},`${items.filter(i=>!i.done).length}개 남음`)),checkList(items,{colName:"todos",media:true,join:true,base:{owner:k},placeholder:`${byKey[k].name}에게 할 일 추가`,emptyText:"할 일이 없어요"})));
+    v.append(el("section",{},el("h2",{},el("span",{},nameEl(k),k===me?" (나)":""),el("span",{class:"meta"},`${items.filter(i=>!i.done).length}개 남음`)),checkList(items,{colName:"todos",media:true,base:{owner:k},placeholder:`${byKey[k].name}에게 할 일 추가`,emptyText:"할 일이 없어요"})));
   });
 }
 
