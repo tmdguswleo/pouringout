@@ -3749,7 +3749,7 @@ function openSheet(title,parts,onSave,saveLabel="저장",extraBtn,opts={}){
 }
 const eunNeun=n=>{const c=n.charCodeAt(n.length-1)-0xAC00;return n+(c>=0&&c<11172&&c%28?"은":"는")};
 function alertBox(t,m,noBtn){ // noBtn: 확인 버튼 없이 바깥(여백)을 누르면 닫힘
-  const ov=el("div",{class:"alertov",role:"alertdialog","aria-label":t},el("div",{class:"ap"+(noBtn?" nobtn":"")},el("h4",{},t),el("p",{},m),noBtn?null:el("button",{class:"btn",type:"button",onclick:()=>ov.remove()},"확인")));ov.onclick=e=>{if(e.target===ov)ov.remove()};document.body.append(ov);const b=ov.querySelector("button");if(b)b.focus()}
+  const ov=el("div",{class:"alertov",role:"alertdialog","aria-label":t},el("div",{class:"ap"+(noBtn?" nobtn":"")},el("h4",{},t),el("p",{},m),noBtn?null:el("button",{class:"btn",type:"button",onclick:()=>ov.remove()},"확인")));ov.onclick=e=>{if(noBtn||e.target===ov)ov.remove()};document.body.append(ov);const b=ov.querySelector("button");if(b)b.focus()} // 버튼 없는 창은 창 자체를 눌러도 닫힘
 function askConfirm(msg,fn,yes="지우기"){openSheet("확인",[el("p",{style:"margin:0"},msg)],async()=>{await fn();return true},yes)}
 function escClose(e){if(e.key==="Escape"&&sheetDismiss)sheetDismiss()}
 function closeSheet(){sheetDismiss=null;$("sheetRoot").textContent="";document.documentElement.classList.remove("np-lock");document.removeEventListener("keydown",escClose);if(pendingRender)render()}
