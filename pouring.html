@@ -808,7 +808,7 @@ html.np-lock,html.np-lock body{overflow:hidden;height:100%;overscroll-behavior:n
 .note-body video{display:block;max-width:100%;max-height:60vh;border-radius:8px;margin:6px 0;background:#000}
 .note-body table{border-collapse:collapse;margin:6px 0;font-size:15px;display:block;overflow-x:auto;max-width:100%}
 .note-body td,.note-body th{border:1px solid var(--line);padding:6px 8px;vertical-align:top;min-width:60px}
-.note-body a{color:var(--accent)}
+.note-body a{color:var(--accent)}.note-body a.playlink{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;margin-left:6px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:11px;line-height:1;text-decoration:none;vertical-align:middle;padding-left:2px;box-sizing:border-box} /* 영상 재생 버튼(▶ 링크) */
 @media (max-width:600px){.np-tb{min-width:32px;height:34px;font-size:15px}}
 .docside .di.sub2{padding-left:36px}
 .fold-row.sub2{padding-left:44px}.fold-row.sub2::before{left:28px}
@@ -3618,7 +3618,7 @@ function docClean(html,forSave){
     // 주소가 없거나 웹 주소가 아닌 링크(예: 메모 앱에서 온 'missing value')는 글자만 → 열 때마다 바뀜으로 잡히지 않게
     if(t==="A"&&!/^https?:\/\//i.test(c.getAttribute("href")||"")){walk(c,to,inA);return}
     const e=document.createElement(t==="P"?"DIV":t);
-    if(t==="A"){const h=c.getAttribute("href")||"";if(/^https?:\/\//i.test(h)){e.setAttribute("href",h);if(!forSave){e.target="_blank";e.rel="noopener noreferrer"}}}
+    if(t==="A"){const h=c.getAttribute("href")||"";if(/^https?:\/\//i.test(h)){e.setAttribute("href",h);if(!forSave){e.target="_blank";e.rel="noopener noreferrer";if(/^\u25B6\uFE0E?$/.test(c.textContent.trim())){e.className="playlink";e.setAttribute("aria-label","영상 보기");e.contentEditable="false"}}}}
     if(t==="UL"&&c.classList.contains("dash"))e.className="dash";
     if(t==="LI"&&c.classList.contains("ck"))e.className=c.classList.contains("done")?"ck done":"ck";
     walk(c,e,inA||t==="A");to.append(e)})};
