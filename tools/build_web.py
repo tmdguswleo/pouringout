@@ -7,8 +7,8 @@ old = '<meta name=viewport content="width=device-width,initial-scale=1,viewport-
 assert src.count(old) == 1, "viewport meta not found"
 head = ('<meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">'
         '<link rel="manifest" href="manifest.webmanifest">'
-        '<link rel="apple-touch-icon" href="icon2-180.png">'
-        '<link rel="icon" href="icon2-192.png">'
+        '<link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png">'
+        '<link rel="icon" href="icon3-192.png">'
         '<meta name="apple-mobile-web-app-capable" content="yes">'
         '<meta name="mobile-web-app-capable" content="yes">'
         '<meta name="apple-mobile-web-app-title" content="pouring out">'
@@ -24,8 +24,8 @@ out = src.replace(old, head)
 (root / "manifest.webmanifest").write_text(json.dumps({
     "name": "pouring out", "short_name": "pouring out", "start_url": "./", "scope": "./",
     "display": "standalone", "background_color": "#141414", "theme_color": "#141414",
-    "icons": [{"src": "icon2-192.png", "sizes": "192x192", "type": "image/png"},
-              {"src": "icon2-512.png", "sizes": "512x512", "type": "image/png"}]}, ensure_ascii=False, indent=1), encoding="utf8")
+    "icons": [{"src": "icon3-192.png", "sizes": "192x192", "type": "image/png"},
+              {"src": "icon3-512.png", "sizes": "512x512", "type": "image/png"}, {"src": "icon3-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any maskable"}]}, ensure_ascii=False, indent=1), encoding="utf8")
 (root / "version.json").write_text(json.dumps({"v": ver, "note": note}, ensure_ascii=False), encoding="utf8")
 (root / ".nojekyll").write_text("", encoding="utf8")
 print("built index.html")

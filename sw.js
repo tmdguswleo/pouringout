@@ -1,6 +1,6 @@
 /* 푸어링아웃 서비스 워커: 빠른 실행(화면 파일 저장) + 푸시 알림 */
-const CACHE = "po-v3";
-const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon2-180.png", "./icon2-192.png", "./icon2-512.png",
+const CACHE = "po-v4";
+const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon3-180.png", "./icon3-192.png", "./icon3-512.png",
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).catch(() => {})); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE && k !== "po-badge").map(k => caches.delete(k)))).then(() => self.clients.claim())); });
