@@ -611,7 +611,7 @@ button{-webkit-tap-highlight-color:transparent}
 .oadd{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:18px;line-height:1;cursor:pointer;padding:0 0 2px}
 .ostep{display:inline-flex;align-items:center;gap:10px}.ostep button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--soft);color:var(--ink);font:inherit;font-size:17px;line-height:1;cursor:pointer;padding:0 0 2px}.ostep span{min-width:16px;text-align:center}
 .osend{width:100%;padding:12px;font-size:16px}.sheet .osend{position:sticky;bottom:0;z-index:2;box-shadow:0 -10px 14px var(--surface)}.sheet .osend:disabled{opacity:1;background:var(--soft);border-color:var(--line);color:var(--muted)} /* 품목이 많아도 요청 버튼은 항상 아래에 보이게 */.osend:disabled{opacity:.45}
-.osup{margin-top:10px}.buy-hint{font-size:11px;opacity:.75}
+.osup{margin-top:10px}.buy-hint{font-size:11px;opacity:.75;padding:6px 14px 0}
 .osup-head{display:flex;align-items:center;gap:8px;padding:12px 14px 0;margin-bottom:-4px} /* 거래처 이름과 첫 품목 줄 사이 좁게 (품목 줄 높이는 그대로) */
 .osup-empty{display:flex;align-items:center;gap:8px;padding:11px 14px;color:var(--muted)}
 .osup-acts{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px 12px;border-top:1px solid var(--line)}.osup-acts a{text-decoration:none}
@@ -2283,9 +2283,9 @@ function vOrder(v){
     if(!os.length)return; // 요청이 들어온 거래처만 보임
     const card=el("div",{class:"card osup"});
     card.append(el("div",{class:"osup-head"},el("span",{},s.name),s.how==="visit"?el("span",{class:"by",style:"opacity:.6"},OHOW[s.how]):null, /* 설명은 오프라인만 (조금 연하게) */el("span",{class:"meta",style:"margin-left:auto"},`${os.length}건`)));
+    // 직원도 사는 곳(사러가·동일마트·다이소): 거래처 이름 줄 바로 아래 안내
+    if(STAFF_BUY.test(String(s.name||"").replace(/\s/g,"")))card.append(el("div",{class:"by buy-hint"},"직원 중 구매했다면 체크해 주세요"));
     card.append(el("ul",{class:"list"},...os.map(row)));
-    const offHint=(s.how==="visit"||STAFF_BUY.test(String(s.name||"").replace(/\s/g,"")))?el("span",{class:"by buy-hint"},"직원 중 구매했다면 체크해 주세요"):null; // 오프라인(사러가·동일마트·다이소 등)
-    if(!(isBoss()&&canWrite)&&offHint)card.append(el("div",{class:"osup-acts"},offHint));
     if(isBoss()&&canWrite){const acts=el("div",{class:"osup-acts"});
       const msg=`안녕하세요, 푸어링아웃입니다. ${os.map(orderLabel).join(", ")} 주문 부탁드립니다.`;
       if(s.how==="kakao"||s.how==="tel"){acts.append(el("button",{class:"btn ghost sm",type:"button",onclick:()=>{try{navigator.clipboard.writeText(msg).then(()=>flash("주문 문자를 복사했어요"),()=>flash("복사가 막혀 있어요",true))}catch(e){flash("복사가 막혀 있어요",true)}}},"주문 문자 복사"));
@@ -2293,8 +2293,7 @@ function vOrder(v){
         if(kurl)acts.append(el("a",{class:"btn ghost sm",href:kurl,target:"_blank",rel:"noopener noreferrer",onclick:()=>{try{navigator.clipboard.writeText(msg)}catch(e){}}},"카톡 열기")); // 누르면 주문 문자도 복사해 둠 → 대화방에 붙여 넣기
         if(s.tel)acts.append(el("a",{class:"btn ghost sm",href:(s.how==="kakao"?"sms:":"tel:")+s.tel.replace(/[^\d+]/g,"")},s.how==="kakao"?"문자":"전화"))}
       if(s.memo)acts.append(el("span",{class:"by"},s.memo));
-      if(offHint)acts.append(el("span",{style:"margin-left:auto"}),offHint);
-      acts.append(el("button",{class:"btn sm",type:"button",style:offHint?"":"margin-left:auto",onclick:()=>markDone(os)},"모두 주문 완료"));card.append(acts)}
+      acts.append(el("button",{class:"btn sm",type:"button",style:"margin-left:auto",onclick:()=>markDone(os)},"모두 주문 완료"));card.append(acts)}
     sec.append(card)});
   if(!pend.length)sec.append(el("div",{class:"card"},el("div",{class:"empty"},"남은 발주 요청이 없어요")));
   v.append(sec);
