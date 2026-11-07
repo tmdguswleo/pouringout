@@ -619,7 +619,7 @@ button{-webkit-tap-highlight-color:transparent}
 /* 발주 요청 창: 창 높이 고정, 목록만 스크롤 (글자를 칠 때 검색칸이 움직이지 않게) */
 .sheet.fit .panel{height:88%;max-height:none;overflow:auto}.sheet.fit .panel>*{flex:none}.sheet.fit .olist{display:block;flex:1 1 0;min-height:0;overflow:auto;overscroll-behavior:contain}.sheet.fit .olist:empty{display:block}
 .osend{width:100%;padding:12px;font-size:16px}.sheet .osend{position:sticky;bottom:0;z-index:2;box-shadow:0 -10px 14px var(--surface)}.sheet .osend:disabled{opacity:1;background:var(--soft);border-color:var(--line);color:var(--muted)} /* 품목이 많아도 요청 버튼은 항상 아래에 보이게 */.osend:disabled{opacity:.45}
-.osup{margin-top:10px}.todo-team{flex:none;align-self:center;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;max-width:55%}.todo-team .np-teambtn{white-space:nowrap}.nadd-tools{display:inline-flex;align-items:center;gap:8px}.nadd-join{max-width:none;margin-left:6px}li.editing .li-team{display:none}.iedit-bar .nadd-join{flex:1 1 auto;min-width:0;justify-content:flex-start} /* 할 일 누르면 이름은 첨부 옆으로 */
+.osup{margin-top:10px}.todo-team{flex:none;align-self:center;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;max-width:55%}.todo-team .np-teambtn{white-space:nowrap}.nadd-tools{display:inline-flex;align-items:center;gap:8px}.nadd-join{max-width:none;margin-left:6px}li.editing .li-team{display:none}.iedit-bar .nadd-join{flex:1 1 auto;min-width:0;justify-content:flex-start;margin-left:4px}.iedit-bar:has(.nadd-join)>.ibtn:first-child{width:34px;place-items:center start} /* 할 일 누를 때: 클립을 글 시작선에, 참여 인원은 바로 옆 */ /* 할 일 누르면 이름은 첨부 옆으로 */
 .ckpin{padding:10px 12px;border-bottom:1px solid var(--line);min-height:21px}.ckpin-t{outline:none;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.45em;cursor:text}
 .buy-hint{font-size:11px;opacity:.75;padding:6px 14px 0}
 .osup-head{display:flex;align-items:center;gap:8px;padding:12px 14px 0;margin-bottom:-4px} /* 거래처 이름과 첫 품목 줄 사이 좁게 (품목 줄 높이는 그대로) */
@@ -2568,7 +2568,6 @@ function vDayoff(v){
   const upcoming=k=>S.dayoffs.filter(x=>x.staff===k&&x.date>=TODAY).map(x=>x.date).sort(); // 달력에서 신청한 날은 근무표가 다 채워진 기간이어도 목록에 보임
   HS.forEach(st=>{
     const ds=upcoming(st.key);
-    const mineRow=st.key===me||isBoss();
     const dates=el("div",{class:"hd"});
     ds.forEach(d=>{const rec0=S.dayoffs.find(y=>y.id===`${d}_${st.key}`)||{}; // × = 본인만, 사장이 확인하기 전까지만 (사장은 지우지 않고 확인만)
       const x=st.key===me&&!rec0.confirmed?el("button",{class:"x","aria-label":`${mdw(d)} 취소`},"×"):null;if(x)
@@ -2576,7 +2575,7 @@ function vDayoff(v){
       const rec=S.dayoffs.find(y=>y.id===`${d}_${st.key}`)||{};const cf=!!rec.confirmed;
       const ok=isBoss()?el("button",{class:"okb"+(cf?" on":""),"aria-label":`${st.name} ${mdw(d)} ${cf?"확인 취소":"확인"}`,"aria-pressed":String(cf),onclick:()=>confirmHope(d,st.key,!cf)}):null;
       dates.append(el("span",{class:"hchip"},ok,el("span",{class:"hdt"},mdw(d)),x))});
-    if(!ds.length&&!mineRow) dates.append(el("span",{class:"by"},"없음"));
+    // 신청한 날이 없으면 빈칸 (누가 보든 같게)
     ul.append(el("li",{class:"hrow"},el("div",{class:"plain",style:"width:40px;flex:0 0 auto;padding-top:4px"},nameEl(st.key)),
       el("div",{class:"txt"},dates),
       st.key===me?el("button",{class:"hope-add",type:"button","aria-label":`${st.name} 희망휴무 날짜 고르기`,title:`${st.name} 희망휴무 날짜 고르기`,onclick:()=>hopeCal(st.key)},"+"):el("span",{class:"hope-add",style:"visibility:hidden","aria-hidden":"true"}))); // + 없는 줄도 같은 자리를 비워 둬서 날짜 칸 위치가 모두 같게
