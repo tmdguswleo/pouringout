@@ -81,9 +81,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .nav{font:inherit;font-size:18px;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;flex:0 0 auto}
 .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
 .shift{display:grid;grid-template-columns:1fr 1fr;gap:0}
-.shift>div{padding:10px 12px;min-width:0}
+.shift>div{padding:7px 12px;min-width:0}
 .shift>div+div{border-left:1px solid var(--line)}
-.shift .st{font-size:12px;font-weight:400;color:var(--muted);margin-bottom:4px}
+.shift .st{font-size:12px;font-weight:400;color:var(--muted);margin-bottom:2px}
 .shift .ln{font-size:13px;font-variant-numeric:tabular-nums}
 .shift .ln b{font-weight:400;color:var(--muted);margin-right:6px}
 .offrow{padding:8px 12px;border-top:1px solid var(--line);font-size:13px}
@@ -253,7 +253,7 @@ span.pwbox{position:relative;display:block;flex:1;min-width:0}span.pwbox input{w
 .mm-ov{z-index:310;background:rgba(0,0,0,.2)}.mm-box{position:fixed;width:220px;padding:6px 0}.mm-box .np-mi{font-size:16px;padding:10px 16px}
 .edt{cursor:text;white-space:pre-wrap;outline:none}
 .list li{cursor:text}
-section.notice-s>.card>.list .txt{font-size:15px} /* 전달사항 글씨만 살짝 작게 (체크리스트는 그대로) */
+section.notice-s>.card>.list .txt,.stores .card>.list .txt{font-size:15px} /* 전달사항·체크리스트 글씨 살짝 작게 */
 .list li.editing{background:var(--soft)}
 .edt[contenteditable]{display:inline-block;min-width:4em;-webkit-user-select:text;user-select:text}
 .edt:empty::before{content:attr(data-ph);color:#d4d4d4}
@@ -510,7 +510,7 @@ button{-webkit-tap-highlight-color:transparent}
   .day-nav .mob-back{flex:none!important;order:0!important;margin-right:auto}
   .mob-back{display:block;flex:0 0 100%;order:-1;background:none;border:0;padding:0;font:inherit;font-size:17px;color:var(--accent);text-align:left;cursor:pointer}
   .mtitle{display:block;font-size:22px;letter-spacing:-.01em;margin:2px 0 -12px} /* 제목과 아래 칸 사이: TO DO와 같게 */ /* 탭 맨 위 제목: 너무 크지 않게 */
-  .shift>div{padding:12px 14px}
+  .shift>div{padding:8px 14px}
   .shift .st{font-size:13px}
   .shift .ln{font-size:13px}
   .close td{padding:8px 10px}
