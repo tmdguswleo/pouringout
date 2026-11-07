@@ -612,6 +612,7 @@ button{-webkit-tap-highlight-color:transparent}
 .ostep{display:inline-flex;align-items:center;gap:10px}.ostep button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--soft);color:var(--ink);font:inherit;font-size:17px;line-height:1;cursor:pointer;padding:0 0 2px}.ostep span{min-width:16px;text-align:center}
 .osend{width:100%;padding:12px;font-size:16px}.sheet .osend{position:sticky;bottom:0;z-index:2;box-shadow:0 -10px 14px var(--surface)}.sheet .osend:disabled{opacity:1;background:var(--soft);border-color:var(--line);color:var(--muted)} /* 품목이 많아도 요청 버튼은 항상 아래에 보이게 */.osend:disabled{opacity:.45}
 .osup{margin-top:10px}.todo-team{flex:none;align-self:center;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;max-width:55%}.todo-team .np-teambtn{white-space:nowrap}
+.ckpin{padding:10px 12px;border-bottom:1px solid var(--line);min-height:21px}.ckpin-t{outline:none;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.45em;cursor:text}
 .buy-hint{font-size:11px;opacity:.75;padding:6px 14px 0}
 .osup-head{display:flex;align-items:center;gap:8px;padding:12px 14px 0;margin-bottom:-4px} /* 거래처 이름과 첫 품목 줄 사이 좁게 (품목 줄 높이는 그대로) */
 .osup-empty{display:flex;align-items:center;gap:8px;padding:11px 14px;color:var(--muted)}
@@ -2033,6 +2034,13 @@ function noticeCard(store,emptyText,placeholder,opt={}){
   if(opt.defaultCheck&&noticeCheckMode[store||"all"]===undefined)noticeCheckMode[store||"all"]=true;
   if(opt.alwaysCheck)noticeCheckMode[store||"all"]=true; // 체크 표시 고르기 없음: 늘 체크 항목으로
   const card=el("div",{class:"card"});
+  // 매장 체크리스트 맨 위: 체크 칸 없는 고정 한 줄 (날짜와 상관없이 늘 같은 내용, monthnotes/ckpin_<매장>). 누르면 고치고 바깥 누르면 저장
+  if(opt.alwaysCheck&&store){const pd=(S.monthnotes||[]).find(x=>x.id==="ckpin_"+store)||{};
+    const sp=el("div",{class:"ckpin-t"});sp.textContent=pd.text||"";
+    if(canWrite){sp.contentEditable="true";sp.setAttribute("aria-label",`${STORES[store]} 체크리스트 고정 메모`);
+      sp.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();sp.blur()}};
+      sp.onblur=()=>{const t=sp.innerText.replace(/\u00a0/g," ").trim();if(t===(pd.text||""))return;W(()=>col("monthnotes").doc("ckpin_"+store).set({text:t,editedBy:me,editedAt:now(),updatedAt:now()}),"저장됨")}}
+    card.append(el("div",{class:"ckpin"},sp))}
   if(!ns.length&&emptyText) card.append(el("div",{class:"empty"},emptyText));
   if(ns.length){const ul=el("ul",{class:"list"});ns.forEach(n=>{
     const C=n._col;
