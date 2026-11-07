@@ -971,7 +971,9 @@ function pickDoc(q,onPick){
 /* 자동 연결: 체크 항목 글(띄어쓰기 무시)에 kw가 있고, make면 '만들기·제조'도 함께 있을 때 → doc(메모) 또는 cat(폴더)을 여는 작은 아이콘 */
 const AUTO_DOC=[{kw:"티라미수",make:true,doc:"note0328"},{kw:"바나나브레드",make:true,doc:"note0316"},{kw:"밀크티in",doc:"note0005"},...["콜드브루in","콜드브루out","디카페인in","디카페인out"].map(kw=>({kw,cat:"음료/콜드브루/대형 토디 일지"}))];
 /* 체크리스트 'in' 항목(예: 콜드브루in, 밀크티 in, 오시 in) → 다음 날 같은 매장에 'out' 체크 항목을 자동으로 만듦. in을 지우면 아직 안 한 out도 지움 */
-const inToOut=t=>{const re=/(^|[^a-z])in(?![a-z])/i;if(!re.test(t)||/(^|[^a-z])out(?![a-z])/i.test(t))return null;return t.replace(re,(m,p)=>p+(m.slice(p.length)==="IN"?"OUT":"out"))};
+// 형식: '이름 in 시간 (몇 통)' → '이름 out 시간 (몇 통)'. 시간·통 수는 그대로, in이 붙어 있어도(밀크티in) '밀크티 out'처럼 띄움
+const inToOut=t=>{const re=/(^|[^a-z])in(?![a-z])/i;const m=t.match(re);if(!m||/(^|[^a-z])out(?![a-z])/i.test(t))return null;
+  const at=m.index+m[1].length,name=t.slice(0,at).trim(),rest=t.slice(at+2).trim();return [name,"out",rest].filter(Boolean).join(" ")};
 const autoDoc=t=>{const s=sq(t);return AUTO_DOC.find(x=>s.includes(x.kw.toLowerCase())&&(!x.make||/만들|제조/.test(s)))||null};
 const openFolder=c=>{location.hash="docs";tab="docs";docCat=c;mView.docs="detail";draw();window.scrollTo(0,0)};
 const dIcon=(t,go,ic)=>el("button",{class:"dlink",type:"button",title:t,"aria-label":t+" 열기",onclick:e=>{e.stopPropagation();go()}},svgI(ic));
