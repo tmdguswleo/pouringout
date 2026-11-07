@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon2-180.png"><link rel="icon" href="icon2-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T00:22:31Z";window.__APP_NOTE="새 버전 알림 창에서 확인 버튼을 없앴어요. 바깥 여백을 누르면 닫혀요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon2-180.png"><link rel="icon" href="icon2-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T00:40:59Z";window.__APP_NOTE="사진·영상 용량을 줄여서 올려요. 사진은 긴 쪽 1280px, 영상은 720p로 다시 녹화해요(영상 길이만큼 걸려요)"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -903,15 +903,41 @@ const iconBtn=(svg,label,extra={})=>el("button",{class:"ibtn",type:"button","ari
 const ACCEPT_ANY="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.hwp,.txt,.csv";
 async function uploadAny(f){
   const isV=/^video\//.test(f.type),isI=/^image\//.test(f.type);
-  if(!isI&&f.size>20*1024*1024){flash(isV?"영상이 너무 커요(20MB까지)":"파일이 너무 커요(20MB까지)",true);return null}
+  if(!isI&&!isV&&f.size>VMAX){flash("파일이 너무 커요(20MB까지)",true);return null}
   flash(isV?"영상 올리는 중… 잠시만요":isI?"사진 올리는 중…":"파일 올리는 중…");
-  try{const blob=isI?await shrinkImage(f):f;const r=await assets.upload(blob);return {k:isV?"video":isI?"image":"file",id:r.id,name:f.name,posterP:isV?videoPoster(f):null}}
+  try{const blob=isI?await shrinkImage(f):isV?await shrinkVideo(f):f;if(isV&&blob.size>VMAX){flash("줄여도 영상이 너무 커요(20MB까지). 짧게 잘라서 올려 주세요",true);return null}
+    if(isV)flash("영상 올리는 중…");const r=await assets.upload(blob);return {k:isV?"video":isI?"image":"file",id:r.id,name:f.name,posterP:isV?videoPoster(f):null}}
   catch(e){flash(isI||isV?"올리지 못했어요. 다시 해주세요":"이 파일은 올릴 수 없어요. 사진·영상·PDF로 올리거나 링크를 붙여 주세요",true);return null}}
 const mediaUp=m=>({image:m.k==="image"?m.id:"",video:m.k==="video"?m.id:"",posterId:"",fileId:m.k==="file"?m.id:"",fileName:m.k==="file"?m.name:""});
 // 영상 미리보기가 준비되면 나중에 붙임 (기다리지 않게)
 const afterPoster=(m,fn)=>{if(m&&m.posterP)m.posterP.then(pid=>{if(pid)fn(pid)})};
 const fileChip=it=>it.fileId?el("a",{class:"fchip",href:BLOB+it.fileId,target:"_blank",rel:"noopener",download:it.fileName||""},"📎 "+(it.fileName||"첨부 파일")):null;
 function setLinked(span,text){span.textContent="";String(text||"").split(/(https?:\/\/[^\s]+)/).forEach((x,i)=>{if(!x)return;span.append(i%2?el("a",{href:x,target:"_blank",rel:"noopener noreferrer",class:"tlink"},x):document.createTextNode(x))})}
+/* 영상 줄이기: 긴 쪽 720px, 약 1Mbps(소리 64kbps) MP4로 다시 녹화 → 1분에 약 8MB. 영상 길이만큼 시간이 걸림(재생하면서 녹화).
+   MP4 녹화가 안 되는 브라우저, 소리를 못 잡는 경우, 실패·결과가 더 크면 원본 그대로 */
+const VMAX=20*1024*1024;
+async function shrinkVideo(file){
+  if(file.size<4e6||!window.MediaRecorder)return file;
+  const mime=["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4;codecs=avc1","video/mp4"].find(t=>{try{return MediaRecorder.isTypeSupported(t)}catch(e){return false}});
+  if(!mime)return file;
+  let url="",ac=null,raf=0;
+  try{url=URL.createObjectURL(file);const v=document.createElement("video");v.playsInline=true;v.setAttribute("playsinline","");v.preload="auto";v.src=url;
+    await new Promise((ok,no)=>{v.onloadedmetadata=ok;v.onerror=no;setTimeout(no,10000)});
+    const w=v.videoWidth,hh=v.videoHeight,dur=v.duration;if(!w||!hh||!isFinite(dur))return file;
+    const sc=Math.min(1,720/Math.max(w,hh));const c=document.createElement("canvas");c.width=Math.round(w*sc/2)*2;c.height=Math.round(hh*sc/2)*2;const g=c.getContext("2d");
+    const vs=c.captureStream(30);
+    ac=new (window.AudioContext||window.webkitAudioContext)();const src=ac.createMediaElementSource(v);const dst=ac.createMediaStreamDestination();src.connect(dst); // 스피커로는 안 나감
+    const stream=new MediaStream([...vs.getVideoTracks(),...dst.stream.getAudioTracks()]);
+    const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:1000000,audioBitsPerSecond:64000});const parts=[];rec.ondataavailable=e=>{if(e.data&&e.data.size)parts.push(e.data)};
+    const draw=()=>{g.drawImage(v,0,0,c.width,c.height);flash(`영상 용량 줄이는 중… ${Math.min(99,Math.round(v.currentTime/dur*100))}%`);raf=requestAnimationFrame(draw)};
+    try{await ac.resume()}catch(e){}
+    await v.play();draw();rec.start(1000);
+    await new Promise((ok,no)=>{v.onended=ok;v.onerror=no;setTimeout(no,dur*1500+20000)});
+    cancelAnimationFrame(raf);await new Promise(ok=>{rec.onstop=ok;rec.stop()});
+    const out=new Blob(parts,{type:"video/mp4"});
+    return out.size>1e5&&out.size<file.size*0.85?out:file}
+  catch(e){return file}
+  finally{cancelAnimationFrame(raf);try{ac&&ac.close()}catch(e){}if(url)URL.revokeObjectURL(url)}}
 /* 영상 첫 장면 사진(미리보기): 올릴 때 브라우저에서 첫 장면을 그려 사진으로 함께 올림. 실패하면 없이 */
 async function videoPoster(file){if(!assets)return null;let url="";
   try{url=URL.createObjectURL(file);const v=document.createElement("video");v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");v.preload="auto";v.src=url;
@@ -919,7 +945,7 @@ async function videoPoster(file){if(!assets)return null;let url="";
     try{v.currentTime=Math.min(0.1,(v.duration||1)/10);await new Promise(ok=>{v.onseeked=ok;setTimeout(ok,2500)})}catch(e){}
     const w=v.videoWidth,h=v.videoHeight;if(!w||!h)return null;const sc=Math.min(1,640/Math.max(w,h));
     const c=document.createElement("canvas");c.width=Math.round(w*sc);c.height=Math.round(h*sc);c.getContext("2d").drawImage(v,0,0,c.width,c.height);
-    const b=await new Promise(ok=>c.toBlob(ok,"image/jpeg",0.8));if(!b)return null;const r=await assets.upload(b);return r.id}
+    const b=await new Promise(ok=>c.toBlob(ok,"image/jpeg",0.7));if(!b)return null;const r=await assets.upload(b);return r.id}
   catch(e){return null}finally{if(url)URL.revokeObjectURL(url)}}
 async function upMedia(any){return new Promise(ok=>{const fi=el("input",{type:"file",accept:any?ACCEPT_ANY:"image/*,video/*",style:"display:none"});document.body.append(fi);
   fi.onchange=async()=>{const f=fi.files&&fi.files[0];fi.remove();if(!f)return ok(null);
@@ -1007,9 +1033,8 @@ function editNotice(n){
   pbtn.onclick=()=>fi.click();
   fi.onchange=async()=>{const f=fi.files&&fi.files[0];fi.value="";if(!f)return;
     const isV=/^video\//.test(f.type);
-    if(isV&&f.size>20*1024*1024){flash("영상이 너무 커요(20MB까지)",true);return}
     pbtn.disabled=true;flash("올리는 중…");
-    try{const blob=isV?f:await shrinkImage(f);const r=await assets.upload(blob);media={k:isV?"video":"image",id:r.id,poster:isV?await videoPoster(f):null}}
+    try{const blob=isV?await shrinkVideo(f):await shrinkImage(f);if(isV&&blob.size>VMAX){flash("줄여도 영상이 너무 커요(20MB까지). 짧게 잘라서 올려 주세요",true);pbtn.disabled=false;return}const r=await assets.upload(blob);media={k:isV?"video":"image",id:r.id,poster:isV?await videoPoster(f):null}}
     catch(e){flash("사진을 올리지 못했어요. 다시 해주세요",true)}
     pbtn.disabled=false;drawPrev()};
   drawPrev();
@@ -1908,13 +1933,15 @@ function vToday(root){
   if(can("today:clean"))v.append(el("section",{class:"clean-in-today"},el("h2",{},"월간 청소"),cw));
 }
 let noticeCheckMode={};
+/* 사진 줄이기: 긴 쪽 1280px, JPEG 품질 0.72 → 보통 150~350KB. 글씨(레시피·메모 사진)도 읽힐 정도. 이미 작은 사진은 그대로 */
 async function shrinkImage(file){
   try{
-    const bmp=await createImageBitmap(file);const max=1600;const sc=Math.min(1,max/Math.max(bmp.width,bmp.height));
-    if(sc===1&&file.size<1.5e6&&/^image\/(jpeg|png|webp)$/.test(file.type))return file;
+    if(file.size<250e3&&/^image\/(jpeg|webp)$/.test(file.type))return file;
+    const bmp=await createImageBitmap(file);const max=1280;const sc=Math.min(1,max/Math.max(bmp.width,bmp.height));
     const c=document.createElement("canvas");c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);
-    c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
-    return await new Promise((ok,no)=>c.toBlob(b=>b?ok(b):no(new Error("toBlob")),"image/jpeg",0.82));
+    const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(bmp,0,0,c.width,c.height); // 투명 PNG는 흰 바탕
+    const b=await new Promise((ok,no)=>c.toBlob(b=>b?ok(b):no(new Error("toBlob")),"image/jpeg",0.72));
+    return b.size<file.size?b:file
   }catch(e){return file}
 }
 function doneFirst(a,b){const ad=!!a.done,bd=!!b.done;if(ad!==bd)return ad?-1:1;
@@ -1995,9 +2022,8 @@ function noticeCard(store,emptyText,placeholder,opt={}){
     fi.onchange=async()=>{const f=fi.files&&fi.files[0];fi.value="";if(!f)return;
       if(!db||!canWrite){flash("보기 전용 계정이에요",true);return}
       const isV=/^video\//.test(f.type);
-      if(isV&&f.size>20*1024*1024){flash("영상이 너무 커요(20MB까지). 짧게 잘라서 올리거나 링크로 붙여주세요",true);return}
       flash(isV?"영상 올리는 중… 잠시만요":"사진 올리는 중…");
-      try{const blob=isV?f:await shrinkImage(f);const r=await assets.upload(blob);
+      try{const blob=isV?await shrinkVideo(f):await shrinkImage(f);if(isV&&blob.size>VMAX){flash("줄여도 영상이 너무 커요(20MB까지). 짧게 잘라서 올려 주세요",true);return}const r=await assets.upload(blob);
         const t=inp.value.trim();inp.value="";const c=!!noticeCheckMode[key];
         const nid=newId(),posterP=isV?videoPoster(f):null;
         await W(()=>col("notices").doc(nid).set({date:dayDate,store,text:t,[isV?"video":"image"]:r.id,by:me,createdAt:now(),...(dayDate>TODAY?{showAt:showAtFor(dayDate)}:{}),...(c?{check:true,done:false}:{})}),isV?"영상 첨부됨":"사진 첨부됨");afterPoster({posterP},pid=>{const cur=S.notices.find(x=>x.id===nid);if(!cur||cur.video===r.id)W(()=>col("notices").doc(nid).update({posterId:pid}))});
@@ -2802,9 +2828,8 @@ function editManual(st,eq,id){
   ed.addEventListener("paste",e=>{e.preventDefault();const t=(e.clipboardData||window.clipboardData).getData("text/plain");document.execCommand("insertText",false,t)});
   const fi=el("input",{type:"file",accept:"image/*,video/*",style:"display:none"});
   fi.onchange=async()=>{const f=fi.files&&fi.files[0];fi.value="";if(!f)return;const isV=/^video\//.test(f.type);
-    if(isV&&f.size>20*1024*1024){flash("영상이 너무 커요(20MB까지). 짧게 잘라서 올리거나 링크로 붙여주세요",true);return}
     flash(isV?"영상 올리는 중… 잠시만요":"사진 올리는 중…");
-    try{const blob=isV?f:await shrinkImage(f);const r=await assets.upload(blob);
+    try{const blob=isV?await shrinkVideo(f):await shrinkImage(f);if(isV&&blob.size>VMAX){flash("줄여도 영상이 너무 커요(20MB까지). 짧게 잘라서 올려 주세요",true);return}const r=await assets.upload(blob);
       const img=isV?vidNode(r.id):imgNode(r.id);if(isV)videoPoster(f).then(pid=>{if(pid&&img.isConnected){img.dataset.poster=pid;img.poster=BLOB+pid}});const br=el("br");
       if(range&&ed.contains(range.commonAncestorContainer)){range.deleteContents();range.insertNode(br);range.insertNode(img);
         const after=document.createRange();after.setStartAfter(br);after.collapse(true);const sel=getSelection();sel.removeAllRanges();sel.addRange(after);range=after.cloneRange()}
