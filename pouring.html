@@ -610,6 +610,8 @@ button{-webkit-tap-highlight-color:transparent}
 .oadd.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-size:15px}
 .oadd{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:18px;line-height:1;cursor:pointer;padding:0 0 2px}
 .ostep{display:inline-flex;align-items:center;gap:10px}.ostep button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--soft);color:var(--ink);font:inherit;font-size:17px;line-height:1;cursor:pointer;padding:0 0 2px}.ostep span{min-width:16px;text-align:center}
+/* 발주 요청 창: 창 높이 고정, 목록만 스크롤 (글자를 칠 때 검색칸이 움직이지 않게) */
+.sheet.fit .panel{height:88%;max-height:none;overflow:auto}.sheet.fit .panel>*{flex:none}.sheet.fit .olist{display:block;flex:1 1 0;min-height:0;overflow:auto;overscroll-behavior:contain}.sheet.fit .olist:empty{display:block}
 .osend{width:100%;padding:12px;font-size:16px}.sheet .osend{position:sticky;bottom:0;z-index:2;box-shadow:0 -10px 14px var(--surface)}.sheet .osend:disabled{opacity:1;background:var(--soft);border-color:var(--line);color:var(--muted)} /* 품목이 많아도 요청 버튼은 항상 아래에 보이게 */.osend:disabled{opacity:.45}
 .osup{margin-top:10px}.todo-team{flex:none;align-self:center;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;max-width:55%}.todo-team .np-teambtn{white-space:nowrap}
 .ckpin{padding:10px 12px;border-bottom:1px solid var(--line);min-height:21px}.ckpin-t{outline:none;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.45em;cursor:text}
@@ -2200,7 +2202,7 @@ function openOrderSheet(store){
   const picked=()=>{const r=[...cart.values()].map(c=>c.it);const t=q.trim();if(!t)return r;const tl=t.toLowerCase();
     const ex=items.find(i=>String(i.name).trim().toLowerCase()===tl);if(ex){if(!r.length)r.push(ex);return r}
     const hit=items.some(i=>String(i.name).toLowerCase().includes(tl)||String(i.cat||"").toLowerCase().includes(tl));if(!hit)r.push({id:"t:"+t,name:t});return r};
-  search.oninput=()=>{q=search.value;draw()};
+  search.oninput=()=>{q=search.value;draw();list.scrollTop=0};
   search.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();send.click()}};
   // 서버를 기다리지 않고 바로 화면에 넣음 (저장 실패하면 다시 뺌)
   send.onclick=()=>{let rows=picked();if(!rows.length)return;
@@ -2215,7 +2217,7 @@ function openOrderSheet(store){
     docs.forEach(d=>optimisticAdd("orders",d.id,d.data,null));
     W(()=>Promise.all(docs.map(d=>col("orders").doc(d.id).set(d.data))),`${STORES[store]} 발주 ${rows.length}개 요청함`).then(ok=>docs.forEach(d=>ok?optimisticDone("orders",d.id):optimisticDrop("orders",d.id)))};
   draw();
-  openSheet(`${STORES[store]} 발주 요청`,[search,list,send],async()=>true,"닫기",null,{autosave:true});
+  openSheet(`${STORES[store]} 발주 요청`,[search,list,send],async()=>true,"닫기",null,{autosave:true,fit:true});
 }
 /* 품목 관리 (사장): 거래처와 품목을 등록 */
 function openOrderCat(mode){ // mode: "sup"=거래처 관리, "item"=품목 관리 (같은 문서에 저장)
@@ -3928,8 +3930,9 @@ function notePage(d){
 }
 
 /* ---------- sheet ---------- */
-let sheetDismiss=null;
+let sheetDismiss=null,sheetFitOff=null;
 function openSheet(title,parts,onSave,saveLabel="저장",extraBtn,opts={}){
+  if(sheetFitOff)sheetFitOff();
   const root=$("sheetRoot");root.textContent="";
   const cancel=el("button",{class:"btn ghost",type:"button",onclick:closeSheet},"닫기");
   const save=el("button",{class:"btn",type:"button"},saveLabel);
@@ -3943,6 +3946,12 @@ function openSheet(title,parts,onSave,saveLabel="저장",extraBtn,opts={}){
   let downBg=false,downAt=0;
   const sh=el("div",{class:"sheet"+(opts.autosave?" autosave":""),onclick:e=>{if(e.target===sh&&downBg&&Date.now()-downAt<1500)sheetDismiss&&sheetDismiss();downBg=false}},panel);
   sh.addEventListener("pointerdown",e=>{downBg=e.target===sh;downAt=Date.now()});
+  if(opts.fit){ // 창을 키보드 위 보이는 영역에 맞춤 + 창 밖 페이지가 끌려 움직이지 않게
+    sh.classList.add("fit");const vv=window.visualViewport;
+    const place=()=>{sh.style.top=vv.offsetTop+"px";sh.style.height=vv.height+"px"};
+    if(vv){place();vv.addEventListener("resize",place);vv.addEventListener("scroll",place);sheetFitOff=()=>{vv.removeEventListener("resize",place);vv.removeEventListener("scroll",place);sheetFitOff=null}}
+    sh.addEventListener("touchmove",e=>{if(e.target.closest("input")||panel.scrollHeight>panel.clientHeight)return;const s=e.target.closest(".olist");if(!s||s.scrollHeight<=s.clientHeight)e.preventDefault()},{passive:false});
+  }
   root.append(sh);
   document.addEventListener("keydown",escClose);
 }
@@ -3951,7 +3960,7 @@ function alertBox(t,m,noBtn){ // noBtn: 확인 버튼 없이 바깥(여백)을 �
   const ov=el("div",{class:"alertov",role:"alertdialog","aria-label":t},el("div",{class:"ap"+(noBtn?" nobtn":"")},el("h4",{},t),el("p",{},m),noBtn?null:el("button",{class:"btn",type:"button",onclick:()=>ov.remove()},"확인")));ov.onclick=e=>{if(noBtn||e.target===ov)ov.remove()};document.body.append(ov);const b=ov.querySelector("button");if(b)b.focus()} // 버튼 없는 창은 창 자체를 눌러도 닫힘
 function askConfirm(msg,fn,yes="지우기"){openSheet("확인",[el("p",{style:"margin:0"},msg)],async()=>{await fn();return true},yes)}
 function escClose(e){if(e.key==="Escape"&&sheetDismiss)sheetDismiss()}
-function closeSheet(){sheetDismiss=null;$("sheetRoot").textContent="";document.documentElement.classList.remove("np-lock");document.removeEventListener("keydown",escClose);if(pendingRender)render()}
+function closeSheet(){if(sheetFitOff)sheetFitOff();sheetDismiss=null;$("sheetRoot").textContent="";document.documentElement.classList.remove("np-lock");document.removeEventListener("keydown",escClose);if(pendingRender)render()}
 
 /* ---------- data ---------- */
 /* 새 주소: 받은 데이터를 휴대폰에 저장해 두고, 다음에 열거나 로그인할 때 그걸로 화면부터 바로 보여 줌 (그다음 서버 값으로 바뀜) */
