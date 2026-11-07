@@ -970,6 +970,8 @@ function pickDoc(q,onPick){
   ov.addEventListener("pointerdown",e=>{if(e.target===ov)ov.remove()});document.body.append(ov)}
 /* 자동 연결: 체크 항목 글(띄어쓰기 무시)에 kw가 있고, make면 '만들기·제조'도 함께 있을 때 → doc(메모) 또는 cat(폴더)을 여는 작은 아이콘 */
 const AUTO_DOC=[{kw:"티라미수",make:true,doc:"note0328"},{kw:"바나나브레드",make:true,doc:"note0316"},{kw:"밀크티in",doc:"note0005"},...["콜드브루in","콜드브루out","디카페인in","디카페인out"].map(kw=>({kw,cat:"음료/콜드브루/대형 토디 일지"}))];
+/* 체크리스트 'in' 항목(예: 콜드브루in, 밀크티 in, 오시 in) → 다음 날 같은 매장에 'out' 체크 항목을 자동으로 만듦. in을 지우면 아직 안 한 out도 지움 */
+const inToOut=t=>{const re=/(^|[^a-z])in(?![a-z])/i;if(!re.test(t)||/(^|[^a-z])out(?![a-z])/i.test(t))return null;return t.replace(re,(m,p)=>p+(m.slice(p.length)==="IN"?"OUT":"out"))};
 const autoDoc=t=>{const s=sq(t);return AUTO_DOC.find(x=>s.includes(x.kw.toLowerCase())&&(!x.make||/만들|제조/.test(s)))||null};
 const openFolder=c=>{location.hash="docs";tab="docs";docCat=c;mView.docs="detail";draw();window.scrollTo(0,0)};
 const dIcon=(t,go,ic)=>el("button",{class:"dlink",type:"button",title:t,"aria-label":t+" 열기",onclick:e=>{e.stopPropagation();go()}},svgI(ic));
@@ -1983,7 +1985,7 @@ function noticeCard(store,emptyText,placeholder,opt={}){
   if(ns.length){const ul=el("ul",{class:"list"});ns.forEach(n=>{
     const C=n._col;
     // 메모 앱에서 옮겨 온 회의록은 오른쪽 위 × 없음 (지워도 다음 동기화 때 다시 생김)
-    const x=n.importedFrom==="notes"?null:el("button",{class:"x","aria-label":"삭제"},"×");if(x)x.onclick=()=>W(()=>col(C).doc(n.id).delete(),"삭제됨");
+    const x=n.importedFrom==="notes"?null:el("button",{class:"x","aria-label":"삭제"},"×");if(x)x.onclick=()=>W(async()=>{await col(C).doc(n.id).delete();const o=n.autoOut&&S.notices.find(y=>y.id===n.autoOut);if(o&&!o.done)await col(C).doc(o.id).delete()},n.autoOut?"삭제됨 (다음 날 out도 지움)":"삭제됨");
     let lead=null;
     if(n.check){lead=el("input",{type:"checkbox",class:"chk","aria-label":"완료 표시"});lead.checked=!!n.done;
       lead.onchange=()=>W(()=>col(C).doc(n.id).update({done:lead.checked,doneBy:lead.checked?me:"",doneAt:lead.checked?now():""}))}
@@ -2011,6 +2013,8 @@ function noticeCard(store,emptyText,placeholder,opt={}){
   // 엔터: 서버를 기다리지 않고 바로 목록에 보여줌 (저장 실패하면 다시 뺌)
   const go=()=>{const t=inp.value.replace(/\u00a0/g," ").trim();if(!t||/^(메라키|푸어링) ›$/.test(t))return;inp.value="";const c=!!noticeCheckMode[key];
     const id=newId(),data={date:dayDate,store,text:t,by:me,createdAt:now(),...(dayDate>TODAY?{showAt:showAtFor(dayDate)}:{}),...(c?{check:true,done:false}:{})};
+    const outT=c?inToOut(t):null;if(outT){const oid=newId(),nd=addDays(dayDate,1);data.autoOut=oid; // in 체크 → 다음 날 같은 매장 체크리스트에 out 자동
+      W(()=>col("notices").doc(oid).set({date:nd,store,text:outT,by:me,createdAt:now(),autoFrom:id,check:true,done:false,...(nd>TODAY?{showAt:showAtFor(nd)}:{})}),null)}
     optimisticAdd("notices",id,data,inp);
     W(()=>col("notices").doc(id).set(data)).then(ok=>{ok?optimisticDone("notices",id):optimisticDrop("notices",id)})};
   inp.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing)go()};
