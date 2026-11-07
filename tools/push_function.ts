@@ -10,7 +10,7 @@ const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { sta
 // 시간 알림(tick): 1분마다 pg_cron이 {"type":"tick"}으로 부름 → remindAt이 지난 체크 항목(예: 밀크티 out 15:00)을
 // 그날 그 매장 근무자에게 알리고 reminded 표시. 비밀값 없이 불러도 '때가 된 알림'만 보내므로 괜찮음
 const SLOT: Record<string, string[]> = { meraki: ["m1", "m2"], pouring: ["b1", "b2"] };
-// 직원 알림은 근무 중일 때만 (사장은 늘). 오늘(한국 시간) 근무표 칸 시간 + koha 근무(monthnotes/koha), 시작 30분 전부터
+// 직원 알림은 근무 중일 때만 (사장은 늘). 오늘(한국 시간) 근무표 칸 시간 + koha 근무(monthnotes/koha), 근무 시작 시각부터 (2026-11-07 사용자: 30분 전 말고 시작할 때)
 const SLOT_T: Record<string, [string, string]> = { m1: ["8:00", "10:30"], m2: ["10:30", "19:30"], b1: ["10:30", "13:30"], b2: ["13:30", "22:30"] };
 const mins = (t: string) => { const [h, m] = String(t || "").split(":").map(Number); return (h || 0) * 60 + (m || 0); };
 // deno-lint-ignore no-explicit-any
@@ -20,8 +20,8 @@ async function workFilter(sb: any) {
   const { data: ko } = await sb.from("store").select("data").eq("col", "monthnotes").eq("id", "koha").maybeSingle();
   if (!sc) return (_: string) => true; // 오늘 근무표가 없으면 거르지 않음
   const on = new Set<string>(), d = sc.data || {};
-  for (const [slot, [a, b]] of Object.entries(SLOT_T)) if (now >= mins(a) - 30 && now < mins(b)) (d[slot] || []).forEach((x: string) => on.add(x));
-  for (const e of (ko?.data?.entries || [])) if (e.date === day && now >= mins(e.start) - 30 && now < mins(e.end)) on.add("koha");
+  for (const [slot, [a, b]] of Object.entries(SLOT_T)) if (now >= mins(a) && now < mins(b)) (d[slot] || []).forEach((x: string) => on.add(x));
+  for (const e of (ko?.data?.entries || [])) if (e.date === day && now >= mins(e.start) && now < mins(e.end)) on.add("koha");
   (d.off || []).forEach((x: string) => on.delete(x));
   return (x: string) => x === "seunghyun" || on.has(x);
 }
