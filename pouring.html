@@ -2308,8 +2308,8 @@ function vSchedule(v){
         W(()=>col("monthnotes").doc("schedpub").set({halves,editedBy:me,editedAt:now(),updatedAt:now()}),nv?"근무표 공개됨":"근무표 숨김")},nv?"공개":"숨기기")}},
       `${md(hs)}~${md(he)} `,el("span",{},on?"공개 중":"공개하기"));
     return b}),(()=>{ // 초안 버튼 한 줄: 초안 작업 중인 2주, 없으면 아직 공개 안 한 2주(둘 다 공개면 뒤 2주)
-      const hs=[periodStart,addDays(periodStart,14)].find(x=>draftOrig[x])||[periodStart,addDays(periodStart,14)].find(x=>!halfShown(x))||addDays(periodStart,14);
-      const on=!!draftOrig[hs],pin=draftPinned[hs]&&draftPinned[hs].size;
+      const hs=[periodStart,addDays(periodStart,14)].find(x=>draftOn(x))||[periodStart,addDays(periodStart,14)].find(x=>!halfShown(x))||addDays(periodStart,14);
+      const on=draftOn(hs),pin=draftPinCount(hs);
       const B=(t,f,dis,pr)=>el("button",{class:"chktog pubb",type:"button",disabled:dis,...(pr?{"aria-pressed":"true"}:{}),onclick:f},t);
       return el("div",{class:"draftacts"},
         B("초안 만들기",()=>draftSheet(hs),on),B("다시 만들기",()=>draftSheet(hs),!on),
@@ -2587,27 +2587,34 @@ function draftHalf(hs,seed,orig){
   const lowOff=DRAFT_STAFF.filter(p=>best.offCnt[p]<4);
   if(lowOff.length)issues.push(`휴무 4회(4주 8회)가 안 되는 사람: ${lowOff.map(p=>nm(p)+" "+best.offCnt[p]+"회").join(", ")} — 정직원 5명이 하루 4명씩 일하면 2주 휴무는 모두 합쳐 ${totalOff}회라 다 채울 수 없어요. 추가근무·승현 근무로 쉬는 날을 더 만들 수 있어요`);
   return{...best,issues}}
-/* 초안 만들기: 빈 칸을 바로 근무표에 채워 넣고(공개 전이라 직원에겐 안 보임), 결과·못 지킨 부분을 작은 창으로 알려 줌.
-   '다시 만들기'는 초안 넣기 전 원래 칸으로 되돌린 뒤 새 안으로 다시 채움 */
-const draftOrig={};
-// 초안을 넣은 뒤 사장이 직접 고친 날은 '고정' → 다시 만들기에서도 그대로 둠
-function draftPin(k){for(const hs of Object.keys(draftOrig))if(k in draftOrig[hs])(draftPinned[hs]=draftPinned[hs]||new Set()).add(k)} // 고친 내용은 다시 만들 때 그 순간의 달력 값으로 읽음
-const draftPinned={};
-async function draftClear(hs){const orig=draftOrig[hs];if(!orig)return;const pinned=draftPinned[hs]||new Set();
-  const ok=await W(async()=>{for(const k of Object.keys(orig)){if(pinned.has(k))continue;const r=orig[k];
-    if(r){const {id,_col,...base}=r;await col("schedule").doc(k).set(base)}else await col("schedule").doc(k).delete()}},"초안을 비웠어요");
-  if(ok){delete draftOrig[hs];delete draftPinned[hs];draw()}}
-function draftConfirm(hs){delete draftOrig[hs];delete draftPinned[hs];flash("초안을 확정했어요. 이제 '공개하기'만 누르면 돼요");draw()}
+/* 초안 만들기: 빈 칸을 바로 근무표에 채워 넣음(공개 전이라 직원에겐 안 보임).
+   초안으로 채운 날은 schedule 문서에 draftBase(초안 넣기 전 원래 칸, 없던 날은 null)를 같이 저장 → 새로 고쳐도 다시 만들기·비우기·확정하기 가능.
+   초안 중에 사장이 날짜 칸을 직접 저장하면 draftBase가 빠지므로 그 날은 '고정' */
+const draftDays=hs=>[...Array(14)].map((_,i)=>addDays(hs,i));
+const draftDoc=k=>S.schedule.find(x=>x.id===k);
+const draftOn=hs=>draftDays(hs).some(k=>{const r=draftDoc(k);return r&&"draftBase" in r});
+const draftPinCount=hs=>draftOn(hs)?draftDays(hs).filter(k=>{const r=draftDoc(k);return r&&!("draftBase" in r)}).length:0;
+const draftStrip=r=>{if(!r)return null;const {id,_col,draftBase,...b}=JSON.parse(JSON.stringify(r));return b};
+async function draftClear(hs){
+  const ok=await W(async()=>{for(const k of draftDays(hs)){const r=draftDoc(k);if(!r||!("draftBase" in r))continue;
+    if(r.draftBase)await col("schedule").doc(k).set(r.draftBase);else await col("schedule").doc(k).delete()}},"초안을 비웠어요");
+  if(ok)draw()}
+async function draftConfirm(hs){
+  const ok=await W(async()=>{for(const k of draftDays(hs)){const r=draftDoc(k);if(!r||!("draftBase" in r))continue;
+    await col("schedule").doc(k).set(draftStrip(r))}},"초안을 확정했어요. 이제 '공개하기'만 누르면 돼요");
+  if(ok)draw()}
 async function draftApply(hs,seed){
-  const days=[...Array(14)].map((_,i)=>addDays(hs,i));
-  if(!draftOrig[hs]){draftOrig[hs]={};days.forEach(k=>{const r=S.schedule.find(x=>x.id===k);draftOrig[hs][k]=r?JSON.parse(JSON.stringify(r)):null})}
-  (draftPinned[hs]||[]).forEach(k=>{const r=S.schedule.find(x=>x.id===k);draftOrig[hs][k]=r?JSON.parse(JSON.stringify(r)):null}); // 고정한 날 = 지금 달력 그대로
-  const orig=draftOrig[hs];const res=draftHalf(hs,seed,orig);
-  const ok=await W(async()=>{for(const d of res.plan){const r=orig[d.k]||{};const wed=parse(d.k).getDay()===3;const {id,_col,...base}=r;
-    await col("schedule").doc(d.k).set({...base,date:d.k,m1:(r.m1&&r.m1.length)?r.m1:["seunghyun"],m2:d.O,b1:wed?(r.b1||[]):((r.b1&&r.b1.length)?r.b1:["seunghyun"]),b2:wed?[]:d.C,off:d.off,editedBy:me,editedAt:now(),updatedAt:now()})}},"초안을 근무표에 넣었어요");
+  const days=draftDays(hs),on=draftOn(hs);
+  // 원래 칸: 초안 중이면 draftBase, 고정한 날(초안 중인데 draftBase 없음)은 지금 칸 그대로
+  const orig={},pinned=new Set();
+  days.forEach(k=>{const r=draftDoc(k);if(r&&"draftBase" in r)orig[k]=r.draftBase||null;else{orig[k]=draftStrip(r);if(on&&r)pinned.add(k)}});
+  const res=draftHalf(hs,seed,orig);
+  const ok=await W(async()=>{for(const d of res.plan){if(pinned.has(d.k))continue;const r=orig[d.k]||{};const wed=parse(d.k).getDay()===3;
+    await col("schedule").doc(d.k).set({...r,date:d.k,m1:(r.m1&&r.m1.length)?r.m1:["seunghyun"],m2:d.O,b1:wed?(r.b1||[]):((r.b1&&r.b1.length)?r.b1:["seunghyun"]),b2:wed?[]:d.C,off:d.off,draftBase:orig[d.k],editedBy:me,editedAt:now(),updatedAt:now()})}},"초안을 근무표에 넣었어요");
   return ok?res:null}
+function draftPin(){} // 고정은 draftBase가 빠지는 것으로 처리
 async function draftSheet(hs){
-  if(!draftOrig[hs]&&!(await new Promise(ok=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 빈 칸을 초안으로 채울까요? 이미 적어 둔 칸과 희망휴무는 그대로 둬요. 공개하기 전까지 직원에게는 안 보여요`,()=>ok(true),"채우기"))))return; // 닫기를 누르면 아무것도 안 함
+  if(!draftOn(hs)&&!(await new Promise(ok=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 빈 칸을 초안으로 채울까요? 이미 적어 둔 칸과 희망휴무는 그대로 둬요. 공개하기 전까지 직원에게는 안 보여요`,()=>ok(true),"채우기"))))return; // 닫기를 누르면 아무것도 안 함
   let seed=Date.now()%2147483647;let res=await draftApply(hs,seed);if(!res)return;
   const nm=p=>(byKey[p]||{}).name||p;const box=el("div",{});
   const drawRes=()=>{box.textContent="";
