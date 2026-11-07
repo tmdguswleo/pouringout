@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T02:20:56Z";window.__APP_NOTE="근무표 아래 '스케줄 짜기' 버튼 하나로 바꿨어요. 창 안에서 공개, 초안 만들기·다시 만들기·비우기·확정하기, 더 반영할 내용을 모두 할 수 있어요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T02:34:06Z";window.__APP_NOTE="4주 근무표는 직원 화면과 똑같이 보여요. '스케줄 짜기' 창 맨 위에 짜고 있는 근무 달력이 보이고, 날짜를 눌러 고칠 수 있어요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -268,7 +268,7 @@ li.editing .iedit-bar{display:flex}
 .ie-pc{display:none!important}
 li.ie-chk .ie-pc{display:block!important}
 li.ie-nochk .chk{opacity:.25}
-.stools-row.stwo{display:grid;grid-template-columns:1fr 1fr;gap:6px}.sheet .stools textarea.dreq-in{min-height:0;height:36px;width:100%}.stools .lab{margin-bottom:6px}.stools .pubb.arm{border-color:var(--accent);color:var(--accent)}.stoolbtn{width:100%;margin:-4px 0 10px;padding:9px 8px;font-size:13px}
+.stools-row.stwo{display:grid;grid-template-columns:1fr 1fr;gap:6px}.sheet .stools textarea.dreq-in{min-height:0;height:36px;width:100%}.stools .lab{margin-bottom:6px}.stools-cal{margin:0 0 14px;overflow-x:auto}.stools .pubb.arm{border-color:var(--accent);color:var(--accent)}.stoolbtn{width:100%;margin:-4px 0 10px;padding:9px 8px;font-size:13px}
 .dreq{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:end}.dreq-in{display:block;width:100%;box-sizing:border-box;height:36px;font:inherit;font-size:16px;line-height:1.3;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--bg);color:var(--ink);resize:none;overflow:hidden}.dreq-btn{height:36px;padding:0 16px;font-size:12.5px;width:auto}
 .draftacts{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.draftacts .pubb:disabled{opacity:.4}
 .oc.draft td,.oc.draft th{font-size:12.5px;padding:5px 4px;text-align:left;white-space:nowrap}.oc.draft{table-layout:auto;width:100%}
@@ -2343,6 +2343,41 @@ function monthBar(d,onMove){
     el("strong",{},`${d.getFullYear()}년 ${d.getMonth()+1}월`),
     el("button",{class:"nav","aria-label":"다음 달",onclick:()=>onMove(1)},"›"));
 }
+/* 4주 달력. edit=false: 직원과 똑같이(공개 안 한 2주는 비어 보임, 누를 수 없음). edit=true(스케줄 짜기 창, 사장): 짜고 있는 근무 모두 보이고 날짜를 눌러 고침 */
+function schedBoard(start,edit){const B=edit&&isBoss();
+  const wrap=el("div",{class:"card fw-scroll"});
+  const board=el("div",{class:"fw"});
+  board.append(el("div",{class:"fw-head"},...[..."일월화수목금토"].map((c,i)=>el("div",{class:i===0?"sun":""},c))));
+  const grid=el("div",{class:"fw-grid"});
+  for(let i=0;i<28;i++){
+    const k=addDays(start,i);const d=parse(k);
+    const s=S.schedule.find(x=>x.id===k)||{};
+    const hope=!B&&k<STAFF_FROM?[]:S.dayoffs.filter(x=>x.date===k&&!(B?halfFilled(x.date):halfShown(x.date))).map(x=>x.staff); // 직원 화면: 11월 전 희망휴무는 안 보임
+    const wed=d.getDay()===3;
+    const half=st=>{const h=el("div",{class:"fw-half"});
+      if(st==="pouring"&&wed){h.append(el("div",{class:"fw-closed"},"휴무"));return h}
+      if(s["note_"+st]){h.append(el("div",{class:"fw-closed",style:"color:var(--ink)"},s["note_"+st]));return h}
+      SLOTS.filter(x=>x.store===st).forEach(sl=>h.append(el("div",{class:"fw-slot"},el("div",{class:"fw-t"},sl.t),el("div",{class:"fw-n"},(s[sl.k]||[]).length?names(s[sl.k],s.starWork):" "))));
+      if(s["note_"+st])h.append(el("div",{class:"fw-snote"},s["note_"+st]));return h};
+    const off=[...new Set([...(s.off||[]),...hope])].sort((a,b)=>STAFF.findIndex(x=>x.key===a)-STAFF.findIndex(x=>x.key===b));
+    if(!B&&!halfShown(k)){ /* 공개하지 않은 2주는 사장만 봄 */
+      grid.append(el("div",{class:"fw-day ro"+(k===TODAY?" today":"")+(k<TODAY?" past":"")},
+        el("div",{class:"fw-date"+(HOLIDAYS[k]?" sun holbg":"")},HOLIDAYS[k]?el("span",{class:"fw-hol"},HOLIDAYS[k]):null,d.getDate()===1||i===0?md(k):String(d.getDate())),
+        // 보이는 칸과 같은 높이: 근무 칸 모양을 보이지 않게 두고, 아래 휴무 줄에는 희망휴무 신청만
+        el("div",{class:"fw-body fw-ghost","aria-hidden":"true"},...["meraki","pouring"].map(st=>el("div",{class:"fw-half"},...SLOTS.filter(x=>x.store===st).map(sl=>el("div",{class:"fw-slot"},el("div",{class:"fw-t"},sl.t),el("div",{class:"fw-n"},"승현")))))),
+        el("div",{class:"fw-off"},hope.length?names([...new Set(hope)].sort((a,b)=>STAFF.findIndex(x=>x.key===a)-STAFF.findIndex(x=>x.key===b)),hope):null))); // 아직 안 보이는 2주: 근무는 숨기고 희망휴무 신청만 보여줌
+      continue;
+    }
+    const cell=el(B?"button":"div",{class:"fw-day"+(k===TODAY?" today":"")+(k<TODAY?" past":"")+(B?"":" ro"),...(B?{"aria-label":`${mdw(k)} 근무 편집`,onclick:()=>editDay(k,schedTools)}:{})},
+      el("div",{class:"fw-date"+(HOLIDAYS[k]?" sun holbg":"")},HOLIDAYS[k]?el("span",{class:"fw-hol"},HOLIDAYS[k]):null,d.getDate()===1||i===0?md(k):String(d.getDate())),
+      el("div",{class:"fw-body"},half("meraki"),half("pouring")),
+      s.note?el("div",{class:"fw-note"},s.note):null,
+      el("div",{class:"fw-off"},names(off,hope)));
+    grid.append(cell);
+  }
+  board.append(grid);
+  wrap.append(board);
+  return{wrap,board}}
 function vSchedule(v){
   const pEnd=addDays(periodStart,27);
   const mid=parse(addDays(periodStart,14));
@@ -2353,38 +2388,7 @@ function vSchedule(v){
     el("button",{class:"nav","aria-label":"다음 2주",onclick:()=>{periodStart=addDays(periodStart,14);draw()}},"›")));
 
   const mn=S.monthnotes.find(x=>x.id==="current")||S.monthnotes.filter(x=>/^\d{4}-\d\d$/.test(x.id)).sort((a,b)=>b.id.localeCompare(a.id))[0];
-  const wrap=el("div",{class:"card fw-scroll"});
-  const board=el("div",{class:"fw"});
-  board.append(el("div",{class:"fw-head"},...[..."일월화수목금토"].map((c,i)=>el("div",{class:i===0?"sun":""},c))));
-  const grid=el("div",{class:"fw-grid"});
-  for(let i=0;i<28;i++){
-    const k=addDays(periodStart,i);const d=parse(k);
-    const s=S.schedule.find(x=>x.id===k)||{};
-    const hope=!isBoss()&&k<STAFF_FROM?[]:S.dayoffs.filter(x=>x.date===k&&!hopeGone(x.date)).map(x=>x.staff); // 직원 화면: 11월 전 희망휴무는 안 보임
-    const wed=d.getDay()===3;
-    const half=st=>{const h=el("div",{class:"fw-half"});
-      if(st==="pouring"&&wed){h.append(el("div",{class:"fw-closed"},"휴무"));return h}
-      if(s["note_"+st]){h.append(el("div",{class:"fw-closed",style:"color:var(--ink)"},s["note_"+st]));return h}
-      SLOTS.filter(x=>x.store===st).forEach(sl=>h.append(el("div",{class:"fw-slot"},el("div",{class:"fw-t"},sl.t),el("div",{class:"fw-n"},(s[sl.k]||[]).length?names(s[sl.k],s.starWork):" "))));
-      if(s["note_"+st])h.append(el("div",{class:"fw-snote"},s["note_"+st]));return h};
-    const off=[...new Set([...(s.off||[]),...hope])].sort((a,b)=>STAFF.findIndex(x=>x.key===a)-STAFF.findIndex(x=>x.key===b));
-    if(!isBoss()&&!halfShown(k)){ /* 공개하지 않은 2주는 사장만 봄 */
-      grid.append(el("div",{class:"fw-day ro"+(k===TODAY?" today":"")+(k<TODAY?" past":"")},
-        el("div",{class:"fw-date"+(HOLIDAYS[k]?" sun holbg":"")},HOLIDAYS[k]?el("span",{class:"fw-hol"},HOLIDAYS[k]):null,d.getDate()===1||i===0?md(k):String(d.getDate())),
-        // 보이는 칸과 같은 높이: 근무 칸 모양을 보이지 않게 두고, 아래 휴무 줄에는 희망휴무 신청만
-        el("div",{class:"fw-body fw-ghost","aria-hidden":"true"},...["meraki","pouring"].map(st=>el("div",{class:"fw-half"},...SLOTS.filter(x=>x.store===st).map(sl=>el("div",{class:"fw-slot"},el("div",{class:"fw-t"},sl.t),el("div",{class:"fw-n"},"승현")))))),
-        el("div",{class:"fw-off"},hope.length?names([...new Set(hope)].sort((a,b)=>STAFF.findIndex(x=>x.key===a)-STAFF.findIndex(x=>x.key===b)),hope):null))); // 아직 안 보이는 2주: 근무는 숨기고 희망휴무 신청만 보여줌
-      continue;
-    }
-    const cell=el(isBoss()?"button":"div",{class:"fw-day"+(k===TODAY?" today":"")+(k<TODAY?" past":"")+(isBoss()?"":" ro"),...(isBoss()?{"aria-label":`${mdw(k)} 근무 편집`,onclick:()=>editDay(k)}:{})},
-      el("div",{class:"fw-date"+(HOLIDAYS[k]?" sun holbg":"")},HOLIDAYS[k]?el("span",{class:"fw-hol"},HOLIDAYS[k]):null,d.getDate()===1||i===0?md(k):String(d.getDate())),
-      el("div",{class:"fw-body"},half("meraki"),half("pouring")),
-      s.note?el("div",{class:"fw-note"},s.note):null,
-      el("div",{class:"fw-off"},names(off,hope)));
-    grid.append(cell);
-  }
-  board.append(grid);
-  wrap.append(board);
+  const {wrap,board}=schedBoard(periodStart,false); // 사장도 직원과 똑같이 보임. 고치기는 '스케줄 짜기' 창에서
   const zbar=el("div",{class:"zbar mob-only"});
   // 사장: 앞 2주 · 뒤 2주를 따로 공개/숨기기. 숨긴 2주는 직원 화면에서 빈칸(희망휴무만 보임)
   // 사장: '스케줄 짜기' 버튼 하나 → 창에서 공개/숨기기 · 초안 만들기·다시 만들기·비우기·확정하기 · 더 반영할 내용
@@ -2471,7 +2475,7 @@ function editMonthNote(text){
   const ta=el("textarea",{id:"mnText"});ta.value=text||"";
   openSheet("메모 수정",[ta],async()=>W(()=>col("monthnotes").doc("current").set({text:ta.value,editedBy:me,editedAt:now(),updatedAt:now()}),"메모 저장됨"));
 }
-function editDay(k){
+function editDay(k,back){ // back: 저장하거나 닫으면 돌아갈 창(스케줄 짜기)
   if(!isBoss())return;
   const s=S.schedule.find(x=>x.id===k)||{};
   const hope=S.dayoffs.filter(x=>x.date===k&&!hopeGone(x.date)).map(x=>x.staff);
@@ -2495,7 +2499,8 @@ function editDay(k){
   parts.push(el("div",{style:"display:grid;grid-template-columns:1fr 1fr;gap:8px"},el("div",{},el("div",{class:"lab"},"메라키 메모"),noteM),el("div",{},el("div",{class:"lab"},"푸어링 메모"),noteP)));
   parts.push(el("div",{},el("div",{class:"lab"},"그날 메모"),note));
   if(fwho(s.editedBy)) parts.push(el("div",{class:"by"},`마지막 수정: ${fwho(s.editedBy)} ${hm(s.editedAt)}`));
-  openSheet(`${mdw(k)} 근무`,parts,async()=>W(()=>col("schedule").doc(k).set({date:k,...(s.starWork?{starWork:s.starWork}:{}),...state,note:note.value.trim(),note_meraki:noteM.value.trim(),note_pouring:noteP.value.trim(),editedBy:me,editedAt:now(),updatedAt:now()}),`${md(k)} 근무 저장됨`).then(ok=>{if(ok)draftPin(k);return ok}));
+  openSheet(`${mdw(k)} 근무`,parts,async()=>W(()=>col("schedule").doc(k).set({date:k,...(s.starWork?{starWork:s.starWork}:{}),...state,note:note.value.trim(),note_meraki:noteM.value.trim(),note_pouring:noteP.value.trim(),editedBy:me,editedAt:now(),updatedAt:now()}),`${md(k)} 근무 저장됨`).then(ok=>{if(ok){draftPin(k);if(back)setTimeout(back,0)}return ok}));
+  if(back){const c=[...$("sheetRoot").querySelectorAll(".btn.ghost")].find(b=>b.textContent==="닫기");if(c)c.onclick=()=>{closeSheet();setTimeout(back,0)};sheetDismiss=()=>{closeSheet();setTimeout(back,0)}}
 }
 
 /* ---------- 희망휴무 ---------- */
@@ -2735,7 +2740,9 @@ function renderTools(){const b=toolsBody;if(!b)return;b.textContent="";const nm=
   bRe.onclick=async()=>{bRe.disabled=true;bRe.textContent="만드는 중…";await draftMake(hs);renderTools()};
   twice(bClr,"비우기","한 번 더 누르면 비워요",()=>draftClear(hs));
   twice(bOk,bOk.textContent,"한 번 더 누르면 확정",()=>draftConfirm(hs));
-  b.append(el("div",{class:"lab"},"공개"),pub,el("div",{class:"lab",style:"margin-top:12px"},`초안 · ${md(hs)}~${md(addDays(hs,13))}`),el("div",{class:"draftacts"},bMake,bRe,bClr,bOk));
+  const {wrap:cal,board:cb}=schedBoard(periodStart,true);cal.classList.add("stools-cal");const zb=el("div",{class:"zbar mob-only"});
+  if(isMob())setTimeout(()=>{if(cal.isConnected)setupZoom(cal,cb,zb)},0); // 근무표 화면처럼 폭에 맞춰 작게, 두 손가락으로 키워 보기
+  b.append(el("p",{class:"hint",style:"margin:0 0 8px"},"짜고 있는 근무가 모두 보여요. 날짜 칸을 누르면 고칠 수 있어요"),zb,cal,el("div",{class:"lab"},"공개"),pub,el("div",{class:"lab",style:"margin-top:12px"},`초안 · ${md(hs)}~${md(addDays(hs,13))}`),el("div",{class:"draftacts"},bMake,bRe,bClr,bOk));
   if(!on){b.append(el("p",{class:"hint",style:"margin:8px 0 0"},"빈 칸만 채워요. 이미 적어 둔 칸과 희망휴무는 그대로 두고, 공개하기 전까지 직원에게는 안 보여요"));return}
   // 3) 더 반영할 내용
   const inp=el("textarea",{rows:"1",class:"dreq-in",placeholder:"더 반영할 내용 (예: 다슬 오픈 하루 줄여 줘)"});const fit=()=>{inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight+2,120)+"px"};inp.addEventListener("input",fit);
