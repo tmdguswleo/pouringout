@@ -7,11 +7,44 @@ const STORE: Record<string, string> = { pouring: "푸어링", meraki: "메라키
 const cut = (s: string, n = 80) => (s || "").replace(/\s+/g, " ").trim().slice(0, n);
 const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json" } });
 
+// 시간 알림(tick): 1분마다 pg_cron이 {"type":"tick"}으로 부름 → remindAt이 지난 체크 항목(예: 밀크티 out 15:00)을
+// 그날 그 매장 근무자에게 알리고 reminded 표시. 비밀값 없이 불러도 '때가 된 알림'만 보내므로 괜찮음
+const SLOT: Record<string, string[]> = { meraki: ["m1", "m2"], pouring: ["b1", "b2"] };
+async function tick() {
+  const { createClient } = await import("npm:@supabase/supabase-js@2.45.4");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SECRET_KEY") || "";
+  const sb = createClient(Deno.env.get("SUPABASE_URL")!, key);
+  const now = new Date(), from = new Date(now.getTime() - 6 * 3600e3); // 6시간 넘게 지난 건 안 보냄
+  const { data: due, error } = await sb.from("store").select("id,data").eq("col", "notices")
+    .gte("data->>remindAt", from.toISOString()).lte("data->>remindAt", now.toISOString());
+  if (error) return json({ error: "due " + error.message }, 500);
+  const list = (due || []).filter(r => !r.data?.reminded && !r.data?.done);
+  if (!list.length) return json({ due: 0 });
+  const { default: webpush } = await import("npm:web-push@3.6.7");
+  webpush.setVapidDetails(Deno.env.get("VAPID_SUBJECT") || "mailto:pouringout@example.com", Deno.env.get("VAPID_PUBLIC_KEY")!, Deno.env.get("VAPID_PRIVATE_KEY")!);
+  const { data: subs } = await sb.from("store").select("id,data").eq("col", "pushsubs");
+  let sent = 0;
+  for (const r of list) {
+    const d = r.data || {};
+    const { data: sc } = await sb.from("store").select("data").eq("col", "schedule").eq("id", d.date).maybeSingle();
+    const who = new Set<string>(); (SLOT[d.store] || []).forEach(k => (sc?.data?.[k] || []).forEach((x: string) => who.add(x)));
+    const to = (k: string) => who.size ? who.has(k) : true; // 근무표가 비어 있으면 모두에게
+    for (const s of subs || []) {
+      const k = s.data?.k; if (!k || !to(k) || !s.data?.sub) continue;
+      try { await webpush.sendNotification(s.data.sub, JSON.stringify({ title: `${STORE[d.store] || ""} ${cut(d.text || "", 40)}`, body: "시간이 됐어요. 체크리스트에서 확인해 주세요", tag: "remind-" + r.id, url: "./" })); sent++; }
+      catch (e) { const c = (e as { statusCode?: number }).statusCode; if (c === 404 || c === 410) await sb.from("store").delete().eq("col", "pushsubs").eq("id", s.id); }
+    }
+    await sb.from("store").update({ data: { ...d, reminded: true } }).eq("col", "notices").eq("id", r.id);
+  }
+  return json({ due: list.length, sent });
+}
+
 Deno.serve(async (req) => {
+  const p = await req.json().catch(() => ({}));
+  if (p.type === "tick") { try { return await tick(); } catch (e) { return json({ error: String((e as Error)?.message || e) }, 500); } }
   const need = Deno.env.get("NOTIFY_SECRET");
   if (!need || req.headers.get("x-notify-secret") !== need) return json({ error: "forbidden" }, 403); // 연결된 Webhook만 부를 수 있음
   try {
-    const p = await req.json().catch(() => ({}));
     if (p.type !== "INSERT" || !p.record) return json({ skip: true });
     const r = p.record, d = r.data || {};
     let title = "", body = "", tag = "", to: (k: string) => boolean = () => false;

@@ -978,6 +978,10 @@ const AUTO_DOC=[{kw:"티라미수",make:true,doc:"note0328"},{kw:"바나나브�
 // 형식: '이름 in 시간 (몇 통)' → '이름 out 시간 (몇 통)'. 시간·통 수는 그대로, in이 붙어 있어도(밀크티in) '밀크티 out'처럼 띄움
 const inToOut=t=>{const re=/(^|[^a-z])in(?![a-z])/i;const m=t.match(re);if(!m||/(^|[^a-z])out(?![a-z])/i.test(t))return null;
   const at=m.index+m[1].length,name=t.slice(0,at).trim(),rest=t.slice(at+2).trim();return [name,"out",rest].filter(Boolean).join(" ")};
+// 'out' 체크 항목에 시간이 있으면(15:00, 3시, 3시 반) 그 날짜 그 시각에 그 매장 근무자에게 알림 (서버 notify 함수가 1분마다 확인)
+const remindFor=(date,t)=>{if(!/(^|[^a-z])out(?![a-z])/i.test(t||""))return null;let m=t.match(/(\d{1,2})\s*:\s*(\d{2})/),H,M=0;
+  if(m){H=+m[1];M=+m[2]}else if((m=t.match(/(\d{1,2})\s*시\s*(?:(\d{1,2})\s*분|(반))?/))){H=+m[1];M=m[2]?+m[2]:m[3]?30:0}else return null;
+  if(H<8)H+=12;if(H>23||M>59)return null;const d=parse(date);d.setHours(H,M,0,0);return d.toISOString()};
 const autoDoc=t=>{const s=sq(t);return AUTO_DOC.find(x=>s.includes(x.kw.toLowerCase())&&(!x.make||/만들|제조/.test(s)))||null};
 const openFolder=c=>{location.hash="docs";tab="docs";docCat=c;mView.docs="detail";draw();window.scrollTo(0,0)};
 const dIcon=(t,go,ic)=>el("button",{class:"dlink",type:"button",title:t,"aria-label":t+" 열기",onclick:e=>{e.stopPropagation();go()}},svgI(ic));
@@ -2045,7 +2049,8 @@ function noticeCard(store,emptyText,placeholder,opt={}){
   const go=()=>{const t=inp.value.replace(/\u00a0/g," ").trim();if(!t||/^(메라키|푸어링) ›$/.test(t))return;inp.value="";const c=!!noticeCheckMode[key];
     const id=newId(),data={date:dayDate,store,text:t,by:me,createdAt:now(),...(dayDate>TODAY?{showAt:showAtFor(dayDate)}:{}),...(c?{check:true,done:false}:{})};
     const outT=c?inToOut(t):null;if(outT){const oid=newId(),nd=addDays(dayDate,1);data.autoOut=oid; // in 체크 → 다음 날 같은 매장 체크리스트에 out 자동
-      W(()=>col("notices").doc(oid).set({date:nd,store,text:outT,by:me,createdAt:now(),autoFrom:id,check:true,done:false,...(nd>TODAY?{showAt:showAtFor(nd)}:{})}),null)}
+      const ra=remindFor(nd,outT);W(()=>col("notices").doc(oid).set({date:nd,store,text:outT,by:me,createdAt:now(),autoFrom:id,check:true,done:false,...(ra?{remindAt:ra}:{}),...(nd>TODAY?{showAt:showAtFor(nd)}:{})}),null)}
+    if(c&&store){const ra=remindFor(dayDate,t);if(ra)data.remindAt=ra} // 직접 쓴 'out 시간' 항목도 알림
     optimisticAdd("notices",id,data,inp);
     W(()=>col("notices").doc(id).set(data)).then(ok=>{ok?optimisticDone("notices",id):optimisticDrop("notices",id)})};
   inp.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing)go()};
