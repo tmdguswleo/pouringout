@@ -808,7 +808,7 @@ html.np-lock,html.np-lock body{overflow:hidden;height:100%;overscroll-behavior:n
 .note-body video{display:block;max-width:100%;max-height:60vh;border-radius:8px;margin:6px 0;background:#000}
 .note-body table{border-collapse:collapse;margin:6px 0;font-size:15px;display:block;overflow-x:auto;max-width:100%}
 .note-body td,.note-body th{border:1px solid var(--line);padding:6px 8px;vertical-align:top;min-width:60px}
-.note-body a{color:var(--accent)}.note-body a.playlink{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;margin-left:6px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:11px;line-height:1;text-decoration:none;vertical-align:middle;padding-left:2px;box-sizing:border-box} /* 영상 재생 버튼(▶ 링크) */
+.note-body a{color:var(--accent)}.note-body a.playlink{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;margin-left:6px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:11px;line-height:1;text-decoration:none;vertical-align:middle;padding-left:2px;box-sizing:border-box} /* 영상 재생 버튼(▶ 링크) */
 @media (max-width:600px){.np-tb{min-width:32px;height:34px;font-size:15px}}
 .docside .di.sub2{padding-left:36px}
 .fold-row.sub2{padding-left:44px}.fold-row.sub2::before{left:28px}
@@ -3022,6 +3022,7 @@ function editManual(st,eq,id){
   // 편집 중에도 링크를 누르면 열림
   ed.addEventListener("click",e=>{const li=ckHit(e,ed);if(li){e.preventDefault();li.classList.toggle("done");return}
     const a=e.target.closest&&e.target.closest("a[href]");if(a){e.preventDefault();window.open(a.href,"_blank","noopener")}});
+  playTap(ed);
   if(!m.html){const legacy=(m.photos||[]).filter(ph=>!manSegments(m.text,m.photos).some(sg=>sg.img===ph));
   legacy.forEach(ph=>ed.append(imgNode(ph)));
   (m.links||[]).filter(l=>!String(m.text||"").includes(l.u)).forEach(l=>{ed.append(el("br"),document.createTextNode((l.t?l.t+" ":"")+l.u))})}
@@ -3595,6 +3596,11 @@ function editFolders(scope){ // scope: 이 폴더와 그 하위만 보여 주고
    d.body: 검색·미리보기용 글자, d.title: 첫 줄, d.media: 본문 속 첨부 목록(목록 썸네일용) */
 const DOC_TAGS=new Set(["DIV","P","BR","H1","H2","H3","B","STRONG","I","EM","U","STRIKE","S","UL","OL","LI","TABLE","TBODY","TR","TD","TH","A","IMG","VIDEO"]);
 const ASSET_ID=/^[0-9a-f]{32}$/;
+/* 편집 칸 안의 재생 버튼: 아이폰은 누르면 편집(커서·키보드)을 시작함 → 끌지 않고 뗐을 때 그 동작을 막고 영상 열기. 닿을 때는 막지 않아 버튼 위에서도 스크롤됨 */
+function playTap(root){let hit=null;
+  root.addEventListener("touchstart",e=>{hit=(e.target.closest&&e.target.closest("a.playlink"))||null},{passive:true});
+  root.addEventListener("touchmove",()=>{hit=null},{passive:true});
+  root.addEventListener("touchend",e=>{if(!hit)return;const a=hit;hit=null;e.preventDefault();window.open(a.href,"_blank","noopener")})}
 function docClean(html,forSave){
   const src=new DOMParser().parseFromString("<body>"+(html||"")+"</body>","text/html").body;
   const out=document.createElement("div");
@@ -3721,6 +3727,7 @@ function notePage(d){
   ed.append(...docClean(html0).childNodes);
   const wireEd=()=>wireBody(ed,()=>ed.dispatchEvent(new Event("input")),edit);wireEd();ed.addEventListener("input",wireEd);
   if(edit){ed.contentEditable="true";try{document.execCommand("defaultParagraphSeparator",false,"div")}catch(e){}}
+  playTap(ed);
   ed.addEventListener("click",e=>{const lk=e.target.closest&&e.target.closest("a[href]");if(lk){e.preventDefault();window.open(lk.href,"_blank","noopener");return}
     const li=ckHit(e,ed);if(li){e.preventDefault();if(edit){li.classList.toggle("done");ed.dispatchEvent(new Event("input"))}return}
     });
