@@ -268,7 +268,7 @@ li.editing .iedit-bar{display:flex}
 .ie-pc{display:none!important}
 li.ie-chk .ie-pc{display:block!important}
 li.ie-nochk .chk{opacity:.25}
-.stools-row.stwo{display:grid;grid-template-columns:1fr 1fr;gap:6px}.sheet .stools textarea.dreq-in{min-height:0;height:36px;width:100%}.stools .lab{margin-bottom:6px}.stools .isd{color:var(--accent)}.st-h3{display:flex;align-items:center;gap:8px}.rulesbtn{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;padding:0 0 1px 1px;border-radius:50%;border:1px solid color-mix(in srgb,var(--muted) 70%,transparent);background:none;color:var(--muted);font:inherit;font-size:14px;line-height:1;cursor:pointer}.sheet textarea.rules-ta{min-height:60vh;font-size:15px;line-height:1.5}.stools-cal{margin:0 0 14px;overflow-x:auto}.stools .pubb.arm{border-color:var(--accent);color:var(--accent)}.stoolbtn{width:100%;margin:-4px 0 10px;padding:9px 8px;font-size:13px}
+.stools-row.stwo{display:grid;grid-template-columns:1fr 1fr;gap:6px}.sheet .stools textarea.dreq-in{min-height:0;height:36px;width:100%}.stools .lab{margin-bottom:6px}.stools .isd{color:var(--accent)}.st-h3{display:flex;align-items:center;gap:8px}.rulesbtn{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;padding:0 0 1px 1px;border-radius:50%;border:1px solid color-mix(in srgb,var(--muted) 70%,transparent);background:none;color:var(--muted);font:inherit;font-size:14px;line-height:1;cursor:pointer}.sheet textarea.rules-ta{min-height:50vh;font-size:15px;line-height:1.5}.stools-cal{margin:0 0 14px;overflow-x:auto}.stools .pubb.arm{border-color:var(--accent);color:var(--accent)}.stoolbtn{width:100%;margin:-4px 0 10px;padding:9px 8px;font-size:13px}
 .dreq{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:end}.dreq-in{display:block;width:100%;box-sizing:border-box;height:36px;font:inherit;font-size:16px;line-height:1.3;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--bg);color:var(--ink);resize:none;overflow:hidden}.dreq-btn{height:36px;padding:0 16px;font-size:12.5px;width:auto}
 .draftacts{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.draftacts .pubb:disabled{opacity:.4}
 .oc.draft td,.oc.draft th{font-size:12.5px;padding:5px 4px;text-align:left;white-space:nowrap}.oc.draft{table-layout:auto;width:100%}
@@ -2633,7 +2633,33 @@ function draftReqParse(text,hs){
     out.said.push(`${byKey[p].name} ${w} ${k}번 ${sign>0?"늘리기":"줄이기"}`);return " "});
   out.unknown=rest.replace(/(그리고|하고|해\s*줘|해\s*주세요|주세요|줘|요)/g," ").replace(/[\s,.·~!?]+/g," ").trim();
   return out}
-function draftHalf(hs,seed,orig,req){
+/* 조건 글(› 조건 창)에서 앱이 직접 읽는 줄. 아래 모양이면 고치거나 더해도 초안에 바로 반영:
+   · 'A와 B는 같은 근무지에 겹치지 않게'      · '4주에 휴무 8회'
+   · '메라키 10:30-19:30: 직원 2명' / '푸어링 13:30-22:30: 직원 2명' (평소 인원)
+   · '수요일: 푸어링 휴무' / '토요일 메라키 직원 3명' (요일별)
+   · '쉬는 날 … 전날은 오픈' 줄이 있으면 켜짐 · '마감 → 오픈 전환은 …' 줄이 있으면 켜짐 */
+const DOWS="일월화수목금토";
+function schedRulesParse(text){const t=String(text==null?schedRulesText():text);
+  const NM=[];STAFF.forEach(s=>[s.full,s.name].filter(Boolean).forEach(n=>NM.push([n,s.key])));NM.sort((a,b)=>b[0].length-a[0].length);const nmRe=NM.map(x=>x[0]).join("|");const key=n=>(NM.find(x=>x[0]===n)||[])[1];
+  const R={pairs:[],off4w:8,o:2,c:2,dayO:{},dayC:{},openBeforeOff:false,noCloseToOpen:false,read:[]};
+  t.split(/\n/).forEach(line=>{const L=line.trim();if(!L||/검토 중|미확정/.test(L))return;
+    let m;
+    const pr=new RegExp(`(${nmRe})\\s*(?:와|과|랑|이랑|하고|,)\\s*(${nmRe})\\s*(?:은|는|이|가|도|이도)?\\s*(?:같은\\s*(?:근무지|매장|곳)|한\\s*(?:근무지|매장)).*(?:겹치지|안\\s*겹|따로|같이\\s*안)`);
+    if((m=L.match(pr))&&key(m[1])&&key(m[2])&&key(m[1])!==key(m[2])){R.pairs.push([key(m[1]),key(m[2])]);R.read.push(`${byKey[key(m[1])].name}·${byKey[key(m[2])].name} 같은 근무지 안 겹치게`)}
+    if((m=L.match(/4\s*주에?\s*휴무\s*(\d+)\s*(?:회|번|일)/))){R.off4w=+m[1];R.read.push(`4주 휴무 ${m[1]}회`)}
+    const dm=L.match(/([일월화수목금토])요일/);
+    if(dm){const d=DOWS.indexOf(dm[1]);
+      if(/푸어링\s*(?:은|는)?\s*휴무|푸어링\s*쉼/.test(L)){R.dayC[d]=0;R.read.push(`${dm[1]}요일 푸어링 휴무`)}
+      if((m=L.match(/메라키만\s*영업\s*\(?\s*직원\s*(\d+)\s*명/))){R.dayO[d]=+m[1];R.read.push(`${dm[1]}요일 메라키 ${m[1]}명`)}
+      else if((m=L.match(/메라키\s*(?:은|는)?\s*직원\s*(\d+)\s*명/))){R.dayO[d]=+m[1];R.read.push(`${dm[1]}요일 메라키 ${m[1]}명`)}
+      if((m=L.match(/푸어링\s*(?:은|는)?\s*직원\s*(\d+)\s*명/))){R.dayC[d]=+m[1];R.read.push(`${dm[1]}요일 푸어링 ${m[1]}명`)}}
+    else{
+      if((m=L.match(/메라키\s*10:30\s*-\s*19:30\s*:?\s*직원\s*(\d+)\s*명/))){R.o=+m[1];R.read.push(`메라키 오픈 ${m[1]}명`)}
+      if((m=L.match(/푸어링\s*13:30\s*-\s*22:30\s*:?\s*직원\s*(\d+)\s*명/))){R.c=+m[1];R.read.push(`푸어링 마감 ${m[1]}명`)}}
+    if(/쉬는\s*날.*전날.*오픈|휴무\s*전날.*오픈/.test(L)){R.openBeforeOff=true;R.read.push("쉬는 날 전날은 오픈")}
+    if(/마감\s*(?:→|->|에서)\s*오픈/.test(L)){R.noCloseToOpen=true;R.read.push("마감 다음 날 오픈 피하기(휴무·주말 뒤는 괜찮음)")}});
+  return R}
+function draftHalf(hs,seed,orig,req){const RU=schedRulesParse();const pairHit=A=>RU.pairs.some(([a,b])=>A.includes(a)&&A.includes(b));
   req=req||{bias:{},offBias:{},fix:[]};const bias=p=>req.bias[p]||0,offB=p=>req.offBias[p]||0;
   let rnd=seed||Date.now()%2147483647;const rand=()=>(rnd=rnd*16807%2147483647)/2147483647;
   const days=[...Array(14)].map((_,i)=>addDays(hs,i));
@@ -2646,7 +2672,7 @@ function draftHalf(hs,seed,orig,req){
   // 바로 전날 근무(오픈/마감) — 전환 규칙용
   const prevShift={};{const r=rec(addDays(hs,-1));DRAFT_STAFF.forEach(p=>{prevShift[p]=(r.m2||[]).includes(p)?"o":(r.b2||[]).includes(p)?"c":"x"})}
   // 메모(대관·휴무 등)가 적힌 매장은 그날 직원 배치 안 함
-  const need=k=>{const r=rec(k);return{o:(r.note_meraki||"").trim()?0:2,c:isWed(k)||(r.note_pouring||"").trim()?0:2}};
+  const need=k=>{const r=rec(k),d=dow(k);return{o:(r.note_meraki||"").trim()?0:(d in RU.dayO?RU.dayO[d]:RU.o),c:(r.note_pouring||"").trim()?0:(d in RU.dayC?RU.dayC[d]:RU.c)}}; // 조건 글의 인원, 메모(대관 등)가 적힌 매장은 배치 안 함
   const fixed=days.map(k=>{const r=rec(k);return{off:new Set([...(r.off||[]).filter(p=>DRAFT_STAFF.includes(p)),...hopeOf(k)]),o:(r.m2||[]).filter(p=>DRAFT_STAFF.includes(p)),c:(r.b2||[]).filter(p=>DRAFT_STAFF.includes(p)),hope:new Set(hopeOf(k)),note:!!(r.note_meraki||r.note_pouring)}});
   (req.fix||[]).forEach(({k,p,kind})=>{const i=days.indexOf(k);if(i<0)return;const f=fixed[i];f.off.delete(p);f.o=f.o.filter(x=>x!==p);f.c=f.c.filter(x=>x!==p);
     if(kind==="off")f.off.add(p);else if(kind==="o")f.o.push(p);else f.c.push(p)});
@@ -2668,10 +2694,10 @@ function draftHalf(hs,seed,orig,req){
       const combos=(arr,m)=>m===0?[[]]:arr.flatMap((x,j)=>combos(arr.slice(j+1),m-1).map(c=>[x,...c]));
       for(const oPick of combos(free,Math.min(needO,free.length))){const rest=free.filter(p=>!oPick.includes(p));const cPick=rest.slice(0,needC);
         const O=[...f.o,...oPick],C=[...f.c,...cPick];let s=0;
-        if((O.includes("daseul")&&O.includes("junhyung"))||(C.includes("daseul")&&C.includes("junhyung")))s+=1000; // 규칙3
-        O.forEach(p=>{if(last[p]==="c"&&dow(k)!==1)s+=300; // 규칙4: 마감→오픈은 휴무 뒤·주말 지난 월요일에만
+        if(pairHit(O)||pairHit(C))s+=1000; // 규칙3: 같은 근무지에 겹치면 안 되는 사람들(조건 글)
+        O.forEach(p=>{if(RU.noCloseToOpen&&last[p]==="c"&&dow(k)!==1)s+=300; // 규칙4: 마감→오픈은 휴무 뒤·주말 지난 월요일에만
           s+=(open[p]-bias(p))*10});
-        C.forEach(p=>{if(tomorrowOff(p))s+=f.hope.has(p)||fixed[i+1]&&fixed[i+1].hope.has(p)?200:120}); // 규칙5: 쉬는 날 전날은 오픈
+        if(RU.openBeforeOff)C.forEach(p=>{if(tomorrowOff(p))s+=f.hope.has(p)||fixed[i+1]&&fixed[i+1].hope.has(p)?200:120}); // 규칙5: 쉬는 날 전날은 오픈
         s+=rand();
         if(!bestSplit||s<bestSplit.s)bestSplit={s,O,C}}
       const O=bestSplit?bestSplit.O:f.o,C=bestSplit?bestSplit.C:f.c;score+=bestSplit?bestSplit.s:0;
@@ -2687,12 +2713,12 @@ function draftHalf(hs,seed,orig,req){
   const issues=[];const nm=p=>(byKey[p]||{}).name||p;
   best.plan.forEach((d,i)=>{const n=need(d.k);
     if(d.O.length<n.o||d.C.length<n.c)issues.push(`${md(d.k)}: 사람이 모자라요 (오픈 ${d.O.length}/${n.o}, 마감 ${d.C.length}/${n.c})`);
-    if((d.O.includes("daseul")&&d.O.includes("junhyung"))||(d.C.includes("daseul")&&d.C.includes("junhyung")))issues.push(`${md(d.k)}: 다슬·준형이 같은 근무지예요`);
-    const prev=i?best.plan[i-1]:null;if(prev&&parse(d.k).getDay()!==1)d.O.forEach(p=>{if(prev.C.includes(p))issues.push(`${md(d.k)}: ${nm(p)} 마감 다음 날 오픈`)});
-    const nx=best.plan[i+1];if(nx)d.C.forEach(p=>{if(nx.off.includes(p))issues.push(`${md(d.k)}: ${nm(p)} 쉬는 날 전날인데 마감`)})});
+    RU.pairs.forEach(([a,b])=>{if((d.O.includes(a)&&d.O.includes(b))||(d.C.includes(a)&&d.C.includes(b)))issues.push(`${md(d.k)}: ${nm(a)}·${nm(b)}이 같은 근무지예요`)});
+    const prev=i?best.plan[i-1]:null;if(RU.noCloseToOpen&&prev&&parse(d.k).getDay()!==1)d.O.forEach(p=>{if(prev.C.includes(p))issues.push(`${md(d.k)}: ${nm(p)} 마감 다음 날 오픈`)});
+    const nx=best.plan[i+1];if(RU.openBeforeOff&&nx)d.C.forEach(p=>{if(nx.off.includes(p))issues.push(`${md(d.k)}: ${nm(p)} 쉬는 날 전날인데 마감`)})});
   const totalOff=DRAFT_STAFF.reduce((s,p)=>s+best.offCnt[p],0);
-  const lowOff=DRAFT_STAFF.filter(p=>best.offCnt[p]<4);
-  if(lowOff.length)issues.push(`휴무 4회(4주 8회)가 안 되는 사람: ${lowOff.map(p=>nm(p)+" "+best.offCnt[p]+"회").join(", ")} — 정직원 5명이 하루 4명씩 일하면 2주 휴무는 모두 합쳐 ${totalOff}회라 다 채울 수 없어요. 추가근무·승현 근무로 쉬는 날을 더 만들 수 있어요`);
+  const offT=Math.round(RU.off4w/2);const lowOff=DRAFT_STAFF.filter(p=>best.offCnt[p]<offT);
+  if(lowOff.length)issues.push(`휴무 ${offT}회(4주 ${RU.off4w}회)가 안 되는 사람: ${lowOff.map(p=>nm(p)+" "+best.offCnt[p]+"회").join(", ")} — 정직원 ${DRAFT_STAFF.length}명이 하루 ${RU.o+RU.c}명씩 일하면 2주 휴무는 모두 합쳐 ${totalOff}회라 다 채울 수 없어요. 추가근무·승현 근무로 쉬는 날을 더 만들 수 있어요`);
   return{...best,issues}}
 /* 초안 만들기: 빈 칸을 바로 근무표에 채워 넣음(공개 전이라 직원에겐 안 보임).
    초안으로 채운 날은 schedule 문서에 draftBase(초안 넣기 전 원래 칸, 없던 날은 null)를 같이 저장 → 새로 고쳐도 다시 만들기·비우기·확정하기 가능.
@@ -2727,7 +2753,8 @@ let toolsBody=null;
 const SCHED_RULES_DEFAULT="[직원]\n- 정직원 5명: 다슬, 준형, 정한, 원석, 우준\n- 이름은 항상 위 순서(입사·나이순)로 쓴다\n- 파트타이머: 수정\n\n[근무 시간과 인원]\n- 메라키 08:00(08:30)-10:30: 승현\n- 메라키 10:30-19:30: 직원 2명 (= 오픈)\n- 푸어링 10:30-13:30: 승현\n- 푸어링 13:30-22:30: 직원 2명 (= 마감)\n- 10:30-13:30 칸에 직원이 대신 들어가면 단축 근무가 아니다. 8시간 근무이고 오픈으로 센다\n- 수요일: 푸어링 휴무, 메라키만 영업 (직원 2명, 또는 직원 2명 + 수정)\n- 수요일 고정 휴무는 없다. 수요일에 쉬려면 희망휴무로 신청한다\n\n[휴무]\n- 4주에 휴무 8회\n- 표 아래쪽 색 이름 = 휴무인 사람, 희망휴무는 ★\n- 희망휴무·추가근무 가능 여부는 공유 메모장으로 신청한다\n- 주말 희망휴무는 토요일보다 일요일을 선호한다\n- 주말 휴무, 2~3일 연속 휴무 신청 가능\n\n[배치 규칙]\n1. 메라키(오픈)/푸어링(마감) 근무 수를 사람마다 최대한 같게. 딱 나눠떨어지지 않으면 달마다 돌아가며 조정\n2. 지난달 메라키 횟수까지 합쳐 누적이 고르게 되도록, 해당 기간 안에서 최대한 맞춘다\n3. 준형과 다슬은 같은 근무지에 겹치지 않게\n4. 오전/오후 근무가 왔다 갔다 하지 않게. 마감 → 오픈 전환은 휴무 뒤나 주말이 지난 뒤에만. 오픈 → 마감 전환은 괜찮다(쉬는 시간 확보)\n5. 하루 쉬는 날(특히 희망휴무) 전날은 오픈 근무\n\n[작성 방식]\n1. 대표가 꼭 넣어야 하는 칸에만 이름을 적으면 그 칸은 고정, 나머지는 자동 배치\n2. 규칙끼리 충돌해서 못 지킨 부분은 따로 알려 준다\n\n[검토 중 (미확정)]\n- 파트타이머 주 13~14시간, 혼자 근무하는 시간이 없어야 함\n- 대표(승현) 주 1일 휴무 보장\n- 수요일 부족 인원: 추가근무 신청자 → 없으면 승현이 대신 근무";
 const schedRulesText=()=>{const d=(S.monthnotes||[]).find(x=>x.id==="schedrules");return d&&typeof d.text==="string"?d.text:SCHED_RULES_DEFAULT};
 function schedRules(){const ta=el("textarea",{class:"rules-ta"});ta.value=schedRulesText();
-  openSheet("스케줄 짜기 조건",[el("p",{class:"hint",style:"margin:0"},"언제든 고치고 더할 수 있어요. 바깥을 누르면 저장돼요"),ta],async()=>{const t=ta.value.replace(/\s+$/,"");
+  const readP=el("p",{class:"hint",style:"margin:0;white-space:pre-line"});const showRead=()=>{const R=schedRulesParse(ta.value);readP.textContent="앱이 읽어서 초안에 바로 쓰는 조건:\n· "+(R.read.length?R.read.join("\n· "):"없음")};showRead();ta.addEventListener("input",showRead);
+  openSheet("스케줄 짜기 조건",[el("p",{class:"hint",style:"margin:0"},"언제든 고치고 더할 수 있어요. 바깥을 누르면 저장돼요. 아래 목록에 없는 조건은 Claude에게 반영을 부탁해 주세요"),ta,readP],async()=>{const t=ta.value.replace(/\s+$/,"");
     if(t!==schedRulesText())await W(()=>col("monthnotes").doc("schedrules").set({text:t,editedBy:me,editedAt:now(),updatedAt:now()}),"조건 저장됨");setTimeout(schedTools,0);return true},"",null,{autosave:true})}
 function schedTools(){toolsBody=el("div",{class:"stools"});renderTools();openSheet("스케줄 짜기",[toolsBody],async()=>true,"",null,{autosave:true});
   const h3=document.querySelector("#sheetRoot .panel h3");if(h3){h3.classList.add("st-h3");h3.append(el("button",{class:"rulesbtn",type:"button","aria-label":"스케줄 짜기 조건 보기·고치기",onclick:schedRules},"›"))}}
