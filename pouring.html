@@ -315,7 +315,7 @@ li.ldrag{transition:none;position:relative;z-index:3;background:var(--surface);b
 .verbar{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);transform:translateX(-50%);z-index:60;border:0;border-radius:18px;padding:8px 16px;background:var(--ink);color:var(--bg);font:inherit;font-size:13px;font-weight:400;box-shadow:0 4px 14px rgba(0,0,0,.25);white-space:nowrap}
 .alertov .ap.nobtn{padding-bottom:4px}
 .alertov h4{margin:0 0 6px;font-size:16px;font-weight:500}.alertov p{margin:0 0 14px;font-size:14px;color:var(--muted);white-space:pre-line}
-.alertov button{width:100%}
+.alertov button{width:100%}.alertov .np-ask{max-width:320px}.alertov .np-ask h4{font-weight:400}.alertov .np-ask p{text-align:left;line-height:1.55}
 .fw-snote{font-size:9.5px;color:var(--accent);text-align:right;padding:0 4px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fw-date.holbg{background:var(--soft);background:color-mix(in srgb,var(--soft) 75%,transparent)}
 .permrow{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);cursor:pointer}.permrow.sub{padding-left:14px}
@@ -1495,6 +1495,17 @@ async function pushOn(){
   try{const r=await navigator.serviceWorker.ready;const s=(await r.pushManager.getSubscription())||await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
     await db.collection("pushsubs").doc(await pushDocId(s)).set({k:myUid,sub:s.toJSON(),at:now(),ua:navigator.userAgent.slice(0,90)});flash("이 기기에서 알림을 받아요");return true}
   catch(e){flash("알림을 켜지 못했어요. 다시 해 주세요",true);return false}}
+/* 알림 켜기 팝업. 지금은 시험: 사장 화면에만, 이 기기에서 한 번 (주소에 ?ask=1 이면 다시). 직원에게 띄우는 건 사용자가 '해줘' 하면 */
+function notifyAsk(){if(!WEB||!me||!isBoss()||document.querySelector(".alertov"))return;
+  const again=/[?&]ask=1/.test(location.search),key="po-ask-test";try{if(!again&&localStorage.getItem(key))return;localStorage.setItem(key,"1")}catch(e){}
+  const p=el("p",{},"새 전달사항·체크리스트·회의록을 알려 드려요.\n근무 시간에만 와요. 휴무일엔 오지 않아요.\n'밀크티 out 11:00'처럼 시간이 적힌 항목은 그 시간에 알려 드려요.\n앱 아이콘의 숫자는 아직 안 본 새 글 수예요.");
+  const btn=el("button",{class:"btn",type:"button"},"알림 켜기");
+  const ov=el("div",{class:"alertov",role:"alertdialog","aria-label":"알림을 켜 주세요"},el("div",{class:"ap np-ask"},el("h4",{},"알림을 켜 주세요"),p,btn));
+  const blocked=()=>{p.textContent="알림이 꺼져 있어요.\n휴대폰 설정 → pouring out → 알림에서 켜 주세요.";btn.textContent="확인";btn.onclick=()=>ov.remove()};
+  ov.onclick=e=>{if(e.target===ov)ov.remove()};
+  btn.onclick=async()=>{if("Notification" in window&&Notification.permission==="denied"){blocked();return}
+    btn.disabled=true;const ok=await pushOn();btn.disabled=false;if(ok)ov.remove();else if("Notification" in window&&Notification.permission==="denied")blocked()};
+  document.body.append(ov)}
 async function pushOffNow(){try{const s=await pushSub();if(s){try{await db.collection("pushsubs").doc(await pushDocId(s)).delete()}catch(e){};await s.unsubscribe()}flash("알림을 껐어요")}catch(e){flash("알림을 끄지 못했어요",true)}}
 async function webInit(){
   if("serviceWorker" in navigator)try{navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{})}catch(e){} // 빠른 실행 + 알림 (열 때마다 새 버전 확인)
@@ -4056,7 +4067,7 @@ function subAll(){
       SRV[name]=new Map(snap.docs.map(d=>[d.id,d.data()||{}])); // 되돌리기용: 앱이 미리 바꿔 둔 화면 값이 아닌 서버 값
       for(const k of [...KNOWN.keys()])if(k.startsWith(name+"/"))KNOWN.delete(k); // 서버 값이 왔으니 그걸 믿음
       if(name==="dayoffs"&&window.__hopeCalDraw)try{window.__hopeCalDraw()}catch(e){}
-      if(first){first=false;ready++;if(ready===total){loaded=true;clearTimeout(timer);setStatus("실시간 동기화 중")}}
+      if(first){first=false;ready++;if(ready===total){loaded=true;clearTimeout(timer);setStatus("실시간 동기화 중");setTimeout(notifyAsk,700)}}
       saveCacheSoon();
       // 새 주소에서 저장해 둔 데이터 없이 처음 받을 때는, 근무·전달사항 등이 하나씩 튀어나오지 않게 다 받은 뒤 한 번에 그림
       if(WEB&&!loaded&&!cacheShown)return;
