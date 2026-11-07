@@ -255,6 +255,7 @@ span.pwbox{position:relative;display:block;flex:1;min-width:0}span.pwbox input{w
 .mm-ov{z-index:310;background:rgba(0,0,0,.2)}.mm-box{position:fixed;width:220px;padding:6px 0}.mm-box .np-mi{font-size:16px;padding:10px 16px}
 .edt{cursor:text;white-space:pre-wrap;outline:none}
 .list li{cursor:text}
+.blend{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-left:auto}.bl-box{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:26px;padding:0 8px;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;color:var(--ink)}.bl-box.empty{color:var(--muted)}.bl-in{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:0;padding:0;margin:0}.bl-n{color:var(--ink)} /* 전달사항 오른쪽 끝 블렌드 제조일 */
 section.notice-s>.card>.list .txt,.stores .card>.list .txt{font-size:15px} /* 전달사항·체크리스트 글씨 살짝 작게 */
 .list li.editing{background:var(--soft)}
 .edt[contenteditable]{display:inline-block;min-width:4em;-webkit-user-select:text;user-select:text}
@@ -1949,7 +1950,7 @@ function vToday(root){
   if(can("today:shift"))v.append(el("section",{},el("h2",{},"근무",null),shiftCard(dayDate)));
 
   // 공지
-  if(can("today:notice"))v.append(el("section",{class:"notice-s"},el("h2",{},"전달사항"),noticeCard("","전달사항이 없어요","전달사항 쓰기")));
+  if(can("today:notice"))v.append(el("section",{class:"notice-s"},el("h2",{},"전달사항",blendTag()),noticeCard("","전달사항이 없어요","전달사항 쓰기")));
   if(dayDate<FULL_FROM)return; // 11/6까지는 근무·전달사항만 (예전 메모장과 섞인 기간). 11/7부터 체크리스트·발주·재고·청소 모두
 
   // 매장 체크리스트 (매장 전달사항 + 체크 항목)
@@ -3929,6 +3930,13 @@ function notePage(d){
   if(!d&&edit)titleIn.focus(); // 새 메모: 제목 칸부터 (누른 순간 키보드)
 }
 
+/* 전달사항 제목 오른쪽 끝: 블렌드 제조일 + 며칠째(제조일 = 1일차, 보고 있는 날짜 기준). monthnotes/blend {date} 하나를 모두 같이 씀 */
+function blendTag(){const bd=(S.monthnotes||[]).find(x=>x.id==="blend")||{};const d=/^\d{4}-\d{2}-\d{2}$/.test(bd.date||"")?bd.date:"";
+  const n=d?Math.round((parse(dayDate)-parse(d))/864e5)+1:0;
+  const box=el("span",{class:"bl-box"+(d?"":" empty")},d?md(d):"+");
+  if(canWrite){const inp=el("input",{type:"date",class:"bl-in","aria-label":"블렌드 제조일",value:d,max:TODAY});
+    let last=d;inp.onchange=()=>{const v=inp.value;if(v===last)return;last=v;W(()=>col("monthnotes").doc("blend").set({date:v,editedBy:me,editedAt:now(),updatedAt:now()}),v?`블렌드 제조일 ${md(v)}`:"블렌드 제조일 지움")};box.append(inp)}
+  return el("span",{class:"blend"},el("span",{class:"bl-lab"},"블렌드"),box,d&&n>=1?el("span",{class:"bl-n"},`${n}일차`):null)}
 /* ---------- sheet ---------- */
 let sheetDismiss=null,sheetFitOff=null;
 function openSheet(title,parts,onSave,saveLabel="저장",extraBtn,opts={}){
