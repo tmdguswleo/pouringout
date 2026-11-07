@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T11:03:14Z";window.__APP_NOTE="전달사항 오른쪽 끝에 블렌드 제조일 칸이 생겼어요. 날짜를 고르면 옆에 며칠째인지 보여요(제조일이 1일차)."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T11:08:32Z";window.__APP_NOTE="블렌드 제조일 칸을 전달사항에서 빼고, 푸어링·메라키 체크리스트 오른쪽 끝에 하나씩 옮겼어요. 매장마다 따로 적어요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -255,7 +255,7 @@ span.pwbox{position:relative;display:block;flex:1;min-width:0}span.pwbox input{w
 .mm-ov{z-index:310;background:rgba(0,0,0,.2)}.mm-box{position:fixed;width:220px;padding:6px 0}.mm-box .np-mi{font-size:16px;padding:10px 16px}
 .edt{cursor:text;white-space:pre-wrap;outline:none}
 .list li{cursor:text}
-.blend{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-left:auto}.bl-box{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:26px;padding:0 8px;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;color:var(--ink)}.bl-box.empty{color:var(--muted)}.bl-in{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:0;padding:0;margin:0}.bl-n{color:var(--ink)} /* 전달사항 오른쪽 끝 블렌드 제조일 */
+.blend{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-left:auto}.bl-box{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:26px;padding:0 8px;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;color:var(--ink)}.bl-box.bl-empty{color:var(--muted)}.bl-in{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:0;padding:0;margin:0}.bl-n{color:var(--ink)} /* 전달사항 오른쪽 끝 블렌드 제조일 */
 section.notice-s>.card>.list .txt,.stores .card>.list .txt{font-size:15px} /* 전달사항·체크리스트 글씨 살짝 작게 */
 .list li.editing{background:var(--soft)}
 .edt[contenteditable]{display:inline-block;min-width:4em;-webkit-user-select:text;user-select:text}
@@ -1950,13 +1950,13 @@ function vToday(root){
   if(can("today:shift"))v.append(el("section",{},el("h2",{},"근무",null),shiftCard(dayDate)));
 
   // 공지
-  if(can("today:notice"))v.append(el("section",{class:"notice-s"},el("h2",{},"전달사항",blendTag()),noticeCard("","전달사항이 없어요","전달사항 쓰기")));
+  if(can("today:notice"))v.append(el("section",{class:"notice-s"},el("h2",{},"전달사항"),noticeCard("","전달사항이 없어요","전달사항 쓰기")));
   if(dayDate<FULL_FROM)return; // 11/6까지는 근무·전달사항만 (예전 메모장과 섞인 기간). 11/7부터 체크리스트·발주·재고·청소 모두
 
   // 매장 체크리스트 (매장 전달사항 + 체크 항목)
   const two=el("div",{class:"stores notice-s"});
   ["pouring","meraki"].forEach((st,i)=>{
-    two.append(el("div",{class:`st-top st-${st}`,style:"min-width:0"},el("h2",{},el("span",{},el("span",{class:"pill "+st},STORES[st]),"체크리스트")),
+    two.append(el("div",{class:`st-top st-${st}`,style:"min-width:0"},el("h2",{},el("span",{},el("span",{class:"pill "+st},STORES[st]),"체크리스트"),blendTag(st)),
       noticeCard(st,"남은 항목이 없어요",`${STORES[st]} 항목 쓰기`,{checks:S.checks.filter(c=>c.store===st),alwaysCheck:true})));
   });
   if(can("today:checks"))v.append(el("section",{},two));
@@ -3930,12 +3930,12 @@ function notePage(d){
   if(!d&&edit)titleIn.focus(); // 새 메모: 제목 칸부터 (누른 순간 키보드)
 }
 
-/* 전달사항 제목 오른쪽 끝: 블렌드 제조일 + 며칠째(제조일 = 1일차, 보고 있는 날짜 기준). monthnotes/blend {date} 하나를 모두 같이 씀 */
-function blendTag(){const bd=(S.monthnotes||[]).find(x=>x.id==="blend")||{};const d=/^\d{4}-\d{2}-\d{2}$/.test(bd.date||"")?bd.date:"";
+/* 매장 체크리스트 제목 오른쪽 끝: 블렌드 제조일 + 며칠째(제조일 = 1일차, 보고 있는 날짜 기준). 매장마다 monthnotes/blend_<매장> {date} */
+function blendTag(store){const bid="blend_"+store;const bd=(S.monthnotes||[]).find(x=>x.id===bid)||{};const d=/^\d{4}-\d{2}-\d{2}$/.test(bd.date||"")?bd.date:"";
   const n=d?Math.round((parse(dayDate)-parse(d))/864e5)+1:0;
-  const box=el("span",{class:"bl-box"+(d?"":" empty")},d?md(d):"+");
-  if(canWrite){const inp=el("input",{type:"date",class:"bl-in","aria-label":"블렌드 제조일",value:d,max:TODAY});
-    let last=d;inp.onchange=()=>{const v=inp.value;if(v===last)return;last=v;W(()=>col("monthnotes").doc("blend").set({date:v,editedBy:me,editedAt:now(),updatedAt:now()}),v?`블렌드 제조일 ${md(v)}`:"블렌드 제조일 지움")};box.append(inp)}
+  const box=el("span",{class:"bl-box"+(d?"":" bl-empty")},d?md(d):"+");
+  if(canWrite){const inp=el("input",{type:"date",class:"bl-in","aria-label":`${STORES[store]} 블렌드 제조일`,value:d,max:TODAY});
+    let last=d;inp.onchange=()=>{const v=inp.value;if(v===last)return;last=v;W(()=>col("monthnotes").doc(bid).set({date:v,editedBy:me,editedAt:now(),updatedAt:now()}),v?`${STORES[store]} 블렌드 제조일 ${md(v)}`:`${STORES[store]} 블렌드 제조일 지움`)};box.append(inp)}
   return el("span",{class:"blend"},el("span",{class:"bl-lab"},"블렌드"),box,d&&n>=1?el("span",{class:"bl-n"},`${n}일차`):null)}
 /* ---------- sheet ---------- */
 let sheetDismiss=null,sheetFitOff=null;
