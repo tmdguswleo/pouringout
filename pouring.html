@@ -619,7 +619,7 @@ button{-webkit-tap-highlight-color:transparent}
 /* 발주 요청 창: 창 높이 고정, 목록만 스크롤 (글자를 칠 때 검색칸이 움직이지 않게) */
 .sheet.fit .panel{height:88%;max-height:none;overflow:auto}.sheet.fit .panel>*{flex:none}.sheet.fit .olist{display:block;flex:1 1 0;min-height:0;overflow:auto;overscroll-behavior:contain}.sheet.fit .olist:empty{display:block}
 .osend{width:100%;padding:12px;font-size:16px}.sheet .osend{position:sticky;bottom:0;z-index:2;box-shadow:0 -10px 14px var(--surface)}.sheet .osend:disabled{opacity:1;background:var(--soft);border-color:var(--line);color:var(--muted)} /* 품목이 많아도 요청 버튼은 항상 아래에 보이게 */.osend:disabled{opacity:.45}
-.osup{margin-top:10px}.todo-team{flex:none;align-self:center;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;max-width:55%}.todo-team .np-teambtn{white-space:nowrap}.nadd-tools{display:inline-flex;align-items:center;gap:8px}.nadd-join{max-width:none;margin-left:6px}
+.osup{margin-top:10px}.todo-team{flex:none;align-self:center;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;max-width:55%}.todo-team .np-teambtn{white-space:nowrap}.nadd-tools{display:inline-flex;align-items:center;gap:8px}.nadd-join{max-width:none;margin-left:6px}li.editing .li-team{display:none}.iedit-bar .nadd-join{flex:1 1 auto;min-width:0;justify-content:flex-start} /* 할 일 누르면 이름은 첨부 옆으로 */
 .ckpin{padding:10px 12px;border-bottom:1px solid var(--line);min-height:21px}.ckpin-t{outline:none;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.45em;cursor:text}
 .buy-hint{font-size:11px;opacity:.75;padding:6px 14px 0}
 .osup-head{display:flex;align-items:center;gap:8px;padding:12px 14px 0;margin-bottom:-4px} /* 거래처 이름과 첫 품목 줄 사이 좁게 (품목 줄 높이는 그대로) */
@@ -1018,6 +1018,10 @@ function inlineEdit(li,span,it,colName,opt={}){
   if(opt.media&&assets){const cb=iconBtn(ICON_CLIP,hasM?"첨부 바꾸기":"사진·영상·파일 첨부");
     cb.onclick=async()=>{const m=await upMedia(true);if(!m)return;commit(true);W(()=>col(colName).doc(it.id).update({...mediaUp(m),editedBy:me,editedAt:now()}),"첨부됨");afterPoster(m,pid=>{const cur=(S[colName]||[]).find(x=>x.id===it.id);if(cur&&cur.video===m.id)W(()=>col(colName).doc(it.id).update({posterId:pid}))})};bar.append(cb);
     if(hasM)bar.append(el("button",{class:"chktog",type:"button",onclick:()=>{commit(true);W(()=>col(colName).doc(it.id).update({image:"",video:"",fileId:"",fileName:"",editedBy:me,editedAt:now()}),"첨부 뺐어요")}},"첨부 빼기"))}
+  // 할 일 참여: 누르면 첨부 옆에 참여 인원 + '+ 참여' (더 넣거나 빼기)
+  if(opt.join&&canWrite){const Wn=(Array.isArray(it.with)?it.with:[]).filter(k=>byKey[k]);
+    bar.append(el("span",{class:"todo-team nadd-join"},...Wn.map(k=>el("span",{class:"chip on nr-chip",style:`--c:var(--c-${k})`},byKey[k].name)),
+      el("button",{class:"np-teambtn",type:"button",onclick:()=>{commit(true);teamPicker(Wn,nx=>W(()=>col(colName).doc(it.id).update({with:nx,editedBy:me,editedAt:now()}),"참여 인원 저장됨"))}},"+ 참여")))}
   if(opt.doc&&S.docs.length){const dl=el("button",{class:"chktog",type:"button",onclick:()=>{const q=span.innerText||orig;commit(true);pickDoc(q,d=>W(()=>col(colName).doc(it.id).update({docId:d.id,editedBy:me,editedAt:now()}),"메모 연결됨"))}},it.docId?"메모 바꾸기":"메모 연결");bar.append(dl);
     if(it.docId)bar.append(el("button",{class:"chktog",type:"button",onclick:()=>{commit(true);W(()=>col(colName).doc(it.id).update({docId:"",editedBy:me,editedAt:now()}),"연결 뺐어요")}},"연결 빼기"))}
   bar.querySelectorAll("button").forEach(b=>{b.addEventListener("mousedown",e=>e.preventDefault());b.addEventListener("pointerdown",e=>e.preventDefault())});
@@ -1850,8 +1854,8 @@ function checkList(items,{colName,emptyText,placeholder,base,showBy=true,showReq
     const x=el("button",{class:"x","aria-label":"삭제",title:"삭제"},"×");
     x.onclick=()=>W(()=>col(colName).doc(it.id).delete(),"삭제됨");
     // 참여 인원: 글 오른쪽 × 바로 옆에 작은 색 이름 (고르기는 새 할 일 쓰는 칸의 '+ 참여')
-    const jb=join&&W2.length?el("span",{class:"todo-team"},...W2.map(k=>el("span",{class:"chip on nr-chip",style:`--c:var(--c-${k})`},byKey[k].name))):null;
-    const li=el("li",{class:it.done?"done":""},cb,txt,jb,x);li._it=it;li._grp=it.done?null:"u";inlineEdit(li,sp,it,colName,{media});ul.append(li);
+    const jb=join&&W2.length?el("span",{class:"todo-team li-team"},...W2.map(k=>el("span",{class:"chip on nr-chip",style:`--c:var(--c-${k})`},byKey[k].name))):null;
+    const li=el("li",{class:it.done?"done":""},cb,txt,jb,x);li._it=it;li._grp=it.done?null:"u";inlineEdit(li,sp,it,colName,{media,join});ul.append(li);
   });
   if(sorted.length){card.append(ul);enableDrag(ul,colName)}
   const inp=el("input",{type:"text",placeholder:placeholder||"새 항목 추가","aria-label":placeholder||"새 항목"});
