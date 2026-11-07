@@ -611,7 +611,8 @@ button{-webkit-tap-highlight-color:transparent}
 .oadd{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:18px;line-height:1;cursor:pointer;padding:0 0 2px}
 .ostep{display:inline-flex;align-items:center;gap:10px}.ostep button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--soft);color:var(--ink);font:inherit;font-size:17px;line-height:1;cursor:pointer;padding:0 0 2px}.ostep span{min-width:16px;text-align:center}
 .osend{width:100%;padding:12px;font-size:16px}.sheet .osend{position:sticky;bottom:0;z-index:2;box-shadow:0 -10px 14px var(--surface)}.sheet .osend:disabled{opacity:1;background:var(--soft);border-color:var(--line);color:var(--muted)} /* 품목이 많아도 요청 버튼은 항상 아래에 보이게 */.osend:disabled{opacity:.45}
-.osup{margin-top:10px}.buy-hint{font-size:11px;opacity:.75;padding:6px 14px 0}
+.osup{margin-top:10px}.joinb{flex:none;align-self:center;font:inherit;font-size:11.5px;line-height:1;padding:5px 8px;border-radius:12px;border:1px solid var(--line);background:none;color:var(--muted);white-space:nowrap;cursor:pointer}.joinb[aria-pressed="true"]{color:var(--accent);border-color:var(--accent)}.join-who{margin-left:6px;font-size:11.5px}
+.buy-hint{font-size:11px;opacity:.75;padding:6px 14px 0}
 .osup-head{display:flex;align-items:center;gap:8px;padding:12px 14px 0;margin-bottom:-4px} /* 거래처 이름과 첫 품목 줄 사이 좁게 (품목 줄 높이는 그대로) */
 .osup-empty{display:flex;align-items:center;gap:8px;padding:11px 14px;color:var(--muted)}
 .osup-acts{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px 12px;border-top:1px solid var(--line)}.osup-acts a{text-decoration:none}
@@ -1803,7 +1804,7 @@ function vLogin(v){
 function needMe(){if(!me){flash("먼저 로그인해 주세요",true);draw();return false}return true}
 
 /* ---------- generic checklist ---------- */
-function checkList(items,{colName,emptyText,placeholder,base,showBy=true,showReq=false,doneWord="완료",media=false,mention=false}){
+function checkList(items,{colName,emptyText,placeholder,base,showBy=true,showReq=false,doneWord="완료",media=false,mention=false,join=false}){
   const parse=v=>{if(!mention)return {base,text:v};const m=v.match(/^\s*@(\S+)\s*/);if(!m){flash("@이름으로 시작해 주세요 (예: @다슬 오틀리 정리)",true);return null}
     const st=m[1]==="전체"?"team":(STAFF.find(x=>x.key!=="seunghyun"&&(x.name===m[1]||x.full===m[1]))||{}).key;
     if(!st){flash(`'${m[1]}' 이름을 찾을 수 없어요`,true);return null}return {base:{owner:st},text:v.slice(m[0].length).trim()}};
@@ -1816,7 +1817,8 @@ function checkList(items,{colName,emptyText,placeholder,base,showBy=true,showReq
     cb.onchange=()=>W(()=>col(colName).doc(it.id).update({done:cb.checked,doneBy:cb.checked?me:"",doneAt:cb.checked?now():""}));
     const sp=el("span",{class:"edt","data-ph":"내용"});setLinked(sp,it.text);
     const tag=mention?el("button",{class:"atag",type:"button",style:it.owner==="team"?"":`color:var(--c-${it.owner})`,onclick:()=>pickOwner(it)},"@"+(it.owner==="team"?"전체":(byKey[it.owner]||{}).name||"?")):null;
-    const txt=el("div",{class:"txt"},tag,sp,isNew(it)?newB(it):null);
+    const W2=Array.isArray(it.with)?it.with.filter(k=>byKey[k]):[]; // 할 일 참여한 사람
+    const txt=el("div",{class:"txt"},tag,sp,isNew(it)?newB(it):null,join&&W2.length?el("span",{class:"by join-who"},...W2.flatMap((k,i)=>[i?", ":"",nameEl(k)])," 참여"):null);
     if(it.image||it.video)txt.append(itemMedia(it,colName));
     
     if(it.fileId)txt.append(el("div",{},fileChip(it)));
@@ -1825,7 +1827,10 @@ function checkList(items,{colName,emptyText,placeholder,base,showBy=true,showReq
     if(at) txt.append(at);
     const x=el("button",{class:"x","aria-label":"삭제",title:"삭제"},"×");
     x.onclick=()=>W(()=>col(colName).doc(it.id).delete(),"삭제됨");
-    const li=el("li",{class:it.done?"done":""},cb,txt,x);li._it=it;li._grp=it.done?null:"u";inlineEdit(li,sp,it,colName,{media});ul.append(li);
+    // +참여: 다른 사람 할 일에 나도 같이 (오른쪽 끝, × 앞). 내 할 일·끝난 일에는 없음
+    const jb=join&&!it.done&&it.owner!==me&&me&&canWrite?(()=>{const on=W2.includes(me);return el("button",{class:"joinb",type:"button","aria-pressed":String(on),onclick:e=>{e.stopPropagation();const nx=on?W2.filter(k=>k!==me):[...W2,me];
+      W(()=>col(colName).doc(it.id).update({with:nx,editedBy:me,editedAt:now()}),on?"참여 취소":"참여했어요")}},on?"참여 중":"+참여")})():null;
+    const li=el("li",{class:it.done?"done":""},cb,txt,jb,x);li._it=it;li._grp=it.done?null:"u";inlineEdit(li,sp,it,colName,{media});ul.append(li);
   });
   if(sorted.length){card.append(ul);enableDrag(ul,colName)}
   const inp=el("input",{type:"text",placeholder:placeholder||"새 항목 추가","aria-label":placeholder||"새 항목"});
@@ -2344,7 +2349,7 @@ function vTodo(v){
   const order=keys.includes(me)?[me,...keys.filter(k=>k!==me)]:keys;
   order.forEach(k=>{
     const items=S.todos.filter(t=>t.owner===k);
-    v.append(el("section",{},el("h2",{},el("span",{},nameEl(k),k===me?" (나)":""),el("span",{class:"meta"},`${items.filter(i=>!i.done).length}개 남음`)),checkList(items,{colName:"todos",media:true,base:{owner:k},placeholder:`${byKey[k].name}에게 할 일 추가`,emptyText:"할 일이 없어요"})));
+    v.append(el("section",{},el("h2",{},el("span",{},nameEl(k),k===me?" (나)":""),el("span",{class:"meta"},`${items.filter(i=>!i.done).length}개 남음`)),checkList(items,{colName:"todos",media:true,join:true,base:{owner:k},placeholder:`${byKey[k].name}에게 할 일 추가`,emptyText:"할 일이 없어요"})));
   });
 }
 
