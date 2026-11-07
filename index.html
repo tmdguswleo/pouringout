@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T02:16:45Z";window.__APP_NOTE="'반영'을 누르면 적은 칸은 비워져요. 앞서 반영한 요청은 계속 쌓여서 같이 반영돼요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-07T02:20:56Z";window.__APP_NOTE="근무표 아래 '스케줄 짜기' 버튼 하나로 바꿨어요. 창 안에서 공개, 초안 만들기·다시 만들기·비우기·확정하기, 더 반영할 내용을 모두 할 수 있어요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -268,6 +268,7 @@ li.editing .iedit-bar{display:flex}
 .ie-pc{display:none!important}
 li.ie-chk .ie-pc{display:block!important}
 li.ie-nochk .chk{opacity:.25}
+.stools-row.stwo{display:grid;grid-template-columns:1fr 1fr;gap:6px}.sheet .stools textarea.dreq-in{min-height:0;height:36px;width:100%}.stools .lab{margin-bottom:6px}.stools .pubb.arm{border-color:var(--accent);color:var(--accent)}.stoolbtn{width:100%;margin:-4px 0 10px;padding:9px 8px;font-size:13px}
 .dreq{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:end}.dreq-in{display:block;width:100%;box-sizing:border-box;height:36px;font:inherit;font-size:16px;line-height:1.3;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--bg);color:var(--ink);resize:none;overflow:hidden}.dreq-btn{height:36px;padding:0 16px;font-size:12.5px;width:auto}
 .draftacts{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.draftacts .pubb:disabled{opacity:.4}
 .oc.draft td,.oc.draft th{font-size:12.5px;padding:5px 4px;text-align:left;white-space:nowrap}.oc.draft{table-layout:auto;width:100%}
@@ -2386,19 +2387,9 @@ function vSchedule(v){
   wrap.append(board);
   const zbar=el("div",{class:"zbar mob-only"});
   // 사장: 앞 2주 · 뒤 2주를 따로 공개/숨기기. 숨긴 2주는 직원 화면에서 빈칸(희망휴무만 보임)
-  const pubBar=isBoss()?el("div",{class:"pubbar"},...[periodStart,addDays(periodStart,14)].map(hs=>{const on=halfShown(hs);const he=addDays(hs,13);
-    const b=el("button",{class:"chktog pubb",type:"button","aria-pressed":String(on),onclick:()=>{const nv=!on;
-      askConfirm(nv?`${md(hs)}~${md(he)} 근무표를 직원들에게 공개할까요?`:`${md(hs)}~${md(he)} 근무표를 직원들에게서 숨길까요?`,()=>{const halves={...schedPub(),[hs]:nv};
-        W(()=>col("monthnotes").doc("schedpub").set({halves,editedBy:me,editedAt:now(),updatedAt:now()}),nv?"근무표 공개됨":"근무표 숨김")},nv?"공개":"숨기기")}},
-      `${md(hs)}~${md(he)} `,el("span",{},on?"공개 중":"공개하기"));
-    return b}),(()=>{ // 초안 버튼 한 줄: 초안 작업 중인 2주, 없으면 아직 공개 안 한 2주(둘 다 공개면 뒤 2주)
-      const hs=[periodStart,addDays(periodStart,14)].find(x=>draftOn(x))||[periodStart,addDays(periodStart,14)].find(x=>!halfShown(x))||addDays(periodStart,14);
-      const on=draftOn(hs),pin=draftPinCount(hs);
-      const B=(t,f,dis,pr)=>el("button",{class:"chktog pubb",type:"button",disabled:dis,...(pr?{"aria-pressed":"true"}:{}),onclick:f},t);
-      return draftWrap(hs,on,el("div",{class:"draftacts"},
-        B("초안 만들기",()=>draftSheet(hs),on),B("다시 만들기",()=>draftSheet(hs),!on),
-        B("비우기",()=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 초안으로 채운 칸을 비울까요? 직접 고쳐서 고정한 날은 그대로 둬요`,()=>draftClear(hs),"비우기"),!on),
-        B(`확정하기${pin?` (${pin})`:""}`,()=>askConfirm(`${md(hs)}~${md(addDays(hs,13))} 초안을 확정할까요? 확정하면 다시 만들기·비우기를 할 수 없어요`,()=>draftConfirm(hs),"확정"),!on,on)))})()):null; // 사장만: 각 2주 공개 버튼 바로 아래 — 초안 만들기, 초안 중이면 다시 만들기·확정하기
+  // 사장: '스케줄 짜기' 버튼 하나 → 창에서 공개/숨기기 · 초안 만들기·다시 만들기·비우기·확정하기 · 더 반영할 내용
+  const pubBar=isBoss()?el("button",{class:"chktog pubb stoolbtn",type:"button",onclick:()=>schedTools()},"스케줄 짜기"):null;
+  if(toolsBody&&toolsBody.isConnected)setTimeout(renderTools,0); // 창이 열려 있으면 새 데이터로 다시 그림
   v.append(el("section",{},el("h2",{},"4주 근무표",el("span",{class:"meta",style:"font-size:11.5px"},"왼쪽 메라키 · 오른쪽 본점 · 컬러 이름=휴무 · ★=희망휴무")),pubBar,zbar,wrap,
     isMob()?el("p",{class:"hint",style:"font-size:11.5px"},"두 손가락으로 늘리고, 커진 상태에서 옆으로 밀어 볼 수 있어요"):null)); // 희망휴무 안내와 같은 크기
   if(isMob())setupZoom(wrap,board,zbar);
@@ -2724,6 +2715,42 @@ async function draftApply(hs,seed,req){
   return ok?res:null}
 function draftPin(){} // 고정은 draftBase가 빠지는 것으로 처리
 // 초안 요청 글은 monthnotes/draftreq 에 2주 시작일별로 저장 (다시 만들기 때도 반영)
+/* 스케줄 짜기 창 (사장만). 누르면 바로 바뀌는 버튼은 한 번 더 눌러야 실행(창 안에서 확인 → 창이 닫히지 않음) */
+let toolsBody=null;
+function schedTools(){toolsBody=el("div",{class:"stools"});renderTools();openSheet("스케줄 짜기",[toolsBody],async()=>true,"",null,{autosave:true})}
+function renderTools(){const b=toolsBody;if(!b)return;b.textContent="";const nm=p=>(byKey[p]||{}).name||p;
+  const halves=[periodStart,addDays(periodStart,14)];
+  const twice=(btn,label,ask,fn)=>{let armed=0;btn.onclick=async()=>{if(armed===2)return;
+    if(!armed){armed=1;btn.textContent=ask;btn.classList.add("arm");setTimeout(()=>{if(armed===1&&btn.isConnected){armed=0;btn.textContent=label;btn.classList.remove("arm")}},3000);return}
+    armed=2;btn.disabled=true;btn.textContent="하는 중…";await fn();renderTools()}};
+  // 1) 공개/숨기기
+  const pub=el("div",{class:"stools-row stwo"},...halves.map(hs=>{const on=halfShown(hs),he=addDays(hs,13),lab=`${md(hs)}~${md(he)} ${on?"공개 중":"공개하기"}`;
+    const x=el("button",{class:"chktog pubb",type:"button","aria-pressed":String(on)},lab);
+    twice(x,lab,on?"한 번 더 누르면 숨겨요":"한 번 더 누르면 공개해요",()=>W(()=>col("monthnotes").doc("schedpub").set({halves:{...schedPub(),[hs]:!on},editedBy:me,editedAt:now(),updatedAt:now()}),on?"근무표 숨김":"근무표 공개됨"));return x}));
+  // 2) 초안 버튼: 초안 작업 중인 2주, 없으면 아직 공개 안 한 2주(둘 다 공개면 뒤 2주)
+  const hs=halves.find(x=>draftOn(x))||halves.find(x=>!halfShown(x))||halves[1];const on=draftOn(hs),pin=draftPinCount(hs);
+  const B=(t,dis,pr)=>el("button",{class:"chktog pubb",type:"button",disabled:dis,...(pr?{"aria-pressed":"true"}:{})},t);
+  const bMake=B("초안 만들기",on),bRe=B("다시 만들기",!on),bClr=B("비우기",!on),bOk=B(`확정하기${pin?` (${pin})`:""}`,!on,on);
+  twice(bMake,"초안 만들기","한 번 더 누르면 채워요",()=>draftMake(hs));
+  bRe.onclick=async()=>{bRe.disabled=true;bRe.textContent="만드는 중…";await draftMake(hs);renderTools()};
+  twice(bClr,"비우기","한 번 더 누르면 비워요",()=>draftClear(hs));
+  twice(bOk,bOk.textContent,"한 번 더 누르면 확정",()=>draftConfirm(hs));
+  b.append(el("div",{class:"lab"},"공개"),pub,el("div",{class:"lab",style:"margin-top:12px"},`초안 · ${md(hs)}~${md(addDays(hs,13))}`),el("div",{class:"draftacts"},bMake,bRe,bClr,bOk));
+  if(!on){b.append(el("p",{class:"hint",style:"margin:8px 0 0"},"빈 칸만 채워요. 이미 적어 둔 칸과 희망휴무는 그대로 두고, 공개하기 전까지 직원에게는 안 보여요"));return}
+  // 3) 더 반영할 내용
+  const inp=el("textarea",{rows:"1",class:"dreq-in",placeholder:"더 반영할 내용 (예: 다슬 오픈 하루 줄여 줘)"});const fit=()=>{inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight+2,120)+"px"};inp.addEventListener("input",fit);
+  const go=el("button",{class:"chktog dreq-btn",type:"button"},"반영");
+  go.onclick=async()=>{go.disabled=true;go.textContent="만드는 중…";const r=await draftReqRun(hs,inp.value.trim());if(!r){go.disabled=false;go.textContent="반영";return}renderTools()};
+  b.append(el("div",{class:"lab",style:"margin-top:12px"},"더 반영할 내용"),el("div",{class:"dreq"},inp,go));
+  const L=draftLast[hs],lines=[];
+  const said=draftReqParse(draftReqText(hs),hs);if(said.said.length)lines.push("반영한 요청: "+said.said.join(" · "));
+  if(L){if(L.req.unknown)lines.push(`이해하지 못한 부분: '${L.req.unknown}'`);
+    lines.push("오픈 횟수(지난 4주+이번 2주): "+DRAFT_STAFF.map(p=>`${nm(p)} ${L.res.open[p]}`).join(" · "));
+    lines.push("이번 2주 휴무: "+DRAFT_STAFF.map(p=>`${nm(p)} ${L.res.offCnt[p]}`).join(" · "));
+    lines.push(L.res.issues.length?"못 지킨 부분\n· "+L.res.issues.join("\n· "):"모든 규칙을 지켰어요")}
+  lines.push("\n달력에서 칸을 눌러 고친 날은 고정돼요. 다시 만들기를 해도 그대로예요");
+  b.append(el("p",{class:"hint",style:"margin:10px 0 0;white-space:pre-line;font-size:12.5px"},lines.join("\n")))}
+async function draftMake(hs){const req=draftReqParse(draftReqText(hs),hs);const res=await draftApply(hs,Date.now()%2147483647,req);if(res)draftLast[hs]={req,res};draw();return res}
 // 초안 작업 중에는 근무표 위(버튼 줄 아래)에 '더 반영할 내용' 칸을 늘 보여 줌 → 달력을 보면서 바로 적고 반영
 const draftLast={}; // 2주별 마지막 결과(반영한 요청·못 지킨 부분) — 이 기기에서만
 function draftWrap(hs,on,acts){if(!on)return acts;
