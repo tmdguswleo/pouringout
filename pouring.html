@@ -1253,7 +1253,8 @@ function tabItems(k){
   if(k==="todo")return S.todos.filter(t=>t.owner===me);
   if(k==="schedule")return S.monthnotes.filter(x=>x.id==="current");
   if(k==="docs")return S.docs.filter(docOK);return []}
-const newCount=k=>{const s=seenLoad();return tabItems(k).filter(it=>isNewIn(it,s)).length};
+const newCount=k=>{if(k==="order"&&!isBoss())return 0; // 발주 탭 배지는 사장만
+  const s=seenLoad();return tabItems(k).filter(it=>isNewIn(it,s)).length};
 // 빨간 숫자 바로 고치기: 아래 탭 숫자 + 자료실 폴더 숫자(그 폴더와 하위 폴더의 새 글)
 function updBadges(){try{drawTabs()}catch(e){}const s=seenLoad();const DOCS=S.docs.filter(docOK).filter(d=>isNewIn(d,s));
   document.querySelectorAll(".fbadge[data-fk]").forEach(b=>{const k=b.dataset.fk;const n=DOCS.filter(d=>{const c=d.cat||"기타";return c===k||c.startsWith(k+"/")}).length;b.hidden=!n;b.textContent=n>99?"99+":String(n)})}
