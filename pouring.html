@@ -94,11 +94,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .close tr:last-child td{border-bottom:0}
 .close td:first-child{font-weight:400;width:auto;padding-left:12px}
 .close input{font:inherit;width:100%;max-width:76px;border:1px solid var(--line);border-radius:8px;padding:5px 8px;background:var(--bg);color:var(--ink)}
+@media (min-width:601px){.close .stk-hint{right:0}} /* 넓은 화면: 조각 칸이 좁아 왼쪽 맞춤이면 카드 밖으로 나감 → 오른쪽 끝에 맞춤 */
+.close td input{text-align:center}.close td input::placeholder{text-align:center} /* 재고 수량 칸: 글자·숫자를 칸 한가운데 */
 .close .prev{font-size:11px;color:var(--muted)}.close tr.stk-pad>*{visibility:hidden}
 /* 티라미수 "조각은 1통 미만일 / 경우에만 적어주세요"(두 줄): 줄 높이 안 늘게 조각 칸 바로 위(이름 줄 높이)에 띄움 */
 .close td:has(>.stk-side){vertical-align:middle;white-space:normal!important}.close .stk-side{max-width:110px;font-size:10.5px;line-height:1.2;word-break:keep-all;white-space:normal;color:color-mix(in srgb,var(--muted) 60%,var(--surface))} /* 뱅쇼·콜드브루·디카페인: 보틀 칸 바로 옆 */
 @media (max-width:600px){.stock-col .close tr:has(.stk-side){flex-wrap:wrap}.stock-col .close td:has(>.stk-side){flex:1 1 0;min-width:0;display:flex!important;align-items:center}.stock-col .close tr:has(.stk-side) input,.stock-col .close td:nth-child(2) input{width:52px!important;max-width:52px!important}.stock-col .close tr:has(.stk-side) td:nth-child(2){flex:none}.close .stk-side{max-width:none}}
-.close td:has(>.stk-hint){position:relative}.close .stk-hint{position:absolute;bottom:100%;right:-24px;width:max-content;margin-bottom:5px;font-size:10.5px!important;line-height:1.15;word-break:keep-all;white-space:pre-line;color:color-mix(in srgb,var(--muted) 60%,var(--surface))}
+.close td:has(>.stk-hint){position:relative}.close .stk-hint{position:absolute;bottom:100%;left:auto;width:max-content;margin-bottom:5px;font-size:10.5px!important;line-height:1.15;word-break:keep-all;white-space:pre-line;color:color-mix(in srgb,var(--muted) 60%,var(--surface))}
 .oc{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
 .oc th,.oc td{padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
 .oc tr:last-child td{border-bottom:0}
