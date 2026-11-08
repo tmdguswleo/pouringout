@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-08T13:42:45Z";window.__APP_NOTE="여유분의 +를 누르면 전달사항처럼 별도 글 항목이 추가돼요. 엔터로 저장하고 다음 항목을 입력할 수 있어요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-08T13:50:56Z";window.__APP_NOTE="여유분 +를 없앴어요. 품목 옆 빈 곳에서 바로 글을 적고, 엔터로 아래 항목을 추가해요. 글 영역과 체크리스트 사이에 구분선을 넣었어요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -9,9 +9,10 @@
   .sched-tools-close{display:inline-flex;margin-left:auto;padding:6px 12px;font:inherit;font-size:14px;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:8px;cursor:pointer}
   .stock-meraki .close .stk-hint{right:8px;text-align:right}
 }
-/* 여유분의 +는 전달사항처럼 독립된 글 항목을 추가 */
-.sp-add{margin-left:auto;flex:none;border:0;background:none;color:var(--muted);font:inherit;font-size:22px;line-height:1;padding:0 3px;cursor:pointer}
-.spare-notes:empty{display:none}.spare-notes .edt{display:block;min-height:1.45em;white-space:pre-wrap;overflow-wrap:anywhere;outline:none}
+/* 품목 옆 자유 글, 엔터로 추가한 항목과 체크리스트 사이 구분선 */
+.spare .sp-inline{flex:1 1 40px;min-width:30px;outline:none;font:inherit;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.spare .sp-inline[hidden]{display:none}
+.spare-notes:empty{display:none}.spare-notes:not(:empty){border-bottom:2px solid var(--line);margin-bottom:8px}.spare-notes .edt{display:block;min-height:1.45em;white-space:pre-wrap;overflow-wrap:anywhere;outline:none}
 </style></head><body>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -2122,14 +2123,14 @@ function noticeCard(store,emptyText,placeholder,opt={}){
         const i=S.monthnotes.findIndex(x=>x.id==="spare_"+store);const before=i>=0?S.monthnotes[i]:null;S.monthnotes=i>=0?S.monthnotes.map((x,j)=>j===i?{id:x.id,...data}:x):[...S.monthnotes,{id:"spare_"+store,...data}];render();
         W(()=>col("monthnotes").doc("spare_"+store).set(data)).then(ok=>{if(ok)return;S.monthnotes=before?S.monthnotes.map(x=>x.id===before.id?before:x):S.monthnotes.filter(x=>x.id!=="spare_"+store);render()})}},
       el("span",{},l),el("span",{class:"sp-m"},on[k]?"○":"✕")))))}
-  // 여유분: +로 별도 글 항목 추가. 이전 고정 메모도 한 항목으로 보존.
+  // 여유분 품목 옆에서 글 입력, 엔터로 아래 독립 항목 추가. 기존 내용 보존.
   if(opt.alwaysCheck&&store){const pd=(S.monthnotes||[]).find(x=>x.id==="ckpin_"+store)||{};
-    const spare=card.querySelector(".spare"),list=el("ul",{class:"list spare-notes"});
-    const initial=Array.isArray(pd.rows)?pd.rows.map(r=>({id:r.id||newId(),text:String(r.text||"")})):(pd.text?[{id:newId(),text:pd.text}]:[]);
-    let saved=JSON.stringify(initial),queued=saved,queue=Promise.resolve();
+    const spare=card.querySelector(".spare"),list=el("ul",{class:"list spare-notes"}),inline=el("div",{class:"sp-inline",role:"textbox","aria-label":`${STORES[store]} 여유분 옆 글 입력`});inline.textContent=pd.inline||"";
+    const initial=Array.isArray(pd.rows)?pd.rows.map(r=>({id:r.id||newId(),text:String(r.text||"")})):(pd.text&&pd.inline==null?[{id:newId(),text:pd.text}]:[]);
+    let saved=JSON.stringify({inline:inline.textContent,rows:initial}),queued=saved,queue=Promise.resolve();
     const readRows=()=>[...list.children].map(li=>({id:li.dataset.id,text:li.querySelector(".edt").innerText.replace(/\u00a0/g," ").trim()})).filter(r=>r.text);
-    const saveRows=()=>{const rows=readRows(),key=JSON.stringify(rows);if(key===queued)return;queued=key;
-      queue=queue.then(async()=>{if(key===saved)return;const ok=await W(()=>col("monthnotes").doc("ckpin_"+store).set({rows,text:rows.map(r=>r.text).join("\n"),editedBy:me,editedAt:now(),updatedAt:now()}),"저장됨");if(ok)saved=key;else queued=saved})};
+    const saveRows=()=>{const rows=readRows(),text=inline.innerText.replace(/\u00a0/g," ").trim(),key=JSON.stringify({inline:text,rows});if(key===queued)return;queued=key;
+      queue=queue.then(async()=>{if(key===saved)return;const ok=await W(()=>col("monthnotes").doc("ckpin_"+store).set({inline:text,rows,text:[text,...rows.map(r=>r.text)].filter(Boolean).join("\n"),editedBy:me,editedAt:now(),updatedAt:now()}),"저장됨");if(ok)saved=key;else queued=saved})};
     const focusRow=sp=>{sp.focus();const r=document.createRange();r.selectNodeContents(sp);r.collapse(false);const sel=getSelection();sel.removeAllRanges();sel.addRange(r)};
     const addRow=(row={id:newId(),text:""},focus=false)=>{const li=el("li",{"data-id":row.id});
       const sp=el("div",{class:"edt",role:"textbox","aria-label":`${STORES[store]} 여유분 글`,"aria-multiline":"true"});sp.textContent=row.text;
@@ -2141,8 +2142,14 @@ function noticeCard(store,emptyText,placeholder,opt={}){
       list.append(li);if(focus)focusRow(sp)};
     const addBlank=()=>{const empty=[...list.querySelectorAll(".edt")].find(sp=>!sp.innerText.trim());if(empty)focusRow(empty);else addRow(undefined,true)};
     initial.forEach(row=>addRow(row));
-    if(spare&&canWrite){spare.append(el("button",{class:"sp-add",type:"button","aria-label":`${STORES[store]} 여유분 글 추가`,onclick:addBlank},"+"));
-      spare.addEventListener("click",e=>{if(!e.target.closest("button"))addBlank()})}
+    if(spare){inline.hidden=!inline.textContent.trim();spare.append(inline);
+      if(canWrite){inline.contentEditable="plaintext-only";
+        inline.addEventListener("keydown",e=>{if(e.isComposing)return;if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();addBlank()}else if(e.key==="Escape"){e.preventDefault();inline.blur()}});
+        inline.addEventListener("blur",()=>{if(!inline.innerText.trim()){inline.textContent="";inline.hidden=true}saveRows()});
+        const focusInline=()=>{inline.hidden=false;focusRow(inline)};
+        spare.tabIndex=0;spare.setAttribute("aria-label",`${STORES[store]} 여유분 옆 글 입력 열기`);
+        spare.addEventListener("click",e=>{if(!e.target.closest("button,.sp-inline"))focusInline()});
+        spare.addEventListener("keydown",e=>{if(e.target===spare&&(e.key==="Enter"||e.key===" ")){e.preventDefault();focusInline()}})}}
     card.append(list)}
   if(!ns.length&&emptyText) card.append(el("div",{class:"empty"},emptyText));
   if(ns.length){const ul=el("ul",{class:"list"});ns.forEach(n=>{
