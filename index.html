@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-08T12:45:46Z";window.__APP_NOTE="레시피 뒤로 가기 개선, PC 스케줄 짜기 전체 화면, 메라키 조각 안내 정렬. 내일 항목 수동 공개와 여유분 표시 포함."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-08T13:08:23Z";window.__APP_NOTE="여유분 X·O 확대, 여유분을 눌러 메모 입력, 엔터로 줄 추가, 빈 메모 공간 자동 접기."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -632,9 +632,10 @@ button{-webkit-tap-highlight-color:transparent}
 .osend{width:100%;padding:12px;font-size:16px}.sheet .osend{position:sticky;bottom:0;z-index:2;box-shadow:0 -10px 14px var(--surface)}.sheet .osend:disabled{opacity:1;background:var(--soft);border-color:var(--line);color:var(--muted)} /* 품목이 많아도 요청 버튼은 항상 아래에 보이게 */.osend:disabled{opacity:.45}
 .osup{margin-top:10px}.todo-team{flex:none;align-self:center;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;max-width:55%}.todo-team .np-teambtn{white-space:nowrap}.nadd-tools{display:inline-flex;align-items:center;gap:8px}.nadd-join{max-width:none;margin-left:6px}li.editing .li-team{display:none}.iedit-bar .nadd-join{flex:1 1 auto;min-width:0;justify-content:flex-start;margin-left:4px}.iedit-bar:has(.nadd-join){margin-left:-38px} /* 할 일 누를 때: 클립·참여를 새 할 일 입력 칸과 같은 자리(왼쪽)로 */ /* 할 일 누르면 이름은 첨부 옆으로 */
 .spare{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:14px}.sp-lab{color:var(--muted);font-size:13px;margin-right:2px}
-.sp-it{display:inline-flex;align-items:center;gap:5px;border:0;background:none;font:inherit;font-weight:400;color:var(--ink);padding:3px 0;cursor:pointer}.sp-m{color:var(--muted);font-size:13px}.sp-it.on .sp-m{color:var(--accent)} /* 여유분 ✕/○ */
+.sp-it{display:inline-flex;align-items:center;gap:5px;border:0;background:none;font:inherit;font-weight:400;color:var(--ink);padding:3px 0;cursor:pointer}.sp-m{color:var(--muted);font-size:1em}.sp-it.on .sp-m{color:var(--accent)} /* 여유분 ✕/○ */
 .pubbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border:1px solid var(--accent);border-radius:12px;font-size:14px;margin:-8px 0 0} /* 사장: 공개 전 n개 · 모두 공개 */
-.ckpin{padding:10px 12px;border-bottom:1px solid var(--line);min-height:21px}.ckpin-t{outline:none;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.45em;cursor:text}
+.ckpin{padding:10px 12px;border-bottom:1px solid var(--line);min-height:21px}.ckpin.is-empty:not(:focus-within){padding:0;border-bottom:0}.ckpin.is-empty:not(:focus-within) .ckpin-t{min-height:0}.spare[data-editable]{cursor:text}
+.ckpin-t{outline:none;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.45em;cursor:text}
 .buy-hint{font-size:11px;opacity:.75;padding:6px 14px 0}
 .osup-head{display:flex;align-items:center;gap:8px;padding:12px 14px 0;margin-bottom:-4px} /* 거래처 이름과 첫 품목 줄 사이 좁게 (품목 줄 높이는 그대로) */
 .osup-empty{display:flex;align-items:center;gap:8px;padding:11px 14px;color:var(--muted)}
@@ -2123,9 +2124,18 @@ function noticeCard(store,emptyText,placeholder,opt={}){
   if(opt.alwaysCheck&&store){const pd=(S.monthnotes||[]).find(x=>x.id==="ckpin_"+store)||{};
     const sp=el("div",{class:"ckpin-t"});sp.textContent=pd.text||"";
     if(canWrite){sp.contentEditable="true";sp.setAttribute("aria-label",`${STORES[store]} 체크리스트 고정 메모`);
-      sp.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();sp.blur()}};
+      sp.setAttribute("role","textbox");sp.setAttribute("aria-multiline","true");
+      sp.onkeydown=e=>{if(e.key==="Escape"&&!e.isComposing){e.preventDefault();sp.blur()}};
       sp.onblur=()=>{const t=sp.innerText.replace(/\u00a0/g," ").trim();if(t===(pd.text||""))return;W(()=>col("monthnotes").doc("ckpin_"+store).set({text:t,editedBy:me,editedAt:now(),updatedAt:now()}),"저장됨")}}
-    card.append(el("div",{class:"ckpin"},sp))}
+    const memo=el("div",{class:"ckpin"},sp);
+    const syncEmpty=()=>memo.classList.toggle("is-empty",!sp.textContent.trim());syncEmpty();sp.addEventListener("input",syncEmpty);
+    sp.addEventListener("blur",()=>{if(!sp.textContent.trim())sp.textContent="";syncEmpty()});
+    const spare=card.querySelector(".spare");
+    if(canWrite&&spare){spare.dataset.editable="true";spare.tabIndex=0;spare.setAttribute("aria-label",`${STORES[store]} 여유분 메모 입력`);
+      const focusMemo=()=>{sp.focus();const sel=getSelection(),r=document.createRange();r.selectNodeContents(sp);r.collapse(false);sel.removeAllRanges();sel.addRange(r)};
+      spare.addEventListener("click",e=>{if(!e.target.closest("button"))focusMemo()});
+      spare.addEventListener("keydown",e=>{if(e.target===spare&&(e.key==="Enter"||e.key===" ")){e.preventDefault();focusMemo()}})}
+    card.append(memo)}
   if(!ns.length&&emptyText) card.append(el("div",{class:"empty"},emptyText));
   if(ns.length){const ul=el("ul",{class:"list"});ns.forEach(n=>{
     const C=n._col;
