@@ -1,4 +1,15 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+/* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
+.sched-tools-close{display:none}
+@media (min-width:601px){
+  .sheet:has(.stools){align-items:stretch}
+  .sheet .panel:has(.stools){width:100%;max-width:none;height:100%;max-height:none;border-radius:0;padding:20px 24px;box-sizing:border-box}
+  .sheet .panel:has(.stools)>h3{flex:none}
+  .sheet .panel:has(.stools)>.stools{flex:none;min-width:0}
+  .sched-tools-close{display:inline-flex;margin-left:auto;padding:6px 12px;font:inherit;font-size:14px;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:8px;cursor:pointer}
+  .stock-meraki .close .stk-hint{right:8px;text-align:right}
+}
+</style></head><body>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -620,6 +631,9 @@ button{-webkit-tap-highlight-color:transparent}
 .sheet.fit .panel{height:88%;max-height:none;overflow:auto}.sheet.fit .panel>*{flex:none}.sheet.fit .olist{display:block;flex:1 1 0;min-height:0;overflow:auto;overscroll-behavior:contain}.sheet.fit .olist:empty{display:block}
 .osend{width:100%;padding:12px;font-size:16px}.sheet .osend{position:sticky;bottom:0;z-index:2;box-shadow:0 -10px 14px var(--surface)}.sheet .osend:disabled{opacity:1;background:var(--soft);border-color:var(--line);color:var(--muted)} /* 품목이 많아도 요청 버튼은 항상 아래에 보이게 */.osend:disabled{opacity:.45}
 .osup{margin-top:10px}.todo-team{flex:none;align-self:center;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;max-width:55%}.todo-team .np-teambtn{white-space:nowrap}.nadd-tools{display:inline-flex;align-items:center;gap:8px}.nadd-join{max-width:none;margin-left:6px}li.editing .li-team{display:none}.iedit-bar .nadd-join{flex:1 1 auto;min-width:0;justify-content:flex-start;margin-left:4px}.iedit-bar:has(.nadd-join){margin-left:-38px} /* 할 일 누를 때: 클립·참여를 새 할 일 입력 칸과 같은 자리(왼쪽)로 */ /* 할 일 누르면 이름은 첨부 옆으로 */
+.spare{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:14px}.sp-lab{color:var(--muted);font-size:13px;margin-right:2px}
+.sp-it{display:inline-flex;align-items:center;gap:5px;border:0;background:none;font:inherit;font-weight:400;color:var(--ink);padding:3px 0;cursor:pointer}.sp-m{color:var(--muted);font-size:13px}.sp-it.on .sp-m{color:var(--accent)} /* 여유분 ✕/○ */
+.pubbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border:1px solid var(--accent);border-radius:12px;font-size:14px;margin:-8px 0 0} /* 사장: 공개 전 n개 · 모두 공개 */
 .ckpin{padding:10px 12px;border-bottom:1px solid var(--line);min-height:21px}.ckpin-t{outline:none;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.45em;cursor:text}
 .buy-hint{font-size:11px;opacity:.75;padding:6px 14px 0}
 .osup-head{display:flex;align-items:center;gap:8px;padding:12px 14px 0;margin-bottom:-4px} /* 거래처 이름과 첫 품목 줄 사이 좁게 (품목 줄 높이는 그대로) */
@@ -1116,11 +1130,16 @@ const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return iso(d)};
 const md=s=>`${+s.slice(5,7)}/${+s.slice(8)}`;
 const mdw=s=>`${md(s)}(${DOW[parse(s).getDay()]})`;
 let TODAY=iso(new Date());
-/* 내일 미리 쓰기: showAt 전에는 사장만 보임 */
-const SHOW_H=9,SHOW_M=30,SHOW_LABEL="오전 9:30";
+/* 내일 미리 쓰기(2026-11-08~): 사장만 보이는 '공개 전'(hold) → 오늘 화면 '모두 공개'를 눌러야 직원에게 보임. 자동 공개·알림 없음.
+   showAt을 먼 미래로 넣어 두면 알림 함수가 새 글 알림을 보내지 않음. 예전 9:30 공개 글(showAt만)은 그 시각에 보임.
+   'in' 체크로 생기는 다음 날 out 항목은 그날 0시에 보임(showAt=그날 0시) */
+const SHOW_H=9,SHOW_M=30,SHOW_LABEL="오전 9:30",HOLD_AT="9999-12-31T00:00:00.000Z";
 const showAtFor=d=>{const x=parse(d);x.setHours(SHOW_H,SHOW_M,0,0);return x.toISOString()};
-const showTs=n=>n.showAt?Date.parse(showAtFor(n.date)):0;
-const visN=n=>!n.showAt||(typeof isBoss==="function"&&isBoss())||showTs(n)<=Date.now();
+const dayStartFor=d=>{const x=parse(d);x.setHours(0,0,0,0);return x.toISOString()};
+const showTs=n=>n.showAt?(Date.parse(n.showAt)||Date.parse(showAtFor(n.date))):0;
+const visN=n=>n.hold?(typeof isBoss==="function"&&isBoss()):(!n.showAt||(typeof isBoss==="function"&&isBoss())||showTs(n)<=Date.now());
+const DRAFT={hold:true,showAt:HOLD_AT};
+const SPARE={pouring:[["banana","바나나 브레드"],["fin","휘낭시에"]],meraki:[["banana","바나나 브레드"],["scone","스콘"],["fin","휘낭시에"]]};
 setInterval(()=>{const t=iso(new Date());let need=false;
   if(t!==TODAY){if(dayDate===TODAY)dayDate=t;TODAY=t;need=true}
   const nw=Date.now();if(S.notices&&S.notices.some(n=>n.showAt&&showTs(n)<=nw&&showTs(n)>nw-61000))need=true;
@@ -1998,7 +2017,9 @@ function vToday(root){
     el("strong",{},mdw(dayDate)+(dayDate===addDays(TODAY,1)?" 내일":""),dayDate===TODAY?el("span",{class:"pill pill-today",style:"margin-left:8px;vertical-align:4px"},"오늘"):null,HOLIDAYS[dayDate]?el("span",{style:"color:var(--red);font-size:13px;margin-left:6px"},HOLIDAYS[dayDate]):null),
     null);
   v.append(bar);
-  if(dayDate>TODAY)v.append(el("p",{class:"hint",style:"margin:-10px 0 0"},`여기 쓴 전달사항·체크리스트는 나만 보이고, ${md(dayDate)} ${SHOW_LABEL}에 직원들에게 보여요`));
+  if(isBoss()&&canWrite&&dayDate===TODAY){const hs=S.notices.filter(n=>n.hold&&n.date<=TODAY);
+    if(hs.length)v.append(el("div",{class:"pubbar"},el("span",{},`공개 전 ${hs.length}개`),el("button",{class:"btn sm",type:"button",onclick:()=>fastSave("notices",hs.map(n=>n.id),{hold:false,showAt:""},`${hs.length}개 공개했어요`)},"모두 공개")))}
+  if(dayDate>TODAY)v.append(el("p",{class:"hint",style:"margin:-10px 0 0"},`여기 쓴 전달사항·체크리스트는 나만 보여요. ${md(dayDate)} 오늘 화면에서 '모두 공개'를 누르면 직원들에게 보여요`));
 
   // 근무
   if(can("today:shift"))v.append(el("section",{},el("h2",{},"근무",null),shiftCard(dayDate)));
@@ -2034,7 +2055,7 @@ function vToday(root){
   const tbs=[];
   ["pouring","meraki"].forEach(st=>{let kids;try{kids=[...closingCard(dayDate,st).childNodes]}catch(e){kids=[el("div",{class:"hint",style:"padding:10px"},"재고 칸을 그리지 못했어요: "+(e&&e.message||e))]}
     kids.forEach(k=>{const tb=k.querySelector&&k.querySelector("table.close tbody");if(tb)tbs.push(tb)});
-    sc.append(el("div",{class:"cl-col stock-col"},el("div",{class:"cl-head"},el("span",{class:"pill "+st},STORES[st])),...kids))});
+    sc.append(el("div",{class:"cl-col stock-col stock-"+st},el("div",{class:"cl-head"},el("span",{class:"pill "+st},STORES[st])),...kids))});
   // 항목 수가 적은 칸은 빈 줄로 채워 양쪽 줄 선이 나란하게 (빈 줄 높이 = 옆 칸 같은 줄 높이)
   if(tbs.length===2){const n=Math.max(tbs[0].children.length,tbs[1].children.length);
     // 빈 줄 = 옆 칸 같은 줄을 보이지 않게 복사 (그래서 높이가 정확히 같음)
@@ -2091,6 +2112,13 @@ function noticeCard(store,emptyText,placeholder,opt={}){
   if(opt.defaultCheck&&noticeCheckMode[store||"all"]===undefined)noticeCheckMode[store||"all"]=true;
   if(opt.alwaysCheck)noticeCheckMode[store||"all"]=true; // 체크 표시 고르기 없음: 늘 체크 항목으로
   const card=el("div",{class:"card"});
+  // 여유분: 체크리스트 맨 위 한 줄. 품목을 누르면 ✕ ↔ ○ (monthnotes/spare_<매장> {date,on}, 날짜가 바뀌면 모두 ✕). 오늘 화면만
+  if(opt.alwaysCheck&&store&&SPARE[store]&&dayDate===TODAY){const sd=(S.monthnotes||[]).find(x=>x.id==="spare_"+store)||{};const on=sd.date===TODAY&&sd.on?sd.on:{};
+    card.append(el("div",{class:"spare"},el("span",{class:"sp-lab"},"여유분"),...SPARE[store].map(([k,l])=>el("button",{class:"sp-it"+(on[k]?" on":""),type:"button","aria-pressed":String(!!on[k]),"aria-label":`${l} 여유분 ${on[k]?"있음":"없음"}`,
+      onclick:()=>{if(!canWrite||!db){flash("보기 전용 계정이에요",true);return}const nx={...on,[k]:!on[k]};const data={date:TODAY,on:nx,editedBy:me,editedAt:now(),updatedAt:now()};
+        const i=S.monthnotes.findIndex(x=>x.id==="spare_"+store);const before=i>=0?S.monthnotes[i]:null;S.monthnotes=i>=0?S.monthnotes.map((x,j)=>j===i?{id:x.id,...data}:x):[...S.monthnotes,{id:"spare_"+store,...data}];render();
+        W(()=>col("monthnotes").doc("spare_"+store).set(data)).then(ok=>{if(ok)return;S.monthnotes=before?S.monthnotes.map(x=>x.id===before.id?before:x):S.monthnotes.filter(x=>x.id!=="spare_"+store);render()})}},
+      el("span",{},l),el("span",{class:"sp-m"},on[k]?"○":"✕")))))}
   // 매장 체크리스트 맨 위: 체크 칸 없는 고정 한 줄 (날짜와 상관없이 늘 같은 내용, monthnotes/ckpin_<매장>). 누르면 고치고 바깥 누르면 저장
   if(opt.alwaysCheck&&store){const pd=(S.monthnotes||[]).find(x=>x.id==="ckpin_"+store)||{};
     const sp=el("div",{class:"ckpin-t"});sp.textContent=pd.text||"";
@@ -2113,8 +2141,8 @@ function noticeCard(store,emptyText,placeholder,opt={}){
     if(n.html)wireBody(sp,()=>W(()=>col("notices").doc(n.id).update({html:normDoc(sp.innerHTML).innerHTML,editedBy:me,editedAt:now()})),canWrite);
     if(n.html)sp.addEventListener("click",e=>{const li=ckHit(e,sp);if(!li)return;e.preventDefault();e.stopPropagation();if(!canWrite){flash("보기 전용 계정이에요",true);return}
       li.classList.toggle("done");W(()=>col("notices").doc(n.id).update({html:normDoc(sp.innerHTML).innerHTML,editedBy:me,editedAt:now()}))});
-    const pend=n.showAt&&showTs(n)>Date.now();
-    const txt=el("div",{class:"txt"},sp,dayDate===TODAY&&isNew(n)?newB(n):null,pend?el("span",{class:"by pendtag"},`${md(n.date)} ${SHOW_LABEL} 공개`):null,n.date&&n.date<dayDate?el("span",{class:"by since",style:"margin-left:6px"},`${md(n.date)}부터`):null);
+    const pend=n.hold||n.showAt&&showTs(n)>Date.now();
+    const txt=el("div",{class:"txt"},sp,dayDate===TODAY&&isNew(n)?newB(n):null,pend?el("span",{class:"by pendtag"},n.hold?"공개 전":`${md(n.date)} 공개`):null,n.date&&n.date<dayDate?el("span",{class:"by since",style:"margin-left:6px"},`${md(n.date)}부터`):null);
     if(img) txt.append(img);
     if(vid) txt.append(vid);
     if(n.fileId) txt.append(el("div",{},fileChip(n)));
@@ -2129,9 +2157,9 @@ function noticeCard(store,emptyText,placeholder,opt={}){
   const inp=el("input",{type:"text",placeholder,"aria-label":placeholder});
   // 엔터: 서버를 기다리지 않고 바로 목록에 보여줌 (저장 실패하면 다시 뺌)
   const go=()=>{const t=inp.value.replace(/\u00a0/g," ").trim();if(!t||/^(메라키|푸어링) ›$/.test(t))return;inp.value="";const c=!!noticeCheckMode[key];
-    const id=newId(),data={date:dayDate,store,text:t,by:me,createdAt:now(),...(dayDate>TODAY?{showAt:showAtFor(dayDate)}:{}),...(c?{check:true,done:false}:{})};
+    const id=newId(),data={date:dayDate,store,text:t,by:me,createdAt:now(),...(dayDate>TODAY?DRAFT:{}),...(c?{check:true,done:false}:{})};
     const outT=c?inToOut(t):null;if(outT){const oid=newId(),nd=addDays(dayDate,1);data.autoOut=oid; // in 체크 → 다음 날 같은 매장 체크리스트에 out 자동
-      const ra=remindFor(nd,outT);W(()=>col("notices").doc(oid).set({date:nd,store,text:outT,by:me,createdAt:now(),autoFrom:id,check:true,done:false,...(ra?{remindAt:ra}:{}),...(nd>TODAY?{showAt:showAtFor(nd)}:{})}),null)}
+      const ra=remindFor(nd,outT);W(()=>col("notices").doc(oid).set({date:nd,store,text:outT,by:me,createdAt:now(),autoFrom:id,check:true,done:false,...(ra?{remindAt:ra}:{}),...(nd>TODAY?{showAt:dayStartFor(nd)}:{})}),null)}
     if(c&&store){const ra=remindFor(dayDate,t);if(ra)data.remindAt=ra} // 직접 쓴 'out 시간' 항목도 알림
     optimisticAdd("notices",id,data,inp);
     W(()=>col("notices").doc(id).set(data)).then(ok=>{ok?optimisticDone("notices",id):optimisticDrop("notices",id)})};
@@ -2148,7 +2176,7 @@ function noticeCard(store,emptyText,placeholder,opt={}){
       try{const blob=isV?await shrinkVideo(f):await shrinkImage(f);if(isV&&blob.size>VMAX){flash("줄여도 영상이 너무 커요(20MB까지). 짧게 잘라서 올려 주세요",true);return}const r=await assets.upload(blob);
         const t=inp.value.trim();inp.value="";const c=!!noticeCheckMode[key];
         const nid=newId(),posterP=isV?videoPoster(f):null;
-        await W(()=>col("notices").doc(nid).set({date:dayDate,store,text:t,[isV?"video":"image"]:r.id,by:me,createdAt:now(),...(dayDate>TODAY?{showAt:showAtFor(dayDate)}:{}),...(c?{check:true,done:false}:{})}),isV?"영상 첨부됨":"사진 첨부됨");afterPoster({posterP},pid=>{const cur=S.notices.find(x=>x.id===nid);if(!cur||cur.video===r.id)W(()=>col("notices").doc(nid).update({posterId:pid}))});
+        await W(()=>col("notices").doc(nid).set({date:dayDate,store,text:t,[isV?"video":"image"]:r.id,by:me,createdAt:now(),...(dayDate>TODAY?DRAFT:{}),...(c?{check:true,done:false}:{})}),isV?"영상 첨부됨":"사진 첨부됨");afterPoster({posterP},pid=>{const cur=S.notices.find(x=>x.id===nid);if(!cur||cur.video===r.id)W(()=>col("notices").doc(nid).update({posterId:pid}))});
       }catch(e){flash(e&&e.code==="quota_exceeded"?"사진 저장 공간이 가득 찼어요":"사진을 올리지 못했어요. 다시 해주세요",true)}};
     card.append(fi);
   }
@@ -2850,7 +2878,7 @@ function schedRules(){const ta=el("textarea",{class:"rules-ta"});ta.value=schedR
   openSheet("스케줄 짜기 조건",[el("p",{class:"hint",style:"margin:0"},"언제든 고치고 더할 수 있어요. 바깥을 누르면 저장돼요. 아래 목록에 없는 조건은 Claude에게 반영을 부탁해 주세요"),ta,readP],async()=>{const t=ta.value.replace(/\s+$/,"");
     if(t!==schedRulesText())await W(()=>col("monthnotes").doc("schedrules").set({text:t,editedBy:me,editedAt:now(),updatedAt:now()}),"조건 저장됨");setTimeout(schedTools,0);return true},"",null,{autosave:true})}
 function schedTools(){toolsBody=el("div",{class:"stools"});renderTools();openSheet("스케줄 짜기",[toolsBody],async()=>true,"",null,{autosave:true});
-  const h3=document.querySelector("#sheetRoot .panel h3");if(h3){h3.classList.add("st-h3");h3.append(el("button",{class:"rulesbtn",type:"button","aria-label":"스케줄 짜기 조건 보기·고치기",onclick:schedRules},"›"))}}
+  const h3=document.querySelector("#sheetRoot .panel h3");if(h3){h3.classList.add("st-h3");h3.append(el("button",{class:"rulesbtn",type:"button","aria-label":"스케줄 짜기 조건 보기·고치기",onclick:schedRules},"›"),el("button",{class:"sched-tools-close",type:"button",onclick:closeSheet,"aria-label":"스케줄 짜기 닫기"},"닫기"))}}
 // 못 지킨 부분 등 글에서 날짜·이름에 색 (달력과 같은 직원 색)
 function colorize(t){const f=document.createDocumentFragment();const NM=[];DRAFT_STAFF.forEach(k=>{const s=byKey[k];if(s)NM.push([s.name,k])});
   const re=new RegExp(`(\\d{1,2}/\\d{1,2})|(${NM.map(x=>x[0]).join("|")})`,"g");let i=0,m;
@@ -3761,6 +3789,7 @@ function chgApply(root,hist,lastRev){chgClear(root);root.normalize();if(!hist||!
       if(b===b0)f.append(el("span",{class:"chg-at","data-noexport":"",contenteditable:"false",style:hv(o.by)},`${who(o.by)}${o.at?" "+hm(o.at):""}`));at=b});
     if(at<en)f.append(tx.slice(at-st));node.replaceWith(f)}}
 function notePage(d){
+  if(sheetNoteOff)sheetNoteOff();
   const root=$("sheetRoot");root.textContent="";
   if(d&&me){const sl=seenLoad();sl.ids[d.id]=Date.now();seenSave();if(seenSnap&&seenSnap.ids)seenSnap.ids[d.id]=sl.ids[d.id];document.querySelectorAll(".newb[data-id=\""+CSS.escape(d.id)+"\"]").forEach(b=>b.remove());updBadges()} // 글을 열면 바로 읽음 처리 (빨간 숫자 바로 사라짐)
   const edit=canWrite;
@@ -3811,7 +3840,7 @@ function notePage(d){
         afterPoster(m,pid=>{if(!e.isConnected)return;e.dataset.poster=pid;e.poster=BLOB+pid;ed.dispatchEvent(new Event("input"))})}
       flash("첨부됨")}):null):null;
   // 자동 저장: 여백을 눌러 글쓰기를 마치면, 쓰는 중엔 잠깐 멈췄을 때, 뒤로 갈 때
-  let curId=d?d.id:null,baseHtml=base,baseCat=cat,pinned=!!(d&&d.pinned),saving=null,timer=null;
+  let curId=d?d.id:null,baseHtml=base,baseCat=cat,pinned=!!(d&&d.pinned),saving=null,timer=null,contentEdited=false;
   let hist=d&&Array.isArray(d.hist)?d.hist.map(h=>({...h})):[];const SID=newId(); // 이번에 열어서 고친 것 = 기록 하나
   // 만든 시각은 처음 저장한 값 그대로 유지 (목록 순서 기준)
   let createdAt=d?(d.createdAt||d.noteDate||d.updatedAt||now()):null;
@@ -3821,6 +3850,8 @@ function notePage(d){
   let members=d?[...(d.members||[])]:(staffOf(cat)?[staffOf(cat)]:[me]);
   const teamKey=()=>members.join(",");let baseTeam=d?teamKey():"";
   const save=async()=>{if(!edit)return true;
+    // 링크·영상·수정 기록을 화면에 표시한 것만으로는 저장하지 않음.
+    if(!contentEdited&&!saving&&cat===baseCat&&teamKey()===baseTeam&&!finalized)return true;
     if(saving)await saving;
     const clean=normDoc(ed.innerHTML);const htmlNew=clean.innerHTML;
     const tv=titleIn.value.trim();
@@ -3850,12 +3881,14 @@ function notePage(d){
     const ok=await saving;saving=null;
     if(ok){hist=H;if(!createdAt)createdAt=t;curId=id;baseHtml=htmlNew;baseCat=cat;baseTeam=teamKey();finalized=false;baseTitle=titleIn.value;if(d)d.titleSep=true}return ok};
   let finalized=false;
-  if(edit){ed.addEventListener("input",()=>{clearTimeout(timer);timer=setTimeout(save,1500)});
+  if(edit){ed.addEventListener("input",()=>{contentEdited=true;clearTimeout(timer);timer=setTimeout(save,1500)});
     ed.addEventListener("blur",()=>{clearTimeout(timer);save().then(()=>{if(document.activeElement!==ed)showChg()})});
     ed.addEventListener("focus",()=>chgClear(ed))}
   // 뒤로: 아이폰 메모처럼 바로 닫힘(화면만 숨김). 저장은 뒤에서 하고, 실패했을 때만 메모를 다시 띄워 알려줌
   let closing=false,leaving=false;
-  const close=async()=>{if(closing)return;closing=true;clearTimeout(timer);let ok=false,why="";
+  const close=async()=>{if(closing)return;
+    if(!saving&&!contentEdited&&cat===baseCat&&teamKey()===baseTeam&&!finalized){closeSheet();return}
+    closing=true;clearTimeout(timer);let ok=false,why="";
     leaving=true;page.classList.add("np-leaving");document.documentElement.classList.remove("np-lock");
     try{ok=await Promise.race([save(),new Promise(r=>setTimeout(()=>r("timeout"),20000))])}catch(e){why=String(e&&e.message||e);ok=false}
     closing=false;
@@ -3863,7 +3896,7 @@ function notePage(d){
     if(ok===true){if(mine())closeSheet();return}
     if(!mine())return;
     leaving=false;page.classList.remove("np-leaving");document.documentElement.classList.add("np-lock");
-    confirmBox(ok==="timeout"?"저장이 아직 끝나지 않았어요. 그래도 나갈까요?":"저장하지 못했어요"+(why?" ("+why.slice(0,60)+")":"")+". 그래도 나갈까요? 방금 고친 내용이 저장되지 않을 수 있어요","나가기",()=>closeSheet())};
+    confirmBox(ok==="timeout"?"저장이 아직 끝나지 않았어요. 그래도 나갈까요?":"저장하지 못했어요"+(why?" ("+why.slice(0,60)+")":"")+". 그래도 나갈까요? 방금 고친 내용이 저장되지 않을 수 있어요","나가기",()=>{if(mine())closeSheet()})};
   // 메모 안 되돌리기 ↶ / 다시 실행 ↷ (위쪽 앱 되돌리기 버튼이 메모 화면에 가려져서 여기에도 둠)
   // 아이폰 기본 되돌리기는 글쓰기 칸을 다시 눌러 키보드·화면이 튀어서, 본문 상태를 직접 기억했다가 되돌림 (커서·키보드는 건드리지 않음)
   const UH=[ed.innerHTML];let uhI=0,uhT=null,uhSkip=false;
@@ -3948,7 +3981,9 @@ function notePage(d){
       edit&&mineOrBoss()?it(svgI(IC.trash),"삭제",doDelete,"danger"):null);
     const ov=overlay(box,"np-menuwrap")};
   page.querySelector(".np-more").before(attrBtn);
-  root.append(page);requestAnimationFrame(showChg);
+  root.append(page);requestAnimationFrame(()=>{if(root.contains(page))showChg()});
+  const dispose=[];
+  sheetNoteOff=()=>{clearTimeout(timer);clearTimeout(uhT);document.removeEventListener("selectionchange",onSel);window.removeEventListener("scroll",pin);dispose.forEach(fn=>fn());sheetNoteOff=null};
   // 상단 ‹ ••• 고정: 메모가 열린 동안 바깥 페이지가 밀려 올라가지 않게 막음
   const keepY=window.scrollY;document.documentElement.classList.add("np-lock");
   const pin=()=>{if(!document.body.contains(page)){window.removeEventListener("scroll",pin);document.documentElement.classList.remove("np-lock");return}if(leaving)return;if(Math.abs(window.scrollY-keepY)>1||window.scrollX)window.scrollTo(0,keepY)};
@@ -3969,7 +4004,7 @@ function notePage(d){
     const keepCaret=()=>{if(isEmp())return;const s=getSelection();if(!s.rangeCount||!ed.contains(s.anchorNode))return;
       let r=s.getRangeAt(0).getBoundingClientRect();if(!r.height&&s.anchorNode===ed){const b=ed.getBoundingClientRect();r={bottom:b.top+28}}else if(!r.height&&s.anchorNode.nodeType===1)r=s.anchorNode.getBoundingClientRect();
       const limit=kbar.getBoundingClientRect().top-12;if(r.bottom>limit)scroller.scrollTop+=r.bottom-limit};
-    if(vv){vv.addEventListener("resize",place);vv.addEventListener("scroll",place)}
+    if(vv){vv.addEventListener("resize",place);vv.addEventListener("scroll",place);dispose.push(()=>{vv.removeEventListener("resize",place);vv.removeEventListener("scroll",place)})}
     ["input","keyup","click"].forEach(ev=>ed.addEventListener(ev,()=>requestAnimationFrame(keepCaret)));
     ed.addEventListener("focus",()=>{page.classList.add("typing");place();setTimeout(()=>{place();keepCaret()},350);setTimeout(()=>{place();keepCaret()},800)});
     ed.addEventListener("blur",()=>setTimeout(()=>{if(document.activeElement!==ed){page.classList.remove("typing");scroller.style.paddingBottom=""}},150));
@@ -3980,13 +4015,13 @@ function notePage(d){
     const short=()=>{if(isEmp())return true;const m=ed.style.minHeight;ed.style.minHeight="0px";const h=ed.scrollHeight;ed.style.minHeight=m;return h<scroller.clientHeight*0.5};
     ed.addEventListener("focus",()=>{if(!short())return;ed.style.minHeight="1.6em";holdTil=Date.now()+1200;[0,50,150,350,600,900].forEach(t=>setTimeout(hold,t))});
     ed.addEventListener("input",()=>{holdTil=0;if(ed.style.minHeight&&!short())unShrink()});ed.addEventListener("blur",()=>{unShrink();holdTil=0});
-    scroller.addEventListener("scroll",hold,{passive:true});if(vv)vv.addEventListener("scroll",hold);
+    scroller.addEventListener("scroll",hold,{passive:true});if(vv){vv.addEventListener("scroll",hold);dispose.push(()=>vv.removeEventListener("scroll",hold))}
   }
   sheetDismiss=close;document.addEventListener("keydown",escClose);
   // 안내 문구: 글자가 없으면 계속 보이고(커서가 있어도), 입력을 시작하면 사라짐
   const phUpd=()=>ed.classList.toggle("is-empty",!ed.textContent.trim()&&!ed.querySelector("img,video,li"));
   phUpd();ed.addEventListener("input",phUpd);
-  if(edit){titleIn.addEventListener("input",()=>{clearTimeout(timer);timer=setTimeout(save,1500)});titleIn.addEventListener("blur",()=>{clearTimeout(timer);save()});
+  if(edit){titleIn.addEventListener("input",()=>{contentEdited=true;clearTimeout(timer);timer=setTimeout(save,1500)});titleIn.addEventListener("blur",()=>{clearTimeout(timer);save()});
     titleIn.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();if(!ed.firstChild)ed.append(el("div",{},el("br")));ed.focus()}})}
   if(!d&&edit)titleIn.focus(); // 새 메모: 제목 칸부터 (누른 순간 키보드)
 }
@@ -4011,8 +4046,9 @@ function blendPick(store,d){let ym=(d||TODAY).slice(0,7);const cal=el("div",{cla
   draw();
   openSheet("제조일",[cal],async()=>true,"닫기",null,{autosave:true})} // 버튼 없음: 바깥을 누르면 닫힘
 /* ---------- sheet ---------- */
-let sheetDismiss=null,sheetFitOff=null;
+let sheetDismiss=null,sheetFitOff=null,sheetNoteOff=null;
 function openSheet(title,parts,onSave,saveLabel="저장",extraBtn,opts={}){
+  if(sheetNoteOff)sheetNoteOff();
   if(sheetFitOff)sheetFitOff();
   const root=$("sheetRoot");root.textContent="";
   const cancel=el("button",{class:"btn ghost",type:"button",onclick:closeSheet},"닫기");
@@ -4041,7 +4077,7 @@ function alertBox(t,m,noBtn){ // noBtn: 확인 버튼 없이 바깥(여백)을 �
   const ov=el("div",{class:"alertov",role:"alertdialog","aria-label":t},el("div",{class:"ap"+(noBtn?" nobtn":"")},el("h4",{},t),el("p",{},m),noBtn?null:el("button",{class:"btn",type:"button",onclick:()=>ov.remove()},"확인")));ov.onclick=e=>{if(noBtn||e.target===ov)ov.remove()};document.body.append(ov);const b=ov.querySelector("button");if(b)b.focus()} // 버튼 없는 창은 창 자체를 눌러도 닫힘
 function askConfirm(msg,fn,yes="지우기"){openSheet("확인",[el("p",{style:"margin:0"},msg)],async()=>{await fn();return true},yes)}
 function escClose(e){if(e.key==="Escape"&&sheetDismiss)sheetDismiss()}
-function closeSheet(){if(sheetFitOff)sheetFitOff();sheetDismiss=null;$("sheetRoot").textContent="";document.documentElement.classList.remove("np-lock");document.removeEventListener("keydown",escClose);if(pendingRender)render()}
+function closeSheet(){if(sheetNoteOff)sheetNoteOff();if(sheetFitOff)sheetFitOff();sheetDismiss=null;$("sheetRoot").textContent="";document.documentElement.classList.remove("np-lock");document.removeEventListener("keydown",escClose);if(pendingRender)render()}
 
 /* ---------- data ---------- */
 /* 새 주소: 받은 데이터를 휴대폰에 저장해 두고, 다음에 열거나 로그인할 때 그걸로 화면부터 바로 보여 줌 (그다음 서버 값으로 바뀜) */
