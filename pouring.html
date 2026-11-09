@@ -2057,7 +2057,7 @@ function vToday(root){
     const two=el("div",{class:"card cl-one"});
     // 두 칸의 줄 수를 같게 맞춰 머리줄·품목줄·+줄이 모두 같은 높이로 나란히 (짧은 칸은 빈 줄로 채움)
     const tIso=iso(new Date());const doneToday=S.orders.filter(visN).filter(o=>o.done&&o.doneAt&&iso(new Date(o.doneAt))===tIso);
-    const shown=[...pend,...(dayDate>TODAY?[]:doneToday)].sort((a,b)=>tsOf(a.createdAt)-tsOf(b.createdAt));
+    const shown=[...pend,...(dayDate>TODAY?[]:doneToday)].sort((a,b)=>Number(!!b.done)-Number(!!a.done)||tsOf(a.createdAt)-tsOf(b.createdAt));
     const byStore=["pouring","meraki"].map(st=>shown.filter(o=>orderStores(o).includes(st)));const nRows=Math.max(...byStore.map(x=>x.length));
     ["pouring","meraki"].forEach((st,si)=>{const its=byStore[si];
       const ordCb=o=>{const cb=el("input",{type:"checkbox",class:"chk","aria-label":`${orderLabel(o)} 주문 완료`,disabled:!canDoneOrder(o)});cb.checked=!!o.done;
