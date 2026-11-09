@@ -2377,7 +2377,7 @@ function openOrderCat(mode){ // mode: "sup"=거래처 관리, "item"=품목 관�
         const url=el("input",{type:"url",value:it.url||"",placeholder:"이 품목 주문 링크 (선택)"});url.oninput=()=>it.url=url.value;
         const rw=el("div",{class:"ocat-it","data-k":(String(it.name||"")+" "+String(it.cat||"")).toLowerCase()},nm,unit);
         rw._arr=g;rw._i=i;rw.append(dragHandle(rw,list,flat),el("button",{class:"x",type:"button","aria-label":"품목 삭제",onclick:()=>{items.splice(items.indexOf(it),1);draw()}},"×"),el("div",{class:"ocat-det"},ct,sp,url));
-        rw.onfocusin=()=>rw.classList.add("editing");list.append(rw)});
+        rw.addEventListener("focusin",()=>rw.classList.add("editing"));list.append(rw)});
       list.append(el("button",{class:"btn ghost sm ocg-add",type:"button",onclick:()=>{const n={id:"i"+newId(),name:"",unit:"",cat:c,sup:""};items.splice(items.indexOf(g[g.length-1])+1,0,n);openCats.add(c);draw();
         const r=[...box.querySelectorAll(".ocat-it input")].find(x=>x.closest(".ocat-it")&&x.placeholder==="품목 이름"&&!x.value);if(r)r.focus()}},"+ 품목 추가"));
       box.append(wrap)});
