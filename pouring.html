@@ -3867,7 +3867,7 @@ function notePage(d){
   const tools=edit?el("div",{class:"np-tools"},
     tb("Aa","제목 / 본문",()=>{const cur=blockOf();cmd("formatBlock",cur==="H2"?"H3":cur==="H3"?"DIV":"H2")}),
     tb(el("b",{},"B"),"굵게",()=>cmd("bold")),
-    tb("☑︎","체크리스트",()=>{const cur=()=>{const s=getSelection();let n=s.rangeCount?s.getRangeAt(0).startContainer:null;while(n&&n!==ed&&n.nodeName!=="LI")n=n.parentNode;return n&&n!==ed?n:null};
+    tb(svgI(ICON_CHECK),"체크리스트",()=>{const cur=()=>{const s=getSelection();let n=s.rangeCount?s.getRangeAt(0).startContainer:null;while(n&&n!==ed&&n.nodeName!=="LI")n=n.parentNode;return n&&n!==ed?n:null};
       let li=cur();if(!li){cmd("insertUnorderedList");li=cur()}else if(li.classList.contains("ck")){li.classList.remove("ck","done");ed.dispatchEvent(new Event("input"));return}
       if(li){li.classList.add("ck");ed.dispatchEvent(new Event("input"))}}),
     tb("•","글머리 목록",()=>cmd("insertUnorderedList")),
