@@ -2644,7 +2644,7 @@ function editDay(k,back){ // back: 저장하거나 닫으면 돌아갈 창(스�
   const wed=parse(k).getDay()===3;
   const state={};SLOTS.forEach(sl=>state[sl.k]=[...(s[sl.k]||[])]);state.off=[...(s.off||[])];
   const parts=[];
-  const cap=hopeCap(k);const offN=()=>new Set([...state.off,...hope].filter(x=>x!=="seunghyun"));const offBtns=[];
+  const cap=wed&&(s.note_meraki||"").trim()==="휴무"?WSTAFF.length:hopeCap(k);const offN=()=>new Set([...state.off,...hope].filter(x=>x!=="seunghyun"));const offBtns=[];
   const refreshOff=()=>{const full=offN().size>=cap;offBtns.forEach(([b,key])=>{const on=state.off.includes(key);b.classList.toggle("blocked",!hope.includes(key)&&!on&&full&&key!=="seunghyun")})};
   const chipRow=key=>{const r=el("div",{class:"chips"});WSTAFF.forEach(st=>{const hp=hope.includes(st.key);const b=el("button",{class:"chip"+(hp&&key!=="off"&&!state[key].includes(st.key)?" blocked":""),type:"button",style:`--c:var(--c-${st.key})`,"aria-pressed":String(state[key].includes(st.key))},(hp?"★":"")+st.name);
     b.onclick=()=>{const a=state[key];const i=a.indexOf(st.key);
