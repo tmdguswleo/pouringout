@@ -2377,12 +2377,12 @@ function openOrderCat(mode){ // mode: "sup"=거래처 관리, "item"=품목 관�
         const url=el("input",{type:"url",value:it.url||"",placeholder:"이 품목 주문 링크 (선택)"});url.oninput=()=>it.url=url.value;
         const rw=el("div",{class:"ocat-it","data-k":(String(it.name||"")+" "+String(it.cat||"")).toLowerCase()},nm,unit);
         rw._arr=g;rw._i=i;rw.append(dragHandle(rw,list,flat),el("button",{class:"x",type:"button","aria-label":"품목 삭제",onclick:()=>{items.splice(items.indexOf(it),1);draw()}},"×"),el("div",{class:"ocat-det"},ct,sp,url));
-        rw.addEventListener("focusin",()=>rw.classList.add("editing"));list.append(rw)});
+        rw.dataset.itemId=it.id;rw.addEventListener("focusin",()=>rw.classList.add("editing"));list.append(rw)});
       list.append(el("button",{class:"btn ghost sm ocg-add",type:"button",onclick:()=>{const n={id:"i"+newId(),name:"",unit:"",cat:c,sup:""};items.splice(items.indexOf(g[g.length-1])+1,0,n);openCats.add(c);draw();
-        const r=[...box.querySelectorAll(".ocat-it input")].find(x=>x.closest(".ocat-it")&&x.placeholder==="품목 이름"&&!x.value);if(r)r.focus()}},"+ 품목 추가"));
+        const r=box.querySelector(`.ocat-it[data-item-id="${CSS.escape(n.id)}"] input[placeholder="품목 이름"]`);if(r){r.focus();r.scrollIntoView({block:"nearest"})}}},"+ 품목 추가"));
       box.append(wrap)});
     box.append(el("datalist",{id:"ocat-cats"},...cats.filter(Boolean).map(c=>el("option",{value:c}))));
-    box.append(el("button",{class:"btn ghost sm ocat-sup",type:"button",onclick:()=>{items.push({id:"i"+newId(),name:"",unit:"",cat:"",sup:""});openCats.add("");draw()}},"+ 새 분류 품목 추가"));filt()};
+    box.append(el("button",{class:"btn ghost sm ocat-sup",type:"button",onclick:()=>{const n={id:"i"+newId(),name:"",unit:"",cat:"",sup:""};items.push(n);openCats.add("");draw();const r=box.querySelector(`.ocat-it[data-item-id="${CSS.escape(n.id)}"] input[placeholder="품목 이름"]`);if(r){r.focus();r.scrollIntoView({block:"nearest"})}}},"+ 새 분류 품목 추가"));filt()};
   draw();
   openSheet(mode==="sup"?"거래처 관리":"품목 관리",mode==="sup"?[el("p",{class:"hint",style:"margin:0"},"거래처마다 주문 방법을 정해요. ≡를 끌어 순서를 바꿀 수 있어요"),box]:[el("p",{class:"hint",style:"margin:0"},"품목을 누르면 분류·거래처·링크를 고칠 수 있어요. ≡를 끌어 순서를 바꿀 수 있어요"),find,box],async()=>{
     const fix=u=>{u=String(u||"").trim();return u&&!/^https?:\/\//i.test(u)?"https://"+u:u};
