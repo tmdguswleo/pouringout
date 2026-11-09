@@ -2065,7 +2065,7 @@ function vToday(root){
         cb.onchange=()=>fastSave("orders",[o.id],doneP(cb.checked),cb.checked?"주문 완료":"요청으로 되돌림");return cb};
       two.append(el("div",{class:"cl-col"},el("div",{class:"ord-today"},el("button",{class:"cl-head ord-h",type:"button","aria-label":`${STORES[st]} 발주 보기`,onclick:()=>{location.hash="order"}},el("span",{class:"pill "+st},STORES[st]),el("span",{class:"meta"},`${its.filter(o=>!o.done).length}건`)),
         ...Array.from({length:nRows},(_,i)=>{const o=its[i];return el("div",{class:"ord-it ord-row"},o?ordCb(o):null,o?el("div",{class:"ord-tx"},el("span",{class:"ord-t"},orderLabel(o)),el("span",{class:"ord-by"},[who(o.by),o.createdAt?hm(o.createdAt):""].filter(Boolean).join(" · "))):null,
-          o&&canWrite&&(isBoss()||o.by===me)?el("button",{class:"x ord-x",type:"button","aria-label":`${orderLabel(o)} ${o.done?"지우기":"요청 취소"}`,title:o.done?"지우기":"요청 취소",onclick:()=>W(()=>col("orders").doc(o.id).delete(),o.done?"지웠어요":"요청 취소함")},"×"):null)})),
+          o&&canWrite&&(isBoss()||o.by===me)?el("button",{class:"x ord-x",type:"button","aria-label":`${orderLabel(o)} ${o.done?"지우기":"요청 취소"}`,title:o.done?"지우기":"요청 취소",onclick:()=>W(()=>col("orders").doc(o.id).delete(),o.done?"지웠어요":"요청 취소함").then(ok=>{if(ok)optimisticDrop("orders",o.id)})},"×"):null)})),
         el("button",{class:"plusbtn",type:"button","aria-label":`${STORES[st]} 발주 요청하기`,onclick:()=>openOrderSheet(st)},"+")))});
     v.append(el("section",{},el("h2",{},"발주 요청",el("span",{class:"meta"},`${pend.length}건`)),two))}
   const sc=el("div",{class:"card cl-one"});if(can("today:stock")){ // 내일 화면에도 보임. 수량은 날짜별로 따로 저장돼서 내일은 빈칸으로 시작(항목은 그대로)
@@ -2329,7 +2329,7 @@ function openOrderSheet(store){
   send.onclick=()=>{let rows=picked();if(!rows.length)return;
     // 같은 매장에 아직 주문 안 된 같은 품목이 있으면 중복 요청 막기
     const nk=t=>String(t||"").replace(/\s+/g,"").toLowerCase();
-    const dup=rows.filter(it=>S.orders.filter(visN).some(o=>!o.done&&orderStores(o).includes(store)&&(o.itemId&&o.itemId===it.id||nk(o.text)===nk(it.name))));
+    const dup=rows.filter(it=>S.orders.filter(visN).some(o=>!o.done&&orderStores(o).includes(store)&&nk(o.text)===nk(it.name)));
     if(dup.length){rows=rows.filter(it=>!dup.includes(it));
       alertBox("이미 요청된 품목이에요",`${STORES[store]}에 '${dup.map(it=>it.name).join("', '")}' 품목은 이미 발주 요청되어 있어요.`+(rows.length?" 나머지 품목만 요청할게요.":""));
       if(!rows.length)return}
