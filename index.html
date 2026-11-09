@@ -1,4 +1,5 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-09T00:27:35Z";window.__APP_NOTE="오늘 화면은 그대로 유지하고, 사장님이 미리 쓴 항목만 오전 10시에 공개돼요. 직원 작성·체크·삭제는 계속 사용할 수 있어요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-09T09:30:00Z";window.__APP_NOTE="오늘 화면은 그대로 유지하고, 사장님이 미리 쓴 항목만 오전 10시에 공개돼요. 직원 작성·체크·삭제는 계속 사용할 수 있어요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -639,7 +640,7 @@ button{-webkit-tap-highlight-color:transparent}
 .sp-it{display:inline-flex;align-items:center;gap:5px;border:0;background:none;font:inherit;font-weight:400;color:var(--ink);padding:3px 0;cursor:pointer}.sp-m{display:inline-flex;flex:0 0 1.25em;width:1.25em;align-items:center;justify-content:center;text-align:center;line-height:1;font-size:1.1em;color:var(--muted)}.sp-m svg{display:block;width:1em;height:1em;flex:none}.sp-it.on .sp-m{color:var(--accent)} /* 여유분 X/O: 같은 도형 크기와 선 두께 */
 .pubbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border:1px solid var(--accent);border-radius:12px;font-size:14px;margin:-8px 0 0} /* 사장: 공개 전 n개 · 모두 공개 */
 .ckpin{padding:10px 12px;border-bottom:1px solid var(--line);min-height:21px}.ckpin-t{outline:none;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.45em;cursor:text}
-.buy-hint{font-size:11px;opacity:.75;padding:6px 14px 0}
+.buy-hint{font-size:11px;color:var(--muted);padding:6px 14px 0}
 .osup-head{display:flex;align-items:center;gap:8px;padding:12px 14px 0;margin-bottom:-4px} /* 거래처 이름과 첫 품목 줄 사이 좁게 (품목 줄 높이는 그대로) */
 .osup-empty{display:flex;align-items:center;gap:8px;padding:11px 14px;color:var(--muted)}
 .osup-acts{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px 12px;border-top:1px solid var(--line)}.osup-acts a{text-decoration:none}
@@ -2509,7 +2510,7 @@ function schedBoard(start,edit){const B=edit&&isBoss();
   for(let i=0;i<28;i++){
     const k=addDays(start,i);const d=parse(k);
     const s=S.schedule.find(x=>x.id===k)||{};
-    const hope=!B&&k<STAFF_FROM?[]:S.dayoffs.filter(x=>x.date===k&&!(B?halfFilled(x.date):halfShown(x.date))).map(x=>x.staff); // 직원 화면: 11월 전 희망휴무는 안 보임
+    const hope=!B&&k<STAFF_FROM?[]:S.dayoffs.filter(x=>x.date===k&&(B||!halfShown(x.date))).map(x=>x.staff); // 직원 화면: 11월 전 희망휴무는 안 보임
     const wed=d.getDay()===3;
     const half=st=>{const h=el("div",{class:"fw-half"});
       if(st==="pouring"&&wed){h.append(el("div",{class:"fw-closed"},"휴무"));return h}
@@ -2639,7 +2640,7 @@ function editMonthNote(text){
 function editDay(k,back){ // back: 저장하거나 닫으면 돌아갈 창(스케줄 짜기)
   if(!isBoss())return;
   const s=S.schedule.find(x=>x.id===k)||{};
-  const hope=S.dayoffs.filter(x=>x.date===k&&!hopeGone(x.date)).map(x=>x.staff);
+  const hope=S.dayoffs.filter(x=>x.date===k).map(x=>x.staff);
   const wed=parse(k).getDay()===3;
   const state={};SLOTS.forEach(sl=>state[sl.k]=[...(s[sl.k]||[])]);state.off=[...(s.off||[])];
   const parts=[];
