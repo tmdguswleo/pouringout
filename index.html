@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-09T00:16:01Z";window.__APP_NOTE="체크리스트 여유분의 X와 O 표시 크기와 선 두께를 맞췄어요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-09T00:23:40Z";window.__APP_NOTE="전달사항·체크리스트·발주 요청은 매일 자정부터 사장님만 보고, 오전 10시에 직원들에게 자동 공개돼요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -904,7 +904,7 @@ const byKey=Object.fromEntries(STAFF.map(s=>[s.key,s]));
 const PERM_ITEMS=[["tab:order","발주 탭"],["tab:todo","TO DO 탭"],["tab:schedule","근무표 탭"],["tab:docs","자료실 탭"],["today:shift","오늘 · 근무"],["today:notice","오늘 · 전달사항"],["today:checks","오늘 · 매장 체크리스트"],["today:orders","오늘 · 발주 요약"],["today:stock","오늘 · 재고"],["today:clean","오늘 · 월간 청소"]];
 const permDoc=()=>S.monthnotes.find(x=>x.id==="perms")||{};
 const hiddenFor=k=>new Set(((permDoc().users||{})[k]||{}).hide||[]);
-const can=key=>{if(!me||isBoss())return true;return !hiddenFor(me).has(key)};
+const can=key=>{if(!me||isBoss())return true;if(["today:notice","today:checks","today:orders","tab:order"].includes(key)&&!todayShared())return false;return !hiddenFor(me).has(key)};
 const docTop=c=>String(c||"기타").split("/")[0];
 /* 파트타이머(PART)는 자료실에서 PART_CAT(과 그 하위)만 봄. PART_CAT은 다른 사람의 폴더 숨김 설정과 상관없이 모두 볼 수 있음 */
 const PART=new Set(["koha"]),PART_CAT="매뉴얼/파트타이머 매뉴얼";
@@ -1133,21 +1133,29 @@ const parse=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)}
 const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return iso(d)};
 const md=s=>`${+s.slice(5,7)}/${+s.slice(8)}`;
 const mdw=s=>`${md(s)}(${DOW[parse(s).getDay()]})`;
-let TODAY=iso(new Date());
-/* 내일 미리 쓰기(2026-11-08~): 사장만 보이는 '공개 전'(hold) → 오늘 화면 '모두 공개'를 눌러야 직원에게 보임. 자동 공개·알림 없음.
-   showAt을 먼 미래로 넣어 두면 알림 함수가 새 글 알림을 보내지 않음. 예전 9:30 공개 글(showAt만)은 그 시각에 보임.
-   'in' 체크로 생기는 다음 날 out 항목은 그날 0시에 보임(showAt=그날 0시) */
-const SHOW_H=9,SHOW_M=30,SHOW_LABEL="오전 9:30",HOLD_AT="9999-12-31T00:00:00.000Z";
-const showAtFor=d=>{const x=parse(d);x.setHours(SHOW_H,SHOW_M,0,0);return x.toISOString()};
-const dayStartFor=d=>{const x=parse(d);x.setHours(0,0,0,0);return x.toISOString()};
-const showTs=n=>n.showAt?(Date.parse(n.showAt)||Date.parse(showAtFor(n.date))):0;
-const visN=n=>n.hold?(typeof isBoss==="function"&&isBoss()):(!n.showAt||(typeof isBoss==="function"&&isBoss())||showTs(n)<=Date.now());
-const DRAFT={hold:true,showAt:HOLD_AT};
+// 매장 공개 시각은 기기 시간대와 무관하게 한국 시간 기준입니다.
+const storeDay=(at=Date.now())=>new Date(at+9*3600e3).toISOString().slice(0,10);
+let TODAY=storeDay();
+const SHOW_H=10,SHOW_M=0,SHOW_LABEL="오전 10:00";
+const todayShared=(at=Date.now())=>new Date(at+9*3600e3).getUTCHours()>=SHOW_H;
+const showAtFor=d=>new Date(`${d}T10:00:00+09:00`).toISOString();
+const dayStartFor=d=>new Date(`${d}T00:00:00+09:00`).toISOString();
+// 기존 수동 공개 대기(hold) 항목도 해당 날짜 오전 10시에 자동 공개합니다.
+const showTs=n=>n.hold?Date.parse(showAtFor(n.date)):(n.showAt?(Date.parse(n.showAt)||Date.parse(showAtFor(n.date))):0);
+const visN=n=>isBoss()||(todayShared()&&(!n.date||n.date<=storeDay())&&showTs(n)<=Date.now());
+const noticeRelease=date=>date>storeDay()||!todayShared()?{hold:false,showAt:showAtFor(date)}:{};
+let sharedBefore=todayShared();
 const SPARE={pouring:[["banana","바나나 브레드"],["fin","휘낭시에"]],meraki:[["banana","바나나 브레드"],["scone","스콘"],["fin","휘낭시에"]]};
-setInterval(()=>{const t=iso(new Date());let need=false;
+function refreshSharing(){const t=storeDay();let need=false;
   if(t!==TODAY){if(dayDate===TODAY)dayDate=t;TODAY=t;need=true}
-  const nw=Date.now();if(S.notices&&S.notices.some(n=>n.showAt&&showTs(n)<=nw&&showTs(n)>nw-61000))need=true;
-  if(need&&me)render()},60000);
+  const shared=todayShared();
+  if(shared!==sharedBefore){sharedBefore=shared;need=true;
+    if(me&&!isBoss()){closeSheet();draw();return}}
+  const nw=Date.now();if(S.notices&&S.notices.some(n=>(n.hold||n.showAt)&&showTs(n)<=nw&&showTs(n)>nw-1100))need=true;
+  if(need&&me)render()}
+setInterval(refreshSharing,1000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshSharing()});
+window.addEventListener("focus",refreshSharing);
 /* 맞춤법: 글 쓰는 칸은 기기 맞춤법 검사(빨간 밑줄 → 눌러서 추천 보기)만 켜고, 자동 고침·자동 대문자는 끔 */
 function spellOn(root){const q='input:not([type]),input[type=text],input[type=search],textarea,[contenteditable=""],[contenteditable=true]';
   (root.matches&&root.matches(q)?[root]:[]).concat(root.querySelectorAll?[...root.querySelectorAll(q)]:[]).forEach(x=>{if(x.dataset.sp)return;x.dataset.sp="1";
@@ -1328,7 +1336,7 @@ const isNew=(it)=>isNewIn(it,seenSnap||seenLoad());
 function tabItems(k){
   // 볼 권한이 없는 것은 빨간 숫자에서 뺌
   if(k==="today")return [...S.notices.filter(n=>n.date<=TODAY&&(!n.past||n.date===TODAY)&&visN(n)&&can(n.store?"today:checks":"today:notice")),...(can("today:checks")?S.checks:[])]; // 발주는 발주 탭에서 새 글 표시
-  if(k==="order")return S.orders.filter(o=>!o.done);
+  if(k==="order")return can("tab:order")?S.orders.filter(o=>!o.done):[];
   if(k==="todo")return S.todos.filter(t=>t.owner===me);
   if(k==="schedule")return S.monthnotes.filter(x=>x.id==="current");
   if(k==="docs")return S.docs.filter(docOK);return []}
@@ -2021,9 +2029,7 @@ function vToday(root){
     el("strong",{},mdw(dayDate)+(dayDate===addDays(TODAY,1)?" 내일":""),dayDate===TODAY?el("span",{class:"pill pill-today",style:"margin-left:8px;vertical-align:4px"},"오늘"):null,HOLIDAYS[dayDate]?el("span",{style:"color:var(--red);font-size:13px;margin-left:6px"},HOLIDAYS[dayDate]):null),
     null);
   v.append(bar);
-  if(isBoss()&&canWrite&&dayDate===TODAY){const hs=S.notices.filter(n=>n.hold&&n.date<=TODAY);
-    if(hs.length)v.append(el("div",{class:"pubbar"},el("span",{},`공개 전 ${hs.length}개`),el("button",{class:"btn sm",type:"button",onclick:()=>fastSave("notices",hs.map(n=>n.id),{hold:false,showAt:""},`${hs.length}개 공개했어요`)},"모두 공개")))}
-  if(dayDate>TODAY)v.append(el("p",{class:"hint",style:"margin:-10px 0 0"},`여기 쓴 전달사항·체크리스트는 나만 보여요. ${md(dayDate)} 오늘 화면에서 '모두 공개'를 누르면 직원들에게 보여요`));
+  if(isBoss()&&(dayDate>TODAY||!todayShared()))v.append(el("p",{class:"hint",style:"margin:-10px 0 0"},`전달사항·체크리스트·발주 요청은 매일 자정부터 오전 10시 전까지 나만 볼 수 있어요. 한국 시간 ${dayDate>TODAY?md(dayDate)+" ":""}${SHOW_LABEL}부터 직원들에게 자동으로 보여요.`));
 
   // 근무
   if(can("today:shift"))v.append(el("section",{},el("h2",{},"근무",null),shiftCard(dayDate)));
@@ -2166,8 +2172,8 @@ function noticeCard(store,emptyText,placeholder,opt={}){
     if(n.html)wireBody(sp,()=>W(()=>col("notices").doc(n.id).update({html:normDoc(sp.innerHTML).innerHTML,editedBy:me,editedAt:now()})),canWrite);
     if(n.html)sp.addEventListener("click",e=>{const li=ckHit(e,sp);if(!li)return;e.preventDefault();e.stopPropagation();if(!canWrite){flash("보기 전용 계정이에요",true);return}
       li.classList.toggle("done");W(()=>col("notices").doc(n.id).update({html:normDoc(sp.innerHTML).innerHTML,editedBy:me,editedAt:now()}))});
-    const pend=n.hold||n.showAt&&showTs(n)>Date.now();
-    const txt=el("div",{class:"txt"},sp,dayDate===TODAY&&isNew(n)?newB(n):null,pend?el("span",{class:"by pendtag"},n.hold?"공개 전":`${md(n.date)} 공개`):null,n.date&&n.date<dayDate?el("span",{class:"by since",style:"margin-left:6px"},`${md(n.date)}부터`):null);
+    const pend=(n.hold||n.showAt)&&showTs(n)>Date.now();
+    const txt=el("div",{class:"txt"},sp,dayDate===TODAY&&isNew(n)?newB(n):null,pend?el("span",{class:"by pendtag"},`${md(n.date)} ${SHOW_LABEL} 공개`):null,n.date&&n.date<dayDate?el("span",{class:"by since",style:"margin-left:6px"},`${md(n.date)}부터`):null);
     if(img) txt.append(img);
     if(vid) txt.append(vid);
     if(n.fileId) txt.append(el("div",{},fileChip(n)));
@@ -2182,7 +2188,7 @@ function noticeCard(store,emptyText,placeholder,opt={}){
   const inp=el("input",{type:"text",placeholder,"aria-label":placeholder});
   // 엔터: 서버를 기다리지 않고 바로 목록에 보여줌 (저장 실패하면 다시 뺌)
   const go=()=>{const t=inp.value.replace(/\u00a0/g," ").trim();if(!t||/^(메라키|푸어링) ›$/.test(t))return;inp.value="";const c=!!noticeCheckMode[key];
-    const id=newId(),data={date:dayDate,store,text:t,by:me,createdAt:now(),...(dayDate>TODAY?DRAFT:{}),...(c?{check:true,done:false}:{})};
+    const id=newId(),data={date:dayDate,store,text:t,by:me,createdAt:now(),...noticeRelease(dayDate),...(c?{check:true,done:false}:{})};
     const outT=c?inToOut(t):null;if(outT){const oid=newId(),nd=addDays(dayDate,1);data.autoOut=oid; // in 체크 → 다음 날 같은 매장 체크리스트에 out 자동
       const ra=remindFor(nd,outT);W(()=>col("notices").doc(oid).set({date:nd,store,text:outT,by:me,createdAt:now(),autoFrom:id,check:true,done:false,...(ra?{remindAt:ra}:{}),...(nd>TODAY?{showAt:dayStartFor(nd)}:{})}),null)}
     if(c&&store){const ra=remindFor(dayDate,t);if(ra)data.remindAt=ra} // 직접 쓴 'out 시간' 항목도 알림
@@ -2201,7 +2207,7 @@ function noticeCard(store,emptyText,placeholder,opt={}){
       try{const blob=isV?await shrinkVideo(f):await shrinkImage(f);if(isV&&blob.size>VMAX){flash("줄여도 영상이 너무 커요(20MB까지). 짧게 잘라서 올려 주세요",true);return}const r=await assets.upload(blob);
         const t=inp.value.trim();inp.value="";const c=!!noticeCheckMode[key];
         const nid=newId(),posterP=isV?videoPoster(f):null;
-        await W(()=>col("notices").doc(nid).set({date:dayDate,store,text:t,[isV?"video":"image"]:r.id,by:me,createdAt:now(),...(dayDate>TODAY?DRAFT:{}),...(c?{check:true,done:false}:{})}),isV?"영상 첨부됨":"사진 첨부됨");afterPoster({posterP},pid=>{const cur=S.notices.find(x=>x.id===nid);if(!cur||cur.video===r.id)W(()=>col("notices").doc(nid).update({posterId:pid}))});
+        await W(()=>col("notices").doc(nid).set({date:dayDate,store,text:t,[isV?"video":"image"]:r.id,by:me,createdAt:now(),...noticeRelease(dayDate),...(c?{check:true,done:false}:{})}),isV?"영상 첨부됨":"사진 첨부됨");afterPoster({posterP},pid=>{const cur=S.notices.find(x=>x.id===nid);if(!cur||cur.video===r.id)W(()=>col("notices").doc(nid).update({posterId:pid}))});
       }catch(e){flash(e&&e.code==="quota_exceeded"?"사진 저장 공간이 가득 찼어요":"사진을 올리지 못했어요. 다시 해주세요",true)}};
     card.append(fi);
   }
@@ -2284,7 +2290,7 @@ const orderLabel=o=>(o.text||"")+(o.qty?` ${o.qty}${o.unit||""}`:"");
 const safeUrl=u=>/^https?:\/\//i.test(u||"")?u:"";
 /* 발주 요청 창: 검색 → 자주 요청 8개 → 분류 탭 → 품목 +로 담기 → 요청 보내기 */
 function openOrderSheet(store){
-  if(!needMe())return;if(!STORES[store])store="pouring";
+  if(!needMe()||!can("tab:order"))return;if(!STORES[store])store="pouring";
   const cart=new Map();let cat="전체",q="";
   const items=oItems();const cats=["전체",...new Set(items.map(i=>i.cat).filter(Boolean))];
   const cnt={};S.orders.forEach(o=>{const it=itemOf(o);if(it)cnt[it.id]=(cnt[it.id]||0)+1});
