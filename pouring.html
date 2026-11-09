@@ -904,7 +904,7 @@ const byKey=Object.fromEntries(STAFF.map(s=>[s.key,s]));
 const PERM_ITEMS=[["tab:order","발주 탭"],["tab:todo","TO DO 탭"],["tab:schedule","근무표 탭"],["tab:docs","자료실 탭"],["today:shift","오늘 · 근무"],["today:notice","오늘 · 전달사항"],["today:checks","오늘 · 매장 체크리스트"],["today:orders","오늘 · 발주 요약"],["today:stock","오늘 · 재고"],["today:clean","오늘 · 월간 청소"]];
 const permDoc=()=>S.monthnotes.find(x=>x.id==="perms")||{};
 const hiddenFor=k=>new Set(((permDoc().users||{})[k]||{}).hide||[]);
-const can=key=>{if(!me||isBoss())return true;if(["today:notice","today:checks","today:orders","tab:order"].includes(key)&&!todayShared())return false;return !hiddenFor(me).has(key)};
+const can=key=>{if(!me||isBoss())return true;return !hiddenFor(me).has(key)};
 const docTop=c=>String(c||"기타").split("/")[0];
 /* 파트타이머(PART)는 자료실에서 PART_CAT(과 그 하위)만 봄. PART_CAT은 다른 사람의 폴더 숨김 설정과 상관없이 모두 볼 수 있음 */
 const PART=new Set(["koha"]),PART_CAT="매뉴얼/파트타이머 매뉴얼";
@@ -1140,18 +1140,25 @@ const SHOW_H=10,SHOW_M=0,SHOW_LABEL="오전 10:00";
 const todayShared=(at=Date.now())=>new Date(at+9*3600e3).getUTCHours()>=SHOW_H;
 const showAtFor=d=>new Date(`${d}T10:00:00+09:00`).toISOString();
 const dayStartFor=d=>new Date(`${d}T00:00:00+09:00`).toISOString();
-// 기존 수동 공개 대기(hold) 항목도 해당 날짜 오전 10시에 자동 공개합니다.
-const showTs=n=>n.hold?Date.parse(showAtFor(n.date)):(n.showAt?(Date.parse(n.showAt)||Date.parse(showAtFor(n.date))):0);
-const visN=n=>isBoss()||(todayShared()&&(!n.date||n.date<=storeDay())&&showTs(n)<=Date.now());
-const noticeRelease=date=>date>storeDay()||!todayShared()?{hold:false,showAt:showAtFor(date)}:{};
+// 창과 직원 작성 글은 유지하고, 사장이 미리 쓴 항목만 개별적으로 공개합니다.
+const ownerWritten=n=>(n.by||n.createdBy)==="seunghyun";
+const showTs=n=>{
+  const created=Date.parse(n.createdAt||""),date=n.date||(Number.isFinite(created)?storeDay(created):"");
+  if(!date)return 0;
+  const morning=ownerWritten(n)&&Number.isFinite(created)&&(storeDay(created)<date||!todayShared(created));
+  if(!n.hold&&!n.showAt&&!morning)return 0;
+  return Math.max(Date.parse(showAtFor(date)),n.hold?0:(Date.parse(n.showAt||"")||0));
+};
+const visN=n=>isBoss()||((!n.date||n.date<=storeDay())&&
+  (ownerWritten(n)?showTs(n)<=Date.now():!n.hold));
+const noticeRelease=date=>isBoss()&&(date>storeDay()||!todayShared())?{hold:false,showAt:showAtFor(date)}:{};
 let sharedBefore=todayShared();
 const SPARE={pouring:[["banana","바나나 브레드"],["fin","휘낭시에"]],meraki:[["banana","바나나 브레드"],["scone","스콘"],["fin","휘낭시에"]]};
 function refreshSharing(){const t=storeDay();let need=false;
   if(t!==TODAY){if(dayDate===TODAY)dayDate=t;TODAY=t;need=true}
   const shared=todayShared();
-  if(shared!==sharedBefore){sharedBefore=shared;need=true;
-    if(me&&!isBoss()){closeSheet();draw();return}}
-  const nw=Date.now();if(S.notices&&S.notices.some(n=>(n.hold||n.showAt)&&showTs(n)<=nw&&showTs(n)>nw-1100))need=true;
+  if(shared!==sharedBefore){sharedBefore=shared;need=true}
+  const nw=Date.now();if(S.notices&&[...S.notices,...S.checks,...S.orders].some(n=>ownerWritten(n)&&showTs(n)<=nw&&showTs(n)>nw-1100))need=true;
   if(need&&me)render()}
 setInterval(refreshSharing,1000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshSharing()});
@@ -1335,8 +1342,8 @@ function isNewIn(it,s){if(!me||!it||!s)return false;const t=itemTs(it);return t>
 const isNew=(it)=>isNewIn(it,seenSnap||seenLoad());
 function tabItems(k){
   // 볼 권한이 없는 것은 빨간 숫자에서 뺌
-  if(k==="today")return [...S.notices.filter(n=>n.date<=TODAY&&(!n.past||n.date===TODAY)&&visN(n)&&can(n.store?"today:checks":"today:notice")),...(can("today:checks")?S.checks:[])]; // 발주는 발주 탭에서 새 글 표시
-  if(k==="order")return can("tab:order")?S.orders.filter(o=>!o.done):[];
+  if(k==="today")return [...S.notices.filter(n=>n.date<=TODAY&&(!n.past||n.date===TODAY)&&visN(n)&&can(n.store?"today:checks":"today:notice")),...(can("today:checks")?S.checks.filter(visN):[])]; // 발주는 발주 탭에서 새 글 표시
+  if(k==="order")return can("tab:order")?S.orders.filter(visN).filter(o=>!o.done):[];
   if(k==="todo")return S.todos.filter(t=>t.owner===me);
   if(k==="schedule")return S.monthnotes.filter(x=>x.id==="current");
   if(k==="docs")return S.docs.filter(docOK);return []}
@@ -1668,8 +1675,8 @@ const msDate=ms=>{if(!ms)return "";const d=new Date(ms);return isNaN(d)?"":iso(d
 function searchItems(){
   const out=[];const sl=st=>st?STORES[st]+" ":"";
   S.notices.filter(n=>visN(n)&&can(n.store?"today:checks":"today:notice")).forEach(n=>out.push({kind:n.store?`${sl(n.store)}${n.check?"체크리스트":"전달사항"}`:"전달사항",text:n.text||"",date:n.date,go:()=>{tab="today";location.hash="today";dayDate=n.date>TODAY?TODAY:n.date;draw()}}));
-  if(can("today:checks"))S.checks.forEach(c=>out.push({kind:`${sl(c.store)}체크리스트`,text:c.text||"",date:c.date||msDate(c.createdAt),go:()=>{location.hash="today";tab="today";dayDate=TODAY;draw()}}));
-  if(can("tab:order"))S.orders.forEach(o=>out.push({kind:`발주 · ${orderStores(o).map(st=>STORES[st]).join("·")}`,text:o.text||"",date:msDate(o.createdAt),go:()=>{location.hash="order";tab="order";draw()}}));
+  if(can("today:checks"))S.checks.filter(visN).forEach(c=>out.push({kind:`${sl(c.store)}체크리스트`,text:c.text||"",date:c.date||msDate(c.createdAt),go:()=>{location.hash="today";tab="today";dayDate=TODAY;draw()}}));
+  if(can("tab:order"))S.orders.filter(visN).forEach(o=>out.push({kind:`발주 · ${orderStores(o).map(st=>STORES[st]).join("·")}`,text:o.text||"",date:msDate(o.createdAt),go:()=>{location.hash="order";tab="order";draw()}}));
   if(can("tab:todo"))S.todos.forEach(t=>out.push({kind:`할 일 · ${byKey[t.owner]?byKey[t.owner].name:"공통"}`,text:t.text||"",date:msDate(t.createdAt),go:()=>{location.hash="todo";tab="todo";draw()}}));
   if(can("tab:docs"))S.docs.filter(docOK).forEach(d=>out.push({kind:`자료실 · ${catLabel(d.cat)} · ${d.title||"제목 없음"}`,text:(d.title||"")+"\n"+(d.body||""),date:msDate(d.createdAt||d.updatedAt),go:()=>{location.hash="docs";tab="docs";draw();openDoc(d)}}));
   const eqName=id=>{const c=S.cleaning.find(x=>x.id===id);if(c&&c.equip)return c.equip;const k=id.split("-").slice(1).join("-");return Object.keys(EQKEY).find(e=>EQKEY[e]===k)||k};
@@ -2029,7 +2036,7 @@ function vToday(root){
     el("strong",{},mdw(dayDate)+(dayDate===addDays(TODAY,1)?" 내일":""),dayDate===TODAY?el("span",{class:"pill pill-today",style:"margin-left:8px;vertical-align:4px"},"오늘"):null,HOLIDAYS[dayDate]?el("span",{style:"color:var(--red);font-size:13px;margin-left:6px"},HOLIDAYS[dayDate]):null),
     null);
   v.append(bar);
-  if(isBoss()&&(dayDate>TODAY||!todayShared()))v.append(el("p",{class:"hint",style:"margin:-10px 0 0"},`전달사항·체크리스트·발주 요청은 매일 자정부터 오전 10시 전까지 나만 볼 수 있어요. 한국 시간 ${dayDate>TODAY?md(dayDate)+" ":""}${SHOW_LABEL}부터 직원들에게 자동으로 보여요.`));
+  if(isBoss()&&(dayDate>TODAY||!todayShared()))v.append(el("p",{class:"hint",style:"margin:-10px 0 0"},`내가 미리 작성한 전달사항·체크리스트·발주 요청만 한국 시간 ${dayDate>TODAY?md(dayDate)+" ":""}${SHOW_LABEL}에 자동 공개돼요. 직원들은 기존 내용과 직접 쓴 항목을 계속 사용할 수 있어요.`));
 
   // 근무
   if(can("today:shift"))v.append(el("section",{},el("h2",{},"근무",null),shiftCard(dayDate)));
@@ -2046,10 +2053,10 @@ function vToday(root){
   });
   if(can("today:checks"))v.append(el("section",{},two));
   // 발주 요청: 오늘 탭에는 푸어링·메라키 두 칸 현황과 작은 + (현황을 누르면 발주 탭, +는 요청 창)
-  if(can("today:orders")&&can("tab:order")){const pend=S.orders.filter(o=>!o.done).sort((a,b)=>tsOf(a.createdAt)-tsOf(b.createdAt));
+  if(can("today:orders")&&can("tab:order")){const pend=S.orders.filter(visN).filter(o=>!o.done).sort((a,b)=>tsOf(a.createdAt)-tsOf(b.createdAt));
     const two=el("div",{class:"card cl-one"});
     // 두 칸의 줄 수를 같게 맞춰 머리줄·품목줄·+줄이 모두 같은 높이로 나란히 (짧은 칸은 빈 줄로 채움)
-    const tIso=iso(new Date());const doneToday=S.orders.filter(o=>o.done&&o.doneAt&&iso(new Date(o.doneAt))===tIso);
+    const tIso=iso(new Date());const doneToday=S.orders.filter(visN).filter(o=>o.done&&o.doneAt&&iso(new Date(o.doneAt))===tIso);
     const shown=[...pend,...(dayDate>TODAY?[]:doneToday)].sort((a,b)=>tsOf(a.createdAt)-tsOf(b.createdAt));
     const byStore=["pouring","meraki"].map(st=>shown.filter(o=>orderStores(o).includes(st)));const nRows=Math.max(...byStore.map(x=>x.length));
     ["pouring","meraki"].forEach((st,si)=>{const its=byStore[si];
@@ -2117,7 +2124,7 @@ function enableDrag(ul,colOf){
   })}
 function noticeCard(store,emptyText,placeholder,opt={}){
   const nsN=S.notices.filter(n=>visN(n)&&n.date<=dayDate&&!(!store&&dayDate>=TODAY&&n.date!==dayDate&&!(n.check&&(!n.done||n.doneAt&&iso(new Date(n.doneAt))>=dayDate)))&&(!n.past||n.date===dayDate)&&(n.store||"")===store&&!(n.check&&n.done&&n.doneAt&&iso(new Date(n.doneAt))<dayDate)).map(n=>({...n,...(opt.alwaysCheck&&!n.html?{check:true}:{}),_col:"notices"})); // 매장 체크리스트는 모두 체크 항목
-  const nsC=(opt.checks||[]).filter(c=>!c.done||!c.doneAt||iso(new Date(c.doneAt))>=dayDate).map(c=>({...c,check:true,date:"",_col:"checks"}));
+  const nsC=(opt.checks||[]).filter(visN).filter(c=>!c.done||!c.doneAt||iso(new Date(c.doneAt))>=dayDate).map(c=>({...c,check:true,date:"",_col:"checks"}));
   const ns=[...nsN,...nsC].sort((a,b)=>((!!a.check)-(!!b.check))||doneFirst(a,b));
   if(opt.defaultCheck&&noticeCheckMode[store||"all"]===undefined)noticeCheckMode[store||"all"]=true;
   if(opt.alwaysCheck)noticeCheckMode[store||"all"]=true; // 체크 표시 고르기 없음: 늘 체크 항목으로
@@ -2172,7 +2179,7 @@ function noticeCard(store,emptyText,placeholder,opt={}){
     if(n.html)wireBody(sp,()=>W(()=>col("notices").doc(n.id).update({html:normDoc(sp.innerHTML).innerHTML,editedBy:me,editedAt:now()})),canWrite);
     if(n.html)sp.addEventListener("click",e=>{const li=ckHit(e,sp);if(!li)return;e.preventDefault();e.stopPropagation();if(!canWrite){flash("보기 전용 계정이에요",true);return}
       li.classList.toggle("done");W(()=>col("notices").doc(n.id).update({html:normDoc(sp.innerHTML).innerHTML,editedBy:me,editedAt:now()}))});
-    const pend=(n.hold||n.showAt)&&showTs(n)>Date.now();
+    const pend=ownerWritten(n)&&showTs(n)>Date.now();
     const txt=el("div",{class:"txt"},sp,dayDate===TODAY&&isNew(n)?newB(n):null,pend?el("span",{class:"by pendtag"},`${md(n.date)} ${SHOW_LABEL} 공개`):null,n.date&&n.date<dayDate?el("span",{class:"by since",style:"margin-left:6px"},`${md(n.date)}부터`):null);
     if(img) txt.append(img);
     if(vid) txt.append(vid);
@@ -2293,7 +2300,7 @@ function openOrderSheet(store){
   if(!needMe()||!can("tab:order"))return;if(!STORES[store])store="pouring";
   const cart=new Map();let cat="전체",q="";
   const items=oItems();const cats=["전체",...new Set(items.map(i=>i.cat).filter(Boolean))];
-  const cnt={};S.orders.forEach(o=>{const it=itemOf(o);if(it)cnt[it.id]=(cnt[it.id]||0)+1});
+  const cnt={};S.orders.filter(visN).forEach(o=>{const it=itemOf(o);if(it)cnt[it.id]=(cnt[it.id]||0)+1});
   const freq=[...items].sort((a,b)=>(cnt[b.id]||0)-(cnt[a.id]||0)).slice(0,8);
   const search=el("input",{type:"search",class:"srch-in",placeholder:"품목 검색 (예: 오틀리)","aria-label":"품목 검색"});
   const freqBox=el("div",{}),tabs=el("div",{class:"otabs"}),list=el("div",{class:"olist"}),send=el("button",{class:"btn osend",type:"button"},"요청");
@@ -2321,12 +2328,12 @@ function openOrderSheet(store){
   send.onclick=()=>{let rows=picked();if(!rows.length)return;
     // 같은 매장에 아직 주문 안 된 같은 품목이 있으면 중복 요청 막기
     const nk=t=>String(t||"").replace(/\s+/g,"").toLowerCase();
-    const dup=rows.filter(it=>S.orders.some(o=>!o.done&&orderStores(o).includes(store)&&(o.itemId&&o.itemId===it.id||nk(o.text)===nk(it.name))));
+    const dup=rows.filter(it=>S.orders.filter(visN).some(o=>!o.done&&orderStores(o).includes(store)&&(o.itemId&&o.itemId===it.id||nk(o.text)===nk(it.name))));
     if(dup.length){rows=rows.filter(it=>!dup.includes(it));
       alertBox("이미 요청된 품목이에요",`${STORES[store]}에 '${dup.map(it=>it.name).join("', '")}' 품목은 이미 발주 요청되어 있어요.`+(rows.length?" 나머지 품목만 요청할게요.":""));
       if(!rows.length)return}
     closeSheet();
-    const docs=rows.map(it=>({id:newId(),data:{text:it.name,...(String(it.id).startsWith("t:")?{}:{itemId:it.id}),store,done:false,by:me,createdAt:now()}}));
+    const docs=rows.map(it=>({id:newId(),data:{text:it.name,...(String(it.id).startsWith("t:")?{}:{itemId:it.id}),store,done:false,by:me,createdAt:now(),...noticeRelease(dayDate>TODAY?dayDate:storeDay())}}));
     docs.forEach(d=>optimisticAdd("orders",d.id,d.data,null));
     W(()=>Promise.all(docs.map(d=>col("orders").doc(d.id).set(d.data))),`${STORES[store]} 발주 ${rows.length}개 요청함`).then(ok=>docs.forEach(d=>ok?optimisticDone("orders",d.id):optimisticDrop("orders",d.id)))};
   draw();
@@ -2397,9 +2404,9 @@ const draw0=()=>draw();
 function vOrder(v){
   v.append(el("div",{class:"mtitle mt-row"},el("span",{},(tabList().find(t=>t[0]==="order")||[,"발주"])[1]),
     isBoss()&&canWrite?el("button",{class:"fgear",type:"button",title:"거래처·품목 관리","aria-label":"거래처·품목 관리",onclick:orderCatMenu},svgI(IC.folder)):null));
-  const pend=S.orders.filter(o=>!o.done).sort((a,b)=>tsOf(a.createdAt)-tsOf(b.createdAt));
+  const pend=S.orders.filter(visN).filter(o=>!o.done).sort((a,b)=>tsOf(a.createdAt)-tsOf(b.createdAt));
   const mAgo=Date.now()-31*864e5; // 구매 완료는 한 달치만 보여 줌
-  const done=S.orders.filter(o=>o.done&&(!o.doneAt||tsOf(o.doneAt)>=mAgo)).sort((a,b)=>tsOf(b.doneAt)-tsOf(a.doneAt));
+  const done=S.orders.filter(visN).filter(o=>o.done&&(!o.doneAt||tsOf(o.doneAt)>=mAgo)).sort((a,b)=>tsOf(b.doneAt)-tsOf(a.doneAt));
   // 체크·모두 주문 완료: 화면부터 바로 구매 완료로 (저장은 뒤에서, 실패하면 되돌림)
   const setDone=(os,on,msg)=>fastSave("orders",os.map(o=>o.id),doneP(on),msg);
   const markDone=os=>setDone(os,true,`${os.length}개 주문 완료`);
