@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-08T13:08:23Z";window.__APP_NOTE="여유분 X·O 확대, 여유분을 눌러 메모 입력, 엔터로 줄 추가, 빈 메모 공간 자동 접기."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-10T03:00:11Z";window.__APP_NOTE="같은 버전 알림 반복 방지"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -9,6 +9,10 @@
   .sched-tools-close{display:inline-flex;margin-left:auto;padding:6px 12px;font:inherit;font-size:14px;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:8px;cursor:pointer}
   .stock-meraki .close .stk-hint{right:8px;text-align:right}
 }
+/* 품목 옆 자유 글, 엔터로 추가한 항목과 체크리스트 사이 구분선 */
+.spare .sp-inline{flex:1 1 40px;min-width:30px;outline:none;font:inherit;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.spare .sp-inline[hidden]{display:none}
+.spare-notes:empty{display:none}.spare-notes:not(:empty){border-bottom:2px solid var(--line);margin-bottom:8px}.spare-notes .edt{display:block;min-height:1.45em;white-space:pre-wrap;overflow-wrap:anywhere;outline:none}
 </style></head><body>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -207,6 +211,7 @@ body.resizing{user-select:none;cursor:col-resize}
 @media (max-width:480px){.man-lrow{grid-template-columns:minmax(0,1fr) auto}.man-lrow input[type=url]{grid-column:1}.man-host{display:none}}
 .add.nadd{flex-direction:column;align-items:stretch;gap:6px}
 .add.nadd input{width:100%}
+.add.nadd textarea.notice-long{width:100%;min-height:38px;max-height:35vh;box-sizing:border-box;resize:none;overflow-y:auto;padding:8px 10px;line-height:1.45}
 .add.nadd:not(.open) .nadd-bar{display:none}
 .nadd-bar{display:flex;justify-content:space-between;align-items:center;gap:6px}
 .nadd-tools{display:inline-flex;gap:6px}
@@ -351,7 +356,7 @@ body.wide main .inner,header.top .inner,nav.tabs .inner{max-width:1120px}
 .fw-day:nth-child(7n){border-right:0}
 .fw-day.today{background:var(--soft)}
 .fw-date{text-align:right;font-weight:400;font-size:13px;padding:3px 6px;border-bottom:1px dashed var(--line);font-variant-numeric:tabular-nums}
-.fw-body{display:grid;grid-template-columns:1fr 1fr;flex:1}
+.fw-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));flex:1;min-width:0;width:100%;box-sizing:border-box}
 .fw-half{padding:4px 3px;min-width:0;display:flex;flex-direction:column;gap:4px}
 .fw-half+.fw-half{border-left:1px solid var(--line)}
 .fw-slot{text-align:right;line-height:1.25;padding-right:3px}
@@ -632,11 +637,10 @@ button{-webkit-tap-highlight-color:transparent}
 .osend{width:100%;padding:12px;font-size:16px}.sheet .osend{position:sticky;bottom:0;z-index:2;box-shadow:0 -10px 14px var(--surface)}.sheet .osend:disabled{opacity:1;background:var(--soft);border-color:var(--line);color:var(--muted)} /* 품목이 많아도 요청 버튼은 항상 아래에 보이게 */.osend:disabled{opacity:.45}
 .osup{margin-top:10px}.todo-team{flex:none;align-self:center;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;max-width:55%}.todo-team .np-teambtn{white-space:nowrap}.nadd-tools{display:inline-flex;align-items:center;gap:8px}.nadd-join{max-width:none;margin-left:6px}li.editing .li-team{display:none}.iedit-bar .nadd-join{flex:1 1 auto;min-width:0;justify-content:flex-start;margin-left:4px}.iedit-bar:has(.nadd-join){margin-left:-38px} /* 할 일 누를 때: 클립·참여를 새 할 일 입력 칸과 같은 자리(왼쪽)로 */ /* 할 일 누르면 이름은 첨부 옆으로 */
 .spare{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:14px}.sp-lab{color:var(--muted);font-size:13px;margin-right:2px}
-.sp-it{display:inline-flex;align-items:center;gap:5px;border:0;background:none;font:inherit;font-weight:400;color:var(--ink);padding:3px 0;cursor:pointer}.sp-m{color:var(--muted);font-size:1em}.sp-it.on .sp-m{color:var(--accent)} /* 여유분 ✕/○ */
+.sp-it{display:inline-flex;align-items:center;gap:5px;border:0;background:none;font:inherit;font-weight:400;color:var(--ink);padding:3px 0;cursor:pointer}.sp-m{display:inline-flex;flex:0 0 1.25em;width:1.25em;align-items:center;justify-content:center;text-align:center;line-height:1;font-size:1.1em;color:var(--muted)}.sp-m svg{display:block;width:1em;height:1em;flex:none}.sp-it.on .sp-m{color:var(--accent)} /* 여유분 X/O: 같은 도형 크기와 선 두께 */
 .pubbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border:1px solid var(--accent);border-radius:12px;font-size:14px;margin:-8px 0 0} /* 사장: 공개 전 n개 · 모두 공개 */
-.ckpin{padding:10px 12px;border-bottom:1px solid var(--line);min-height:21px}.ckpin.is-empty:not(:focus-within){padding:0;border-bottom:0}.ckpin.is-empty:not(:focus-within) .ckpin-t{min-height:0}.spare[data-editable]{cursor:text}
-.ckpin-t{outline:none;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.45em;cursor:text}
-.buy-hint{font-size:11px;opacity:.75;padding:6px 14px 0}
+.ckpin{padding:10px 12px;border-bottom:1px solid var(--line);min-height:21px}.ckpin-t{outline:none;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.45em;cursor:text}
+.buy-hint{font-size:11px;color:var(--muted);padding:6px 14px 0}
 .osup-head{display:flex;align-items:center;gap:8px;padding:12px 14px 0;margin-bottom:-4px} /* 거래처 이름과 첫 품목 줄 사이 좁게 (품목 줄 높이는 그대로) */
 .osup-empty{display:flex;align-items:center;gap:8px;padding:11px 14px;color:var(--muted)}
 .osup-acts{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px 12px;border-top:1px solid var(--line)}.osup-acts a{text-decoration:none}
@@ -652,13 +656,14 @@ button{-webkit-tap-highlight-color:transparent}
 .ocg-h{display:flex;align-items:center;gap:8px;width:100%;height:44px;padding:0 2px;background:none;border:0;font:inherit;font-size:16px;color:var(--ink);cursor:pointer;text-align:left}.ocg-h .by{margin-left:auto}
 .ocg-list{display:none;flex-direction:column;gap:6px;padding:0 0 10px}.ocg.open .ocg-list,.ocat-q .ocg-list{display:flex}.ocat-q .ocg-add{display:none}.ocg.open>.ocg-h .dyc,.ocat-q .ocg-h .dyc{transform:rotate(-135deg);margin:4px 4px 0 0}
 .ocat-it{display:grid;grid-template-columns:minmax(0,1fr) 64px 28px 28px;gap:6px;align-items:center}.ocat-it .dhd{width:28px;height:34px;justify-self:center}
-.ocat-det{display:none;grid-column:1/-1;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;padding:0 0 6px}.ocat-det>:last-child{grid-column:1/-1}.ocat-it:focus-within .ocat-det{display:grid}
+.ocat-det{display:grid;grid-column:1/-1;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;padding:0 0 6px}.ocat-det>:last-child{grid-column:1/-1}.ocat-it:focus-within .ocat-det,.ocat-it.editing .ocat-det{display:grid}
 .ord-today{display:block;width:100%;padding:0;border:0;background:none;flex:1}/* 발주 요청 두 칸: 줄 높이 고정 (머리줄 44 · 품목줄 40 · +줄 40) */
 .cl-head.ord-h{height:44px;box-sizing:border-box;padding:0 12px;margin:0;width:100%;border:0;border-bottom:1px solid var(--line);background:none;font:inherit;color:var(--ink);cursor:pointer}
 .ord-row .chk{width:20px;height:20px;margin-right:2px}
 .ord-row{height:54px;box-sizing:border-box;display:flex;align-items:center;gap:6px;padding:0 12px;border-bottom:1px solid var(--line);font-size:14px;line-height:1;white-space:nowrap;overflow:hidden}
 .ord-today .ord-row{padding:0 4px 0 12px}.ord-row .ord-x{flex:none;width:28px;height:28px;padding:0;margin:0}.ord-row .ord-tx{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px}.ord-row .ord-t,.ord-row .ord-by{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.15}.ord-row .ord-by{margin-left:0;font-size:12px}
-.ord-today+.plusbtn{height:40px;box-sizing:border-box;padding:0;border-top:0;margin-top:0;line-height:40px}
+.ord-today+.plusbtn,.ord-today-list+.plusbtn{height:40px;box-sizing:border-box;padding:0;border-top:0;margin-top:0;line-height:40px}
+.ord-today-list.list>li{height:54px;min-height:54px;box-sizing:border-box;gap:6px;align-items:center;padding:0 4px 0 12px;overflow:hidden;white-space:nowrap}
 .ord-today{display:block;flex:none!important;font:inherit;color:var(--ink);text-align:left}
 .oh-q{padding:10px 12px 4px}.oh-h{width:100%;border:0;background:none;font:inherit;cursor:pointer;justify-content:space-between;text-align:left}.oh-h .oh-n{display:inline-flex;align-items:center;gap:8px}.oh-h.open .dyc{transform:rotate(-135deg);margin:4px 4px 0 0}
 .odate{min-height:0!important;height:34px;box-sizing:border-box;display:flex!important;align-items:flex-end!important;padding:0 14px 6px!important;font-size:12px;color:var(--muted);background:none}
@@ -1130,21 +1135,36 @@ const parse=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)}
 const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return iso(d)};
 const md=s=>`${+s.slice(5,7)}/${+s.slice(8)}`;
 const mdw=s=>`${md(s)}(${DOW[parse(s).getDay()]})`;
-let TODAY=iso(new Date());
-/* 내일 미리 쓰기(2026-11-08~): 사장만 보이는 '공개 전'(hold) → 오늘 화면 '모두 공개'를 눌러야 직원에게 보임. 자동 공개·알림 없음.
-   showAt을 먼 미래로 넣어 두면 알림 함수가 새 글 알림을 보내지 않음. 예전 9:30 공개 글(showAt만)은 그 시각에 보임.
-   'in' 체크로 생기는 다음 날 out 항목은 그날 0시에 보임(showAt=그날 0시) */
-const SHOW_H=9,SHOW_M=30,SHOW_LABEL="오전 9:30",HOLD_AT="9999-12-31T00:00:00.000Z";
-const showAtFor=d=>{const x=parse(d);x.setHours(SHOW_H,SHOW_M,0,0);return x.toISOString()};
-const dayStartFor=d=>{const x=parse(d);x.setHours(0,0,0,0);return x.toISOString()};
-const showTs=n=>n.showAt?(Date.parse(n.showAt)||Date.parse(showAtFor(n.date))):0;
-const visN=n=>n.hold?(typeof isBoss==="function"&&isBoss()):(!n.showAt||(typeof isBoss==="function"&&isBoss())||showTs(n)<=Date.now());
-const DRAFT={hold:true,showAt:HOLD_AT};
+// 매장 공개 시각은 기기 시간대와 무관하게 한국 시간 기준입니다.
+const storeDay=(at=Date.now())=>new Date(at+9*3600e3).toISOString().slice(0,10);
+let TODAY=storeDay();
+const SHOW_H=10,SHOW_M=0,SHOW_LABEL="오전 10:00";
+const todayShared=(at=Date.now())=>new Date(at+9*3600e3).getUTCHours()>=SHOW_H;
+const showAtFor=d=>new Date(`${d}T10:00:00+09:00`).toISOString();
+const dayStartFor=d=>new Date(`${d}T00:00:00+09:00`).toISOString();
+// 창과 직원 작성 글은 유지하고, 사장이 미리 쓴 항목만 개별적으로 공개합니다.
+const ownerWritten=n=>(n.by||n.createdBy)==="seunghyun";
+const showTs=n=>{
+  const created=Date.parse(n.createdAt||""),date=n.date||(Number.isFinite(created)?storeDay(created):"");
+  if(!date)return 0;
+  const morning=ownerWritten(n)&&Number.isFinite(created)&&(storeDay(created)<date||!todayShared(created));
+  if(!n.hold&&!n.showAt&&!morning)return 0;
+  return Math.max(Date.parse(showAtFor(date)),n.hold?0:(Date.parse(n.showAt||"")||0));
+};
+const visN=n=>isBoss()||((!n.date||n.date<=storeDay())&&
+  (ownerWritten(n)?showTs(n)<=Date.now():!n.hold));
+const noticeRelease=date=>isBoss()&&(date>storeDay()||!todayShared())?{hold:false,showAt:showAtFor(date)}:{};
+let sharedBefore=todayShared();
 const SPARE={pouring:[["banana","바나나 브레드"],["fin","휘낭시에"]],meraki:[["banana","바나나 브레드"],["scone","스콘"],["fin","휘낭시에"]]};
-setInterval(()=>{const t=iso(new Date());let need=false;
+function refreshSharing(){const t=storeDay();let need=false;
   if(t!==TODAY){if(dayDate===TODAY)dayDate=t;TODAY=t;need=true}
-  const nw=Date.now();if(S.notices&&S.notices.some(n=>n.showAt&&showTs(n)<=nw&&showTs(n)>nw-61000))need=true;
-  if(need&&me)render()},60000);
+  const shared=todayShared();
+  if(shared!==sharedBefore){sharedBefore=shared;need=true}
+  const nw=Date.now();if(S.notices&&[...S.notices,...S.checks,...S.orders].some(n=>ownerWritten(n)&&showTs(n)<=nw&&showTs(n)>nw-1100))need=true;
+  if(need&&me)render()}
+setInterval(refreshSharing,1000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshSharing()});
+window.addEventListener("focus",refreshSharing);
 /* 맞춤법: 글 쓰는 칸은 기기 맞춤법 검사(빨간 밑줄 → 눌러서 추천 보기)만 켜고, 자동 고침·자동 대문자는 끔 */
 function spellOn(root){const q='input:not([type]),input[type=text],input[type=search],textarea,[contenteditable=""],[contenteditable=true]';
   (root.matches&&root.matches(q)?[root]:[]).concat(root.querySelectorAll?[...root.querySelectorAll(q)]:[]).forEach(x=>{if(x.dataset.sp)return;x.dataset.sp="1";
@@ -1324,8 +1344,8 @@ function isNewIn(it,s){if(!me||!it||!s)return false;const t=itemTs(it);return t>
 const isNew=(it)=>isNewIn(it,seenSnap||seenLoad());
 function tabItems(k){
   // 볼 권한이 없는 것은 빨간 숫자에서 뺌
-  if(k==="today")return [...S.notices.filter(n=>n.date<=TODAY&&(!n.past||n.date===TODAY)&&visN(n)&&can(n.store?"today:checks":"today:notice")),...(can("today:checks")?S.checks:[])]; // 발주는 발주 탭에서 새 글 표시
-  if(k==="order")return S.orders.filter(o=>!o.done);
+  if(k==="today")return [...S.notices.filter(n=>n.date<=TODAY&&(!n.past||n.date===TODAY)&&visN(n)&&can(n.store?"today:checks":"today:notice")),...(can("today:checks")?S.checks.filter(visN):[])]; // 발주는 발주 탭에서 새 글 표시
+  if(k==="order")return can("tab:order")?S.orders.filter(visN).filter(o=>!o.done):[];
   if(k==="todo")return S.todos.filter(t=>t.owner===me);
   if(k==="schedule")return S.monthnotes.filter(x=>x.id==="current");
   if(k==="docs")return S.docs.filter(docOK);return []}
@@ -1364,13 +1384,19 @@ function appBadge(){if(!WEB||!("setAppBadge" in navigator))return;let n=0;
    - 새 버전으로 처음 열면: '새 버전이 반영됐어요' 창
    - 앱을 켜 둔 동안 새 버전이 올라오면: 위쪽에 '새 버전이 올라왔어요' 띠 → 누르면 새로 고침 */
 let verShown=false,verPolling=false,verNew="";
+const verPromptKey="pn.verPrompted";
 const verWhen=v=>{const d=new Date(v);return isNaN(d)?"":`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")} 반영`};
 function verCheck(){const V=window.__APP_VER||"";if(!WEB||!V||!isBoss())return;
   if(!verShown){verShown=true;let seen="";try{seen=localStorage.getItem("pn.seenVer")||""}catch(e){}
     if(seen!==V){try{localStorage.setItem("pn.seenVer",V)}catch(e){}setTimeout(()=>alertBox("새 버전이 반영됐어요",[window.__APP_NOTE||"앱이 새로 바뀌었어요",verWhen(V)].filter(Boolean).join("\n\n"),true),700)}}
   if(verPolling)return;verPolling=true;
   const poll=async()=>{if(!isBoss())return;try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});const j=await r.json();
-    if(j.v&&j.v!==V&&j.v!==verNew){verNew=j.v;const old=document.querySelector(".verbar");if(old)old.remove();
+    if(!j.v)return;
+    if(j.v===V){try{localStorage.removeItem(verPromptKey)}catch(e){};return}
+    if(j.v!==verNew){verNew=j.v;let prompted="";try{prompted=localStorage.getItem(verPromptKey)||""}catch(e){}
+      if(prompted===j.v)return;
+      try{localStorage.setItem(verPromptKey,j.v)}catch(e){}
+      const old=document.querySelector(".verbar");if(old)old.remove();
       document.body.append(el("button",{class:"verbar",type:"button",onclick:()=>location.reload()},"새 버전이 올라왔어요 · 눌러서 반영"))}}catch(e){}};
   setInterval(poll,120000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)poll()})}
 /* 직원 가입 알림(사장만, 새 주소): 직원이 휴대폰 번호로 처음 들어와 새 비밀번호까지 정하면 사장 화면에 창. 1분마다·앱으로 돌아올 때 확인.
@@ -1657,8 +1683,8 @@ const msDate=ms=>{if(!ms)return "";const d=new Date(ms);return isNaN(d)?"":iso(d
 function searchItems(){
   const out=[];const sl=st=>st?STORES[st]+" ":"";
   S.notices.filter(n=>visN(n)&&can(n.store?"today:checks":"today:notice")).forEach(n=>out.push({kind:n.store?`${sl(n.store)}${n.check?"체크리스트":"전달사항"}`:"전달사항",text:n.text||"",date:n.date,go:()=>{tab="today";location.hash="today";dayDate=n.date>TODAY?TODAY:n.date;draw()}}));
-  if(can("today:checks"))S.checks.forEach(c=>out.push({kind:`${sl(c.store)}체크리스트`,text:c.text||"",date:c.date||msDate(c.createdAt),go:()=>{location.hash="today";tab="today";dayDate=TODAY;draw()}}));
-  if(can("tab:order"))S.orders.forEach(o=>out.push({kind:`발주 · ${orderStores(o).map(st=>STORES[st]).join("·")}`,text:o.text||"",date:msDate(o.createdAt),go:()=>{location.hash="order";tab="order";draw()}}));
+  if(can("today:checks"))S.checks.filter(visN).forEach(c=>out.push({kind:`${sl(c.store)}체크리스트`,text:c.text||"",date:c.date||msDate(c.createdAt),go:()=>{location.hash="today";tab="today";dayDate=TODAY;draw()}}));
+  if(can("tab:order"))S.orders.filter(visN).forEach(o=>out.push({kind:`발주 · ${orderStores(o).map(st=>STORES[st]).join("·")}`,text:o.text||"",date:msDate(o.createdAt),go:()=>{location.hash="order";tab="order";draw()}}));
   if(can("tab:todo"))S.todos.forEach(t=>out.push({kind:`할 일 · ${byKey[t.owner]?byKey[t.owner].name:"공통"}`,text:t.text||"",date:msDate(t.createdAt),go:()=>{location.hash="todo";tab="todo";draw()}}));
   if(can("tab:docs"))S.docs.filter(docOK).forEach(d=>out.push({kind:`자료실 · ${catLabel(d.cat)} · ${d.title||"제목 없음"}`,text:(d.title||"")+"\n"+(d.body||""),date:msDate(d.createdAt||d.updatedAt),go:()=>{location.hash="docs";tab="docs";draw();openDoc(d)}}));
   const eqName=id=>{const c=S.cleaning.find(x=>x.id===id);if(c&&c.equip)return c.equip;const k=id.split("-").slice(1).join("-");return Object.keys(EQKEY).find(e=>EQKEY[e]===k)||k};
@@ -2018,15 +2044,13 @@ function vToday(root){
     el("strong",{},mdw(dayDate)+(dayDate===addDays(TODAY,1)?" 내일":""),dayDate===TODAY?el("span",{class:"pill pill-today",style:"margin-left:8px;vertical-align:4px"},"오늘"):null,HOLIDAYS[dayDate]?el("span",{style:"color:var(--red);font-size:13px;margin-left:6px"},HOLIDAYS[dayDate]):null),
     null);
   v.append(bar);
-  if(isBoss()&&canWrite&&dayDate===TODAY){const hs=S.notices.filter(n=>n.hold&&n.date<=TODAY);
-    if(hs.length)v.append(el("div",{class:"pubbar"},el("span",{},`공개 전 ${hs.length}개`),el("button",{class:"btn sm",type:"button",onclick:()=>fastSave("notices",hs.map(n=>n.id),{hold:false,showAt:""},`${hs.length}개 공개했어요`)},"모두 공개")))}
-  if(dayDate>TODAY)v.append(el("p",{class:"hint",style:"margin:-10px 0 0"},`여기 쓴 전달사항·체크리스트는 나만 보여요. ${md(dayDate)} 오늘 화면에서 '모두 공개'를 누르면 직원들에게 보여요`));
+  if(isBoss()&&(dayDate>TODAY||!todayShared()))v.append(el("p",{class:"hint",style:"margin:-10px 0 0"},`내가 미리 작성한 전달사항·체크리스트·발주 요청만 한국 시간 ${dayDate>TODAY?md(dayDate)+" ":""}${SHOW_LABEL}에 자동 공개돼요. 직원들은 기존 내용과 직접 쓴 항목을 계속 사용할 수 있어요.`));
 
   // 근무
   if(can("today:shift"))v.append(el("section",{},el("h2",{},"근무",null),shiftCard(dayDate)));
 
   // 공지
-  if(can("today:notice"))v.append(el("section",{class:"notice-s"},el("h2",{},"전달사항"),noticeCard("","전달사항이 없어요","전달사항 쓰기")));
+  if(can("today:notice"))v.append(el("section",{class:"notice-s"},el("h2",{},"전달사항"),noticeCard("","전달사항이 없어요","전달사항 쓰기",{longText:true})));
   if(dayDate<FULL_FROM)return; // 11/6까지는 근무·전달사항만 (예전 메모장과 섞인 기간). 11/7부터 체크리스트·발주·재고·청소 모두
 
   // 매장 체크리스트 (매장 전달사항 + 체크 항목)
@@ -2037,20 +2061,23 @@ function vToday(root){
   });
   if(can("today:checks"))v.append(el("section",{},two));
   // 발주 요청: 오늘 탭에는 푸어링·메라키 두 칸 현황과 작은 + (현황을 누르면 발주 탭, +는 요청 창)
-  if(can("today:orders")&&can("tab:order")){const pend=S.orders.filter(o=>!o.done).sort((a,b)=>tsOf(a.createdAt)-tsOf(b.createdAt));
+  if(can("today:orders")&&can("tab:order")){const pend=S.orders.filter(visN).filter(o=>!o.done).sort((a,b)=>tsOf(a.createdAt)-tsOf(b.createdAt));
     const two=el("div",{class:"card cl-one"});
     // 두 칸의 줄 수를 같게 맞춰 머리줄·품목줄·+줄이 모두 같은 높이로 나란히 (짧은 칸은 빈 줄로 채움)
-    const tIso=iso(new Date());const doneToday=S.orders.filter(o=>o.done&&o.doneAt&&iso(new Date(o.doneAt))===tIso);
-    const shown=[...pend,...(dayDate>TODAY?[]:doneToday)].sort((a,b)=>tsOf(a.createdAt)-tsOf(b.createdAt));
-    const byStore=["pouring","meraki"].map(st=>shown.filter(o=>orderStores(o).includes(st)));const nRows=Math.max(...byStore.map(x=>x.length));
+    const tIso=iso(new Date());const doneToday=S.orders.filter(visN).filter(o=>o.done&&o.doneAt&&iso(new Date(o.doneAt))===tIso);
+    const shown=[...pend,...(dayDate>TODAY?[]:doneToday)].sort((a,b)=>Number(!!b.done)-Number(!!a.done)||tsOf(a.createdAt)-tsOf(b.createdAt));
+    const byStore=["pouring","meraki"].map(st=>shown.filter(o=>orderStores(o).includes(st)).sort((a,b)=>Number(!!b.done)-Number(!!a.done)||(a["ord_"+st]!=null?a["ord_"+st]:tsOf(a.createdAt))-(b["ord_"+st]!=null?b["ord_"+st]:tsOf(b.createdAt))));const nRows=Math.max(...byStore.map(x=>x.length));
     ["pouring","meraki"].forEach((st,si)=>{const its=byStore[si];
       const ordCb=o=>{const cb=el("input",{type:"checkbox",class:"chk","aria-label":`${orderLabel(o)} 주문 완료`,disabled:!canDoneOrder(o)});cb.checked=!!o.done;
         cb.onchange=()=>fastSave("orders",[o.id],doneP(cb.checked),cb.checked?"주문 완료":"요청으로 되돌림");return cb};
-      two.append(el("div",{class:"cl-col"},el("div",{class:"ord-today"},el("button",{class:"cl-head ord-h",type:"button","aria-label":`${STORES[st]} 발주 보기`,onclick:()=>{location.hash="order"}},el("span",{class:"pill "+st},STORES[st]),el("span",{class:"meta"},`${its.filter(o=>!o.done).length}건`)),
-        ...Array.from({length:nRows},(_,i)=>{const o=its[i];return el("div",{class:"ord-it ord-row"},o?ordCb(o):null,o?el("div",{class:"ord-tx"},el("span",{class:"ord-t"},orderLabel(o)),el("span",{class:"ord-by"},[who(o.by),o.createdAt?hm(o.createdAt):""].filter(Boolean).join(" · "))):null,
-          o&&canWrite&&(isBoss()||o.by===me)?el("button",{class:"x ord-x",type:"button","aria-label":`${orderLabel(o)} ${o.done?"지우기":"요청 취소"}`,title:o.done?"지우기":"요청 취소",onclick:()=>W(()=>col("orders").doc(o.id).delete(),o.done?"지웠어요":"요청 취소함")},"×"):null)})),
-        el("button",{class:"plusbtn",type:"button","aria-label":`${STORES[st]} 발주 요청하기`,onclick:()=>openOrderSheet(st)},"+")))});
-    v.append(el("section",{},el("h2",{},"발주 요청",el("span",{class:"meta"},`${pend.length}건`)),two))}
+      const head=el("button",{class:"cl-head ord-h",type:"button","aria-label":`${STORES[st]} 발주 보기`,onclick:()=>{location.hash="order"}},el("span",{class:"pill "+st},STORES[st]),el("span",{class:"meta"},`${its.filter(o=>!o.done).length}건`));
+      const ul=el("ul",{class:"list ord-today-list"});
+      Array.from({length:nRows},(_,i)=>{const o=its[i];const li=el("li",{class:"ord-it ord-row"},o?ordCb(o):null,o?el("div",{class:"ord-tx"},el("span",{class:"ord-t"},orderLabel(o)),el("span",{class:"ord-by"},[who(o.by),o.createdAt?hm(o.createdAt):""].filter(Boolean).join(" · "))):null,
+        o&&canWrite&&(isBoss()||o.by===me)?el("button",{class:"x ord-x",type:"button","aria-label":`${orderLabel(o)} ${o.done?"지우기":"요청 취소"}`,title:o.done?"지우기":"요청 취소",onclick:()=>W(()=>col("orders").doc(o.id).delete(),o.done?"지웠어요":"요청 취소함").then(ok=>{if(ok)optimisticDrop("orders",o.id)})},"×"):null);
+        if(o&&!o.done){li._it=o;li._grp=st}ul.append(li)});
+      const todayBox=el("div",{class:"ord-today"},head,ul,el("button",{class:"plusbtn",type:"button","aria-label":`${STORES[st]} 발주 요청하기`,onclick:()=>openOrderSheet(st)},"+"));
+      two.append(el("div",{class:"cl-col"},todayBox));if(canWrite&&its.filter(o=>!o.done).length>1)enableDrag(ul,"orders","ord_"+st)});
+    v.append(el("section",{},el("h2",{},"발주 요청",el("span",{class:"meta"},`${pend.length}건`)),pend.length>1?el("p",{class:"hint",style:"margin:-10px 0 10px"},"항목을 길게 눌러 순서를 바꿀 수 있어요"):null,two))}
   const sc=el("div",{class:"card cl-one"});if(can("today:stock")){ // 내일 화면에도 보임. 수량은 날짜별로 따로 저장돼서 내일은 빈칸으로 시작(항목은 그대로)
   // 한 칸에서 오류가 나도 재고 칸 전체가 사라지지 않게 (오류 내용은 그 칸에 작게 보여줌)
   const tbs=[];
@@ -2066,7 +2093,7 @@ function vToday(root){
   const cw=el("div",{});vClean(cw);
   if(can("today:clean"))v.append(el("section",{class:"clean-in-today"},el("h2",{},"월간 청소"),cw));
 }
-let noticeCheckMode={};
+let noticeCheckMode={},noticeDrafts=new Map();
 /* 사진 줄이기: 긴 쪽 1280px, JPEG 품질 0.72 → 보통 150~350KB. 글씨(레시피·메모 사진)도 읽힐 정도. 이미 작은 사진은 그대로 */
 async function shrinkImage(file){
   try{
@@ -2082,7 +2109,7 @@ function doneFirst(a,b){const ad=!!a.done,bd=!!b.done;if(ad!==bd)return ad?-1:1;
   if(ad)return String(a.doneAt||"").localeCompare(String(b.doneAt||""));
   const ka=a.ord!=null?a.ord:tsOf(a.createdAt),kb=b.ord!=null?b.ord:tsOf(b.createdAt);return ka-kb}
 /* 항목 꾹 눌러서 위아래로 옮기기 (아이폰 메모처럼). li._it, li._grp 필요 */
-function enableDrag(ul,colOf){
+function enableDrag(ul,colOf,ordKey="ord"){
   [...ul.children].forEach(li=>{if(!li._grp)return;
     let t=null,sx=0,sy=0,drag=false,sibs,rc,i,to,hgt;
     li.classList.add("ldr");
@@ -2104,11 +2131,11 @@ function enableDrag(ul,colOf){
       li._noClick=true;setTimeout(()=>li._noClick=false,400);
       if(cancel||to===i)return;const arr=sibs.map(x=>x._it);arr.splice(to,0,arr.splice(i,1)[0]);
       ul.insertBefore(li,to<i?sibs[to]:sibs[to].nextSibling);
-      W(()=>Promise.all(arr.map((it,k)=>it.ord===k?null:col(it._col||colOf).doc(it.id).update({ord:k}))),"순서 바꿨어요")}
+      W(()=>Promise.all(arr.map((it,k)=>it[ordKey]===k?null:col(it._col||colOf).doc(it.id).update({[ordKey]:k}))),"순서 바꿨어요")}
   })}
 function noticeCard(store,emptyText,placeholder,opt={}){
   const nsN=S.notices.filter(n=>visN(n)&&n.date<=dayDate&&!(!store&&dayDate>=TODAY&&n.date!==dayDate&&!(n.check&&(!n.done||n.doneAt&&iso(new Date(n.doneAt))>=dayDate)))&&(!n.past||n.date===dayDate)&&(n.store||"")===store&&!(n.check&&n.done&&n.doneAt&&iso(new Date(n.doneAt))<dayDate)).map(n=>({...n,...(opt.alwaysCheck&&!n.html?{check:true}:{}),_col:"notices"})); // 매장 체크리스트는 모두 체크 항목
-  const nsC=(opt.checks||[]).filter(c=>!c.done||!c.doneAt||iso(new Date(c.doneAt))>=dayDate).map(c=>({...c,check:true,date:"",_col:"checks"}));
+  const nsC=(opt.checks||[]).filter(visN).filter(c=>!c.done||!c.doneAt||iso(new Date(c.doneAt))>=dayDate).map(c=>({...c,check:true,date:"",_col:"checks"}));
   const ns=[...nsN,...nsC].sort((a,b)=>((!!a.check)-(!!b.check))||doneFirst(a,b));
   if(opt.defaultCheck&&noticeCheckMode[store||"all"]===undefined)noticeCheckMode[store||"all"]=true;
   if(opt.alwaysCheck)noticeCheckMode[store||"all"]=true; // 체크 표시 고르기 없음: 늘 체크 항목으로
@@ -2119,23 +2146,35 @@ function noticeCard(store,emptyText,placeholder,opt={}){
       onclick:()=>{if(!canWrite||!db){flash("보기 전용 계정이에요",true);return}const nx={...on,[k]:!on[k]};const data={date:TODAY,on:nx,editedBy:me,editedAt:now(),updatedAt:now()};
         const i=S.monthnotes.findIndex(x=>x.id==="spare_"+store);const before=i>=0?S.monthnotes[i]:null;S.monthnotes=i>=0?S.monthnotes.map((x,j)=>j===i?{id:x.id,...data}:x):[...S.monthnotes,{id:"spare_"+store,...data}];render();
         W(()=>col("monthnotes").doc("spare_"+store).set(data)).then(ok=>{if(ok)return;S.monthnotes=before?S.monthnotes.map(x=>x.id===before.id?before:x):S.monthnotes.filter(x=>x.id!=="spare_"+store);render()})}},
-      el("span",{},l),el("span",{class:"sp-m"},on[k]?"○":"✕")))))}
-  // 매장 체크리스트 맨 위: 체크 칸 없는 고정 한 줄 (날짜와 상관없이 늘 같은 내용, monthnotes/ckpin_<매장>). 누르면 고치고 바깥 누르면 저장
+      el("span",{},l),el("span",{class:"sp-m","aria-hidden":"true"},svgI(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">${on[k]?'<circle cx="12" cy="12" r="8"/>':'<path d="M4 4l16 16M20 4L4 20"/>'}</svg>`))))))}
+  // 여유분 품목 옆에서 글 입력, 엔터로 아래 독립 항목 추가. 기존 내용 보존.
   if(opt.alwaysCheck&&store){const pd=(S.monthnotes||[]).find(x=>x.id==="ckpin_"+store)||{};
-    const sp=el("div",{class:"ckpin-t"});sp.textContent=pd.text||"";
-    if(canWrite){sp.contentEditable="true";sp.setAttribute("aria-label",`${STORES[store]} 체크리스트 고정 메모`);
-      sp.setAttribute("role","textbox");sp.setAttribute("aria-multiline","true");
-      sp.onkeydown=e=>{if(e.key==="Escape"&&!e.isComposing){e.preventDefault();sp.blur()}};
-      sp.onblur=()=>{const t=sp.innerText.replace(/\u00a0/g," ").trim();if(t===(pd.text||""))return;W(()=>col("monthnotes").doc("ckpin_"+store).set({text:t,editedBy:me,editedAt:now(),updatedAt:now()}),"저장됨")}}
-    const memo=el("div",{class:"ckpin"},sp);
-    const syncEmpty=()=>memo.classList.toggle("is-empty",!sp.textContent.trim());syncEmpty();sp.addEventListener("input",syncEmpty);
-    sp.addEventListener("blur",()=>{if(!sp.textContent.trim())sp.textContent="";syncEmpty()});
-    const spare=card.querySelector(".spare");
-    if(canWrite&&spare){spare.dataset.editable="true";spare.tabIndex=0;spare.setAttribute("aria-label",`${STORES[store]} 여유분 메모 입력`);
-      const focusMemo=()=>{sp.focus();const sel=getSelection(),r=document.createRange();r.selectNodeContents(sp);r.collapse(false);sel.removeAllRanges();sel.addRange(r)};
-      spare.addEventListener("click",e=>{if(!e.target.closest("button"))focusMemo()});
-      spare.addEventListener("keydown",e=>{if(e.target===spare&&(e.key==="Enter"||e.key===" ")){e.preventDefault();focusMemo()}})}
-    card.append(memo)}
+    const spare=card.querySelector(".spare"),list=el("ul",{class:"list spare-notes"}),inline=el("div",{class:"sp-inline",role:"textbox","aria-label":`${STORES[store]} 여유분 옆 글 입력`});inline.textContent=pd.inline||"";
+    const initial=Array.isArray(pd.rows)?pd.rows.map(r=>({id:r.id||newId(),text:String(r.text||"")})):(pd.text&&pd.inline==null?[{id:newId(),text:pd.text}]:[]);
+    let saved=JSON.stringify({inline:inline.textContent,rows:initial}),queued=saved,queue=Promise.resolve();
+    const readRows=()=>[...list.children].map(li=>({id:li.dataset.id,text:li.querySelector(".edt").innerText.replace(/\u00a0/g," ").trim()})).filter(r=>r.text);
+    const saveRows=()=>{const rows=readRows(),text=inline.innerText.replace(/\u00a0/g," ").trim(),key=JSON.stringify({inline:text,rows});if(key===queued)return;queued=key;
+      queue=queue.then(async()=>{if(key===saved)return;const ok=await W(()=>col("monthnotes").doc("ckpin_"+store).set({inline:text,rows,text:[text,...rows.map(r=>r.text)].filter(Boolean).join("\n"),editedBy:me,editedAt:now(),updatedAt:now()}),"저장됨");if(ok)saved=key;else queued=saved})};
+    const focusRow=sp=>{sp.focus();const r=document.createRange();r.selectNodeContents(sp);r.collapse(false);const sel=getSelection();sel.removeAllRanges();sel.addRange(r)};
+    const addRow=(row={id:newId(),text:""},focus=false)=>{const li=el("li",{"data-id":row.id});
+      const sp=el("div",{class:"edt",role:"textbox","aria-label":`${STORES[store]} 여유분 글`,"aria-multiline":"true"});sp.textContent=row.text;
+      if(canWrite){sp.contentEditable="plaintext-only";
+        sp.addEventListener("keydown",e=>{if(e.isComposing)return;if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();if(sp.innerText.trim())addBlank();else sp.blur()}else if(e.key==="Escape"){e.preventDefault();sp.blur()}});
+        sp.addEventListener("blur",()=>{if(!sp.innerText.trim())li.remove();saveRows()})}
+      li.append(el("div",{class:"txt"},sp));
+      if(canWrite)li.append(el("button",{class:"x",type:"button","aria-label":`${STORES[store]} 여유분 글 삭제`,onclick:()=>{li.remove();saveRows()}},"×"));
+      list.append(li);if(focus)focusRow(sp)};
+    const addBlank=()=>{const empty=[...list.querySelectorAll(".edt")].find(sp=>!sp.innerText.trim());if(empty)focusRow(empty);else addRow(undefined,true)};
+    initial.forEach(row=>addRow(row));
+    if(spare){inline.hidden=!inline.textContent.trim();spare.append(inline);
+      if(canWrite){inline.contentEditable="plaintext-only";
+        inline.addEventListener("keydown",e=>{if(e.isComposing)return;if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();addBlank()}else if(e.key==="Escape"){e.preventDefault();inline.blur()}});
+        inline.addEventListener("blur",()=>{if(!inline.innerText.trim()){inline.textContent="";inline.hidden=true}saveRows()});
+        const focusInline=()=>{inline.hidden=false;focusRow(inline)};
+        spare.tabIndex=0;spare.setAttribute("aria-label",`${STORES[store]} 여유분 옆 글 입력 열기`);
+        spare.addEventListener("click",e=>{if(!e.target.closest("button,.sp-inline"))focusInline()});
+        spare.addEventListener("keydown",e=>{if(e.target===spare&&(e.key==="Enter"||e.key===" ")){e.preventDefault();focusInline()}})}}
+    card.append(list)}
   if(!ns.length&&emptyText) card.append(el("div",{class:"empty"},emptyText));
   if(ns.length){const ul=el("ul",{class:"list"});ns.forEach(n=>{
     const C=n._col;
@@ -2151,8 +2190,8 @@ function noticeCard(store,emptyText,placeholder,opt={}){
     if(n.html)wireBody(sp,()=>W(()=>col("notices").doc(n.id).update({html:normDoc(sp.innerHTML).innerHTML,editedBy:me,editedAt:now()})),canWrite);
     if(n.html)sp.addEventListener("click",e=>{const li=ckHit(e,sp);if(!li)return;e.preventDefault();e.stopPropagation();if(!canWrite){flash("보기 전용 계정이에요",true);return}
       li.classList.toggle("done");W(()=>col("notices").doc(n.id).update({html:normDoc(sp.innerHTML).innerHTML,editedBy:me,editedAt:now()}))});
-    const pend=n.hold||n.showAt&&showTs(n)>Date.now();
-    const txt=el("div",{class:"txt"},sp,dayDate===TODAY&&isNew(n)?newB(n):null,pend?el("span",{class:"by pendtag"},n.hold?"공개 전":`${md(n.date)} 공개`):null,n.date&&n.date<dayDate?el("span",{class:"by since",style:"margin-left:6px"},`${md(n.date)}부터`):null);
+    const pend=ownerWritten(n)&&showTs(n)>Date.now();
+    const txt=el("div",{class:"txt"},sp,dayDate===TODAY&&isNew(n)?newB(n):null,pend?el("span",{class:"by pendtag"},`${md(n.date)} ${SHOW_LABEL} 공개`):null,n.date&&n.date<dayDate?el("span",{class:"by since",style:"margin-left:6px"},`${md(n.date)}부터`):null);
     if(img) txt.append(img);
     if(vid) txt.append(vid);
     if(n.fileId) txt.append(el("div",{},fileChip(n)));
@@ -2164,16 +2203,20 @@ function noticeCard(store,emptyText,placeholder,opt={}){
   const key=store||"all";
   const tog=opt.alwaysCheck?null:iconBtn(ICON_CHECK,"체크 항목으로 쓰기",{"aria-pressed":String(!!noticeCheckMode[key])});
   if(tog)tog.onclick=()=>{noticeCheckMode[key]=!noticeCheckMode[key];tog.setAttribute("aria-pressed",String(noticeCheckMode[key]));box.classList.toggle("chkmode",!!noticeCheckMode[key]);inp.focus()};
-  const inp=el("input",{type:"text",placeholder,"aria-label":placeholder});
+  const draftKey=(store||"all")+":"+dayDate;
+  const inp=el(opt.longText?"textarea":"input",opt.longText?{class:"notice-long",rows:1,placeholder,"aria-label":placeholder}:{type:"text",placeholder,"aria-label":placeholder});
+  inp.value=noticeDrafts.get(draftKey)||"";
+  const fitInput=()=>{if(!opt.longText)return;inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight,Math.round(window.innerHeight*.35))+"px"};
+  inp.oninput=()=>{if(inp.value)noticeDrafts.set(draftKey,inp.value);else noticeDrafts.delete(draftKey);fitInput()};
   // 엔터: 서버를 기다리지 않고 바로 목록에 보여줌 (저장 실패하면 다시 뺌)
-  const go=()=>{const t=inp.value.replace(/\u00a0/g," ").trim();if(!t||/^(메라키|푸어링) ›$/.test(t))return;inp.value="";const c=!!noticeCheckMode[key];
-    const id=newId(),data={date:dayDate,store,text:t,by:me,createdAt:now(),...(dayDate>TODAY?DRAFT:{}),...(c?{check:true,done:false}:{})};
+  const go=()=>{const t=inp.value.replace(/\u00a0/g," ").trim();if(!t||/^(메라키|푸어링) ›$/.test(t))return;inp.value="";noticeDrafts.delete(draftKey);fitInput();const c=!!noticeCheckMode[key];
+    const id=newId(),data={date:dayDate,store,text:t,by:me,createdAt:now(),...noticeRelease(dayDate),...(c?{check:true,done:false}:{})};
     const outT=c?inToOut(t):null;if(outT){const oid=newId(),nd=addDays(dayDate,1);data.autoOut=oid; // in 체크 → 다음 날 같은 매장 체크리스트에 out 자동
       const ra=remindFor(nd,outT);W(()=>col("notices").doc(oid).set({date:nd,store,text:outT,by:me,createdAt:now(),autoFrom:id,check:true,done:false,...(ra?{remindAt:ra}:{}),...(nd>TODAY?{showAt:dayStartFor(nd)}:{})}),null)}
     if(c&&store){const ra=remindFor(dayDate,t);if(ra)data.remindAt=ra} // 직접 쓴 'out 시간' 항목도 알림
     optimisticAdd("notices",id,data,inp);
     W(()=>col("notices").doc(id).set(data)).then(ok=>{ok?optimisticDone("notices",id):optimisticDrop("notices",id)})};
-  inp.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing)go()};
+  inp.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing&&(!opt.longText||e.ctrlKey||e.metaKey)){e.preventDefault();go()}};
   let photoBtn=null;
   if(assets){
     const fi=el("input",{type:"file",accept:"image/*,video/*",hidden:true});
@@ -2184,9 +2227,9 @@ function noticeCard(store,emptyText,placeholder,opt={}){
       const isV=/^video\//.test(f.type);
       flash(isV?"영상 올리는 중… 잠시만요":"사진 올리는 중…");
       try{const blob=isV?await shrinkVideo(f):await shrinkImage(f);if(isV&&blob.size>VMAX){flash("줄여도 영상이 너무 커요(20MB까지). 짧게 잘라서 올려 주세요",true);return}const r=await assets.upload(blob);
-        const t=inp.value.trim();inp.value="";const c=!!noticeCheckMode[key];
+        const t=inp.value.trim();inp.value="";noticeDrafts.delete(draftKey);fitInput();const c=!!noticeCheckMode[key];
         const nid=newId(),posterP=isV?videoPoster(f):null;
-        await W(()=>col("notices").doc(nid).set({date:dayDate,store,text:t,[isV?"video":"image"]:r.id,by:me,createdAt:now(),...(dayDate>TODAY?DRAFT:{}),...(c?{check:true,done:false}:{})}),isV?"영상 첨부됨":"사진 첨부됨");afterPoster({posterP},pid=>{const cur=S.notices.find(x=>x.id===nid);if(!cur||cur.video===r.id)W(()=>col("notices").doc(nid).update({posterId:pid}))});
+        await W(()=>col("notices").doc(nid).set({date:dayDate,store,text:t,[isV?"video":"image"]:r.id,by:me,createdAt:now(),...noticeRelease(dayDate),...(c?{check:true,done:false}:{})}),isV?"영상 첨부됨":"사진 첨부됨");afterPoster({posterP},pid=>{const cur=S.notices.find(x=>x.id===nid);if(!cur||cur.video===r.id)W(()=>col("notices").doc(nid).update({posterId:pid}))});
       }catch(e){flash(e&&e.code==="quota_exceeded"?"사진 저장 공간이 가득 찼어요":"사진을 올리지 못했어요. 다시 해주세요",true)}};
     card.append(fi);
   }
@@ -2201,7 +2244,7 @@ function noticeCard(store,emptyText,placeholder,opt={}){
   box.querySelectorAll("button").forEach(b=>b.addEventListener("mousedown",e=>e.preventDefault()));
   inp.addEventListener("focus",()=>box.classList.add("open"));
   inp.addEventListener("blur",()=>setTimeout(()=>{if(!box.contains(document.activeElement)&&!inp.value.trim()&&(opt.alwaysCheck||!noticeCheckMode[key]))box.classList.remove("open")},250));
-  card.append(box);
+  card.append(box);fitInput();
   return card;
 }
 function closingCard(date,store="pouring"){
@@ -2269,10 +2312,10 @@ const orderLabel=o=>(o.text||"")+(o.qty?` ${o.qty}${o.unit||""}`:"");
 const safeUrl=u=>/^https?:\/\//i.test(u||"")?u:"";
 /* 발주 요청 창: 검색 → 자주 요청 8개 → 분류 탭 → 품목 +로 담기 → 요청 보내기 */
 function openOrderSheet(store){
-  if(!needMe())return;if(!STORES[store])store="pouring";
+  if(!needMe()||!can("tab:order"))return;if(!STORES[store])store="pouring";
   const cart=new Map();let cat="전체",q="";
   const items=oItems();const cats=["전체",...new Set(items.map(i=>i.cat).filter(Boolean))];
-  const cnt={};S.orders.forEach(o=>{const it=itemOf(o);if(it)cnt[it.id]=(cnt[it.id]||0)+1});
+  const cnt={};S.orders.filter(visN).forEach(o=>{const it=itemOf(o);if(it)cnt[it.id]=(cnt[it.id]||0)+1});
   const freq=[...items].sort((a,b)=>(cnt[b.id]||0)-(cnt[a.id]||0)).slice(0,8);
   const search=el("input",{type:"search",class:"srch-in",placeholder:"품목 검색 (예: 오틀리)","aria-label":"품목 검색"});
   const freqBox=el("div",{}),tabs=el("div",{class:"otabs"}),list=el("div",{class:"olist"}),send=el("button",{class:"btn osend",type:"button"},"요청");
@@ -2300,12 +2343,12 @@ function openOrderSheet(store){
   send.onclick=()=>{let rows=picked();if(!rows.length)return;
     // 같은 매장에 아직 주문 안 된 같은 품목이 있으면 중복 요청 막기
     const nk=t=>String(t||"").replace(/\s+/g,"").toLowerCase();
-    const dup=rows.filter(it=>S.orders.some(o=>!o.done&&orderStores(o).includes(store)&&(o.itemId&&o.itemId===it.id||nk(o.text)===nk(it.name))));
+    const dup=rows.filter(it=>S.orders.filter(visN).some(o=>!o.done&&orderStores(o).includes(store)&&nk(o.text)===nk(it.name)));
     if(dup.length){rows=rows.filter(it=>!dup.includes(it));
       alertBox("이미 요청된 품목이에요",`${STORES[store]}에 '${dup.map(it=>it.name).join("', '")}' 품목은 이미 발주 요청되어 있어요.`+(rows.length?" 나머지 품목만 요청할게요.":""));
       if(!rows.length)return}
     closeSheet();
-    const docs=rows.map(it=>({id:newId(),data:{text:it.name,...(String(it.id).startsWith("t:")?{}:{itemId:it.id}),store,done:false,by:me,createdAt:now()}}));
+    const docs=rows.map(it=>({id:newId(),data:{text:it.name,...(String(it.id).startsWith("t:")?{}:{itemId:it.id}),store,done:false,by:me,createdAt:now(),...noticeRelease(dayDate>TODAY?dayDate:storeDay())}}));
     docs.forEach(d=>optimisticAdd("orders",d.id,d.data,null));
     W(()=>Promise.all(docs.map(d=>col("orders").doc(d.id).set(d.data))),`${STORES[store]} 발주 ${rows.length}개 요청함`).then(ok=>docs.forEach(d=>ok?optimisticDone("orders",d.id):optimisticDrop("orders",d.id)))};
   draw();
@@ -2349,12 +2392,13 @@ function openOrderCat(mode){ // mode: "sup"=거래처 관리, "item"=품목 관�
         const url=el("input",{type:"url",value:it.url||"",placeholder:"이 품목 주문 링크 (선택)"});url.oninput=()=>it.url=url.value;
         const rw=el("div",{class:"ocat-it","data-k":(String(it.name||"")+" "+String(it.cat||"")).toLowerCase()},nm,unit);
         rw._arr=g;rw._i=i;rw.append(dragHandle(rw,list,flat),el("button",{class:"x",type:"button","aria-label":"품목 삭제",onclick:()=>{items.splice(items.indexOf(it),1);draw()}},"×"),el("div",{class:"ocat-det"},ct,sp,url));
-        list.append(rw)});
+        rw.dataset.itemId=it.id;rw.addEventListener("focusin",()=>rw.classList.add("editing"));list.append(rw)});
       list.append(el("button",{class:"btn ghost sm ocg-add",type:"button",onclick:()=>{const n={id:"i"+newId(),name:"",unit:"",cat:c,sup:""};items.splice(items.indexOf(g[g.length-1])+1,0,n);openCats.add(c);draw();
-        const r=[...box.querySelectorAll(".ocat-it input")].find(x=>x.closest(".ocat-it")&&x.placeholder==="품목 이름"&&!x.value);if(r)r.focus()}},"+ 품목 추가"));
+        const r=box.querySelector(`.ocat-it[data-item-id="${CSS.escape(n.id)}"] input[placeholder="품목 이름"]`);if(r){r.focus();r.scrollIntoView({block:"nearest"})}}},"+ 품목 추가"));
       box.append(wrap)});
     box.append(el("datalist",{id:"ocat-cats"},...cats.filter(Boolean).map(c=>el("option",{value:c}))));
-    box.append(el("button",{class:"btn ghost sm ocat-sup",type:"button",onclick:()=>{items.push({id:"i"+newId(),name:"",unit:"",cat:"",sup:""});openCats.add("");draw()}},"+ 새 분류 품목 추가"));filt()};
+    box.append(el("button",{class:"btn ghost sm ocat-sup",type:"button",onclick:()=>{const n={id:"i"+newId(),name:"",unit:"",cat:"",sup:""};items.push(n);openCats.add("");draw();
+      const r=box.querySelector(`.ocat-it[data-item-id="${CSS.escape(n.id)}"] input[placeholder="품목 이름"]`);if(r){r.focus();r.scrollIntoView({block:"nearest"})}}},"+ 새 분류 품목 추가"));filt()};
   draw();
   openSheet(mode==="sup"?"거래처 관리":"품목 관리",mode==="sup"?[el("p",{class:"hint",style:"margin:0"},"거래처마다 주문 방법을 정해요. ≡를 끌어 순서를 바꿀 수 있어요"),box]:[el("p",{class:"hint",style:"margin:0"},"품목을 누르면 분류·거래처·링크를 고칠 수 있어요. ≡를 끌어 순서를 바꿀 수 있어요"),find,box],async()=>{
     const fix=u=>{u=String(u||"").trim();return u&&!/^https?:\/\//i.test(u)?"https://"+u:u};
@@ -2376,9 +2420,9 @@ const draw0=()=>draw();
 function vOrder(v){
   v.append(el("div",{class:"mtitle mt-row"},el("span",{},(tabList().find(t=>t[0]==="order")||[,"발주"])[1]),
     isBoss()&&canWrite?el("button",{class:"fgear",type:"button",title:"거래처·품목 관리","aria-label":"거래처·품목 관리",onclick:orderCatMenu},svgI(IC.folder)):null));
-  const pend=S.orders.filter(o=>!o.done).sort((a,b)=>tsOf(a.createdAt)-tsOf(b.createdAt));
+  const pend=S.orders.filter(visN).filter(o=>!o.done).sort((a,b)=>tsOf(a.createdAt)-tsOf(b.createdAt));
   const mAgo=Date.now()-31*864e5; // 구매 완료는 한 달치만 보여 줌
-  const done=S.orders.filter(o=>o.done&&(!o.doneAt||tsOf(o.doneAt)>=mAgo)).sort((a,b)=>tsOf(b.doneAt)-tsOf(a.doneAt));
+  const done=S.orders.filter(visN).filter(o=>o.done&&(!o.doneAt||tsOf(o.doneAt)>=mAgo)).sort((a,b)=>tsOf(b.doneAt)-tsOf(a.doneAt));
   // 체크·모두 주문 완료: 화면부터 바로 구매 완료로 (저장은 뒤에서, 실패하면 되돌림)
   const setDone=(os,on,msg)=>fastSave("orders",os.map(o=>o.id),doneP(on),msg);
   const markDone=os=>setDone(os,true,`${os.length}개 주문 완료`);
@@ -2395,14 +2439,15 @@ function vOrder(v){
   // 거래처별로 묶기 (거래처 순서대로, 거래처 없는 품목은 맨 아래 '기타')
   const groups=[...oSups().map(s=>({s,os:[]})),{s:{id:"",name:"기타",how:""},os:[]}];
   pend.forEach(o=>{const s=supOf(o);(groups.find(g=>g.s.id===(s?s.id:""))||groups[groups.length-1]).os.push(o)});
-  const sec=el("section",{},el("h2",{},isBoss()?"주문하기":"발주 요청",el("span",{class:"meta"},`${pend.length}건 남음`)));
+  const sec=el("section",{},el("h2",{},isBoss()?"주문하기":"발주 요청",el("span",{class:"meta"},`${pend.length}건 남음`)),pend.length>1?el("p",{class:"hint",style:"margin:-10px 0 10px"},"발주 항목을 길게 눌러 순서를 바꿀 수 있어요"):null);
   groups.forEach(({s,os})=>{
     if(!os.length)return; // 요청이 들어온 거래처만 보임
+    os.sort(doneFirst);
     const card=el("div",{class:"card osup"});
     card.append(el("div",{class:"osup-head"},el("span",{},s.name),s.how==="visit"?el("span",{class:"by",style:"opacity:.6"},OHOW[s.how]):null, /* 설명은 오프라인만 (조금 연하게) */el("span",{class:"meta",style:"margin-left:auto"},`${os.length}건`)));
     // 직원도 사는 곳(사러가·동일마트·다이소): 거래처 이름 줄 바로 아래 안내
     if(STAFF_BUY.test(String(s.name||"").replace(/\s/g,"")))card.append(el("div",{class:"by buy-hint"},"직원 중 구매했다면 체크해 주세요"));
-    card.append(el("ul",{class:"list"},...os.map(row)));
+    const ul=el("ul",{class:"list"});os.forEach(o=>{const li=row(o);li._it=o;li._grp="pending";ul.append(li)});card.append(ul);if(canWrite&&os.length>1)enableDrag(ul,"orders");
     if(isBoss()&&canWrite){const acts=el("div",{class:"osup-acts"});
       const msg=`안녕하세요, 푸어링아웃입니다. ${os.map(orderLabel).join(", ")} 주문 부탁드립니다.`;
       if(s.how==="kakao"||s.how==="tel"){acts.append(el("button",{class:"btn ghost sm",type:"button",onclick:()=>{try{navigator.clipboard.writeText(msg).then(()=>flash("주문 문자를 복사했어요"),()=>flash("복사가 막혀 있어요",true))}catch(e){flash("복사가 막혀 있어요",true)}}},"주문 문자 복사"));
@@ -2481,7 +2526,7 @@ function schedBoard(start,edit){const B=edit&&isBoss();
   for(let i=0;i<28;i++){
     const k=addDays(start,i);const d=parse(k);
     const s=S.schedule.find(x=>x.id===k)||{};
-    const hope=!B&&k<STAFF_FROM?[]:S.dayoffs.filter(x=>x.date===k&&!(B?halfFilled(x.date):halfShown(x.date))).map(x=>x.staff); // 직원 화면: 11월 전 희망휴무는 안 보임
+    const hope=!B&&k<STAFF_FROM?[]:S.dayoffs.filter(x=>x.date===k&&(B||!halfShown(x.date))).map(x=>x.staff); // 직원 화면: 11월 전 희망휴무는 안 보임
     const wed=d.getDay()===3;
     const half=st=>{const h=el("div",{class:"fw-half"});
       if(st==="pouring"&&wed){h.append(el("div",{class:"fw-closed"},"휴무"));return h}
@@ -2611,11 +2656,11 @@ function editMonthNote(text){
 function editDay(k,back){ // back: 저장하거나 닫으면 돌아갈 창(스케줄 짜기)
   if(!isBoss())return;
   const s=S.schedule.find(x=>x.id===k)||{};
-  const hope=S.dayoffs.filter(x=>x.date===k&&!hopeGone(x.date)).map(x=>x.staff);
+  const hope=S.dayoffs.filter(x=>x.date===k).map(x=>x.staff);
   const wed=parse(k).getDay()===3;
   const state={};SLOTS.forEach(sl=>state[sl.k]=[...(s[sl.k]||[])]);state.off=[...(s.off||[])];
   const parts=[];
-  const cap=hopeCap(k);const offN=()=>new Set([...state.off,...hope].filter(x=>x!=="seunghyun"));const offBtns=[];
+  const cap=wed&&(s.note_meraki||"").trim()==="휴무"?WSTAFF.length:hopeCap(k);const offN=()=>new Set([...state.off,...hope].filter(x=>x!=="seunghyun"));const offBtns=[];
   const refreshOff=()=>{const full=offN().size>=cap;offBtns.forEach(([b,key])=>{const on=state.off.includes(key);b.classList.toggle("blocked",!hope.includes(key)&&!on&&full&&key!=="seunghyun")})};
   const chipRow=key=>{const r=el("div",{class:"chips"});WSTAFF.forEach(st=>{const hp=hope.includes(st.key);const b=el("button",{class:"chip"+(hp&&key!=="off"&&!state[key].includes(st.key)?" blocked":""),type:"button",style:`--c:var(--c-${st.key})`,"aria-pressed":String(state[key].includes(st.key))},(hp?"★":"")+st.name);
     b.onclick=()=>{const a=state[key];const i=a.indexOf(st.key);
@@ -3813,7 +3858,7 @@ function notePage(d){
   if(!edit)titleIn.readOnly=true;let baseTitle=titleIn.value;
   const ed=el("div",{class:"note-body","data-ph":"메모를 입력하세요"});
   ed.append(...docClean(html0).childNodes);
-  const wireEd=()=>wireBody(ed,()=>ed.dispatchEvent(new Event("input")),edit);wireEd();ed.addEventListener("input",wireEd);
+  const wireEd=()=>wireBody(ed,()=>ed.dispatchEvent(new Event("input")),edit);wireEd();
   if(edit){ed.contentEditable="true";try{document.execCommand("defaultParagraphSeparator",false,"div")}catch(e){}}
   playTap(ed);
   ed.addEventListener("click",e=>{const lk=e.target.closest&&e.target.closest("a[href]");if(lk){e.preventDefault();window.open(lk.href,"_blank","noopener");return}
@@ -3839,7 +3884,7 @@ function notePage(d){
   const tools=edit?el("div",{class:"np-tools"},
     tb("Aa","제목 / 본문",()=>{const cur=blockOf();cmd("formatBlock",cur==="H2"?"H3":cur==="H3"?"DIV":"H2")}),
     tb(el("b",{},"B"),"굵게",()=>cmd("bold")),
-    tb("☑︎","체크리스트",()=>{const cur=()=>{const s=getSelection();let n=s.rangeCount?s.getRangeAt(0).startContainer:null;while(n&&n!==ed&&n.nodeName!=="LI")n=n.parentNode;return n&&n!==ed?n:null};
+    tb(svgI(ICON_CHECK),"체크리스트",()=>{const cur=()=>{const s=getSelection();let n=s.rangeCount?s.getRangeAt(0).startContainer:null;while(n&&n!==ed&&n.nodeName!=="LI")n=n.parentNode;return n&&n!==ed?n:null};
       let li=cur();if(!li){cmd("insertUnorderedList");li=cur()}else if(li.classList.contains("ck")){li.classList.remove("ck","done");ed.dispatchEvent(new Event("input"));return}
       if(li){li.classList.add("ck");ed.dispatchEvent(new Event("input"))}}),
     tb("•","글머리 목록",()=>cmd("insertUnorderedList")),
@@ -3991,7 +4036,12 @@ function notePage(d){
       edit&&mineOrBoss()?it(svgI(IC.trash),"삭제",doDelete,"danger"):null);
     const ov=overlay(box,"np-menuwrap")};
   page.querySelector(".np-more").before(attrBtn);
-  root.append(page);requestAnimationFrame(()=>{if(root.contains(page))showChg()});
+  root.append(page);
+  // 메모 기록 색 입히기는 긴 본문에서 무거울 수 있어, 편집창이 먼저 반응한 뒤 유휴 시간에만 표시.
+  if(document.body.classList.contains("show-attr")){
+    const paint=()=>{if(root.contains(page)&&document.body.classList.contains("show-attr"))showChg()};
+    if("requestIdleCallback" in window)requestIdleCallback(paint,{timeout:1200});else setTimeout(paint,180);
+  }
   const dispose=[];
   sheetNoteOff=()=>{clearTimeout(timer);clearTimeout(uhT);document.removeEventListener("selectionchange",onSel);window.removeEventListener("scroll",pin);dispose.forEach(fn=>fn());sheetNoteOff=null};
   // 상단 ‹ ••• 고정: 메모가 열린 동안 바깥 페이지가 밀려 올라가지 않게 막음
@@ -4015,7 +4065,9 @@ function notePage(d){
       let r=s.getRangeAt(0).getBoundingClientRect();if(!r.height&&s.anchorNode===ed){const b=ed.getBoundingClientRect();r={bottom:b.top+28}}else if(!r.height&&s.anchorNode.nodeType===1)r=s.anchorNode.getBoundingClientRect();
       const limit=kbar.getBoundingClientRect().top-12;if(r.bottom>limit)scroller.scrollTop+=r.bottom-limit};
     if(vv){vv.addEventListener("resize",place);vv.addEventListener("scroll",place);dispose.push(()=>{vv.removeEventListener("resize",place);vv.removeEventListener("scroll",place)})}
-    ["input","keyup","click"].forEach(ev=>ed.addEventListener(ev,()=>requestAnimationFrame(keepCaret)));
+    // 입력할 때마다 본문·커서의 레이아웃을 다시 계산하면 긴 메모에서 타이핑이 끊길 수 있음.
+    // 키보드가 열릴 때와 실제 탭/뷰포트 변경 때만 도구막대 위치를 보정하고, 본문 입력은 브라우저에 맡김.
+    ["click"].forEach(ev=>ed.addEventListener(ev,()=>requestAnimationFrame(keepCaret)));
     ed.addEventListener("focus",()=>{page.classList.add("typing");place();setTimeout(()=>{place();keepCaret()},350);setTimeout(()=>{place();keepCaret()},800)});
     ed.addEventListener("blur",()=>setTimeout(()=>{if(document.activeElement!==ed){page.classList.remove("typing");scroller.style.paddingBottom=""}},150));
     // 빈 메모 본문을 누르면 아이폰이 큰 본문 칸 전체를 보이려고 화면을 밀어 올려 제목이 가려짐 → 쓰기 시작 전까지 칸을 한 줄 높이로 줄이고 잠깐 위치 고정
@@ -4029,8 +4081,13 @@ function notePage(d){
   }
   sheetDismiss=close;document.addEventListener("keydown",escClose);
   // 안내 문구: 글자가 없으면 계속 보이고(커서가 있어도), 입력을 시작하면 사라짐
-  const phUpd=()=>ed.classList.toggle("is-empty",!ed.textContent.trim()&&!ed.querySelector("img,video,li"));
-  phUpd();ed.addEventListener("input",phUpd);
+  let phEmpty=false;
+  const phUpd=()=>{const empty=!ed.textContent.trim()&&!ed.querySelector("img,video,li");if(empty!==phEmpty){phEmpty=empty;ed.classList.toggle("is-empty",empty)}};
+  phUpd();ed.addEventListener("input",e=>{
+    // 일반 입력은 빈 상태를 벗어나는 경우에만 확인. 삭제·서식·되돌리기는 전체 확인이 필요함.
+    if(phEmpty){phUpd();return}
+    if(!e.inputType||e.inputType.startsWith("delete")||e.inputType.startsWith("history")||e.inputType.startsWith("format")||e.inputType.startsWith("insertFrom"))phUpd();
+  });
   if(edit){titleIn.addEventListener("input",()=>{contentEdited=true;clearTimeout(timer);timer=setTimeout(save,1500)});titleIn.addEventListener("blur",()=>{clearTimeout(timer);save()});
     titleIn.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();if(!ed.firstChild)ed.append(el("div",{},el("br")));ed.focus()}})}
   if(!d&&edit)titleIn.focus(); // 새 메모: 제목 칸부터 (누른 순간 키보드)
