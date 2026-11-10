@@ -661,7 +661,7 @@ button{-webkit-tap-highlight-color:transparent}
 .ord-row .chk{width:20px;height:20px;margin-right:2px}
 .ord-row{height:54px;box-sizing:border-box;display:flex;align-items:center;gap:6px;padding:0 12px;border-bottom:1px solid var(--line);font-size:14px;line-height:1;white-space:nowrap;overflow:hidden}
 .ord-today .ord-row{padding:0 4px 0 12px}.ord-row .ord-x{flex:none;width:28px;height:28px;padding:0;margin:0}.ord-row .ord-tx{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px}.ord-row .ord-t,.ord-row .ord-by{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.15}.ord-row .ord-by{margin-left:0;font-size:12px}
-.ord-today+.plusbtn{height:40px;box-sizing:border-box;padding:0;border-top:0;margin-top:0;line-height:40px}
+.ord-today+.plusbtn,.ord-today-list+.plusbtn{height:40px;box-sizing:border-box;padding:0;border-top:0;margin-top:0;line-height:40px}.ord-today-list.list>li{height:54px;min-height:54px;box-sizing:border-box;gap:6px;align-items:center;padding:0 4px 0 12px;overflow:hidden;white-space:nowrap}
 .ord-today{display:block;flex:none!important;font:inherit;color:var(--ink);text-align:left}
 .oh-q{padding:10px 12px 4px}.oh-h{width:100%;border:0;background:none;font:inherit;cursor:pointer;justify-content:space-between;text-align:left}.oh-h .oh-n{display:inline-flex;align-items:center;gap:8px}.oh-h.open .dyc{transform:rotate(-135deg);margin:4px 4px 0 0}
 .odate{min-height:0!important;height:34px;box-sizing:border-box;display:flex!important;align-items:flex-end!important;padding:0 14px 6px!important;font-size:12px;color:var(--muted);background:none}
@@ -2058,7 +2058,7 @@ function vToday(root){
     // 두 칸의 줄 수를 같게 맞춰 머리줄·품목줄·+줄이 모두 같은 높이로 나란히 (짧은 칸은 빈 줄로 채움)
     const tIso=iso(new Date());const doneToday=S.orders.filter(visN).filter(o=>o.done&&o.doneAt&&iso(new Date(o.doneAt))===tIso);
     const shown=[...pend,...(dayDate>TODAY?[]:doneToday)].sort((a,b)=>Number(!!b.done)-Number(!!a.done)||tsOf(a.createdAt)-tsOf(b.createdAt));
-    const byStore=["pouring","meraki"].map(st=>shown.filter(o=>orderStores(o).includes(st)));const nRows=Math.max(...byStore.map(x=>x.length));
+    const byStore=["pouring","meraki"].map(st=>shown.filter(o=>orderStores(o).includes(st)).sort((a,b)=>Number(!!b.done)-Number(!!a.done)||(a["ord_"+st]!=null?a["ord_"+st]:tsOf(a.createdAt))-(b["ord_"+st]!=null?b["ord_"+st]:tsOf(b.createdAt))));const nRows=Math.max(...byStore.map(x=>x.length));
     ["pouring","meraki"].forEach((st,si)=>{const its=byStore[si];
       const ordCb=o=>{const cb=el("input",{type:"checkbox",class:"chk","aria-label":`${orderLabel(o)} 주문 완료`,disabled:!canDoneOrder(o)});cb.checked=!!o.done;
         cb.onchange=()=>fastSave("orders",[o.id],doneP(cb.checked),cb.checked?"주문 완료":"요청으로 되돌림");return cb};
@@ -2098,7 +2098,7 @@ function doneFirst(a,b){const ad=!!a.done,bd=!!b.done;if(ad!==bd)return ad?-1:1;
   if(ad)return String(a.doneAt||"").localeCompare(String(b.doneAt||""));
   const ka=a.ord!=null?a.ord:tsOf(a.createdAt),kb=b.ord!=null?b.ord:tsOf(b.createdAt);return ka-kb}
 /* 항목 꾹 눌러서 위아래로 옮기기 (아이폰 메모처럼). li._it, li._grp 필요 */
-function enableDrag(ul,colOf){
+function enableDrag(ul,colOf,ordKey="ord"){
   [...ul.children].forEach(li=>{if(!li._grp)return;
     let t=null,sx=0,sy=0,drag=false,sibs,rc,i,to,hgt;
     li.classList.add("ldr");
@@ -2120,7 +2120,7 @@ function enableDrag(ul,colOf){
       li._noClick=true;setTimeout(()=>li._noClick=false,400);
       if(cancel||to===i)return;const arr=sibs.map(x=>x._it);arr.splice(to,0,arr.splice(i,1)[0]);
       ul.insertBefore(li,to<i?sibs[to]:sibs[to].nextSibling);
-      W(()=>Promise.all(arr.map((it,k)=>it.ord===k?null:col(it._col||colOf).doc(it.id).update({ord:k}))),"순서 바꿨어요")}
+      W(()=>Promise.all(arr.map((it,k)=>it[ordKey]===k?null:col(it._col||colOf).doc(it.id).update({[ordKey]:k}))),"순서 바꿨어요")}
   })}
 function noticeCard(store,emptyText,placeholder,opt={}){
   const nsN=S.notices.filter(n=>visN(n)&&n.date<=dayDate&&!(!store&&dayDate>=TODAY&&n.date!==dayDate&&!(n.check&&(!n.done||n.doneAt&&iso(new Date(n.doneAt))>=dayDate)))&&(!n.past||n.date===dayDate)&&(n.store||"")===store&&!(n.check&&n.done&&n.doneAt&&iso(new Date(n.doneAt))<dayDate)).map(n=>({...n,...(opt.alwaysCheck&&!n.html?{check:true}:{}),_col:"notices"})); // 매장 체크리스트는 모두 체크 항목
