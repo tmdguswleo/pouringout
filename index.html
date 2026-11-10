@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-10T04:51:39Z";window.__APP_NOTE="레시피 뒤로가기 터치 처리 및 중복 닫기 방지"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-10T04:54:38Z";window.__APP_NOTE="발주 확인 후 알림 해제 및 뱅쇼용 와인 코스트코 거래처 고정"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -1361,10 +1361,17 @@ const newCount=k=>{if(k==="order"&&!isBoss())return 0; // 발주 탭 배지는 �
 function updBadges(){try{drawTabs()}catch(e){}const s=seenLoad();const DOCS=S.docs.filter(docOK).filter(d=>isNewIn(d,s));
   document.querySelectorAll(".fbadge[data-fk]").forEach(b=>{const k=b.dataset.fk;const n=DOCS.filter(d=>{const c=d.cat||"기타";return c===k||c.startsWith(k+"/")}).length;b.hidden=!n;b.textContent=n>99?"99+":String(n)})}
 const seenIO="IntersectionObserver" in window?new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const b=e.target;
-  clearTimeout(b._t);b._t=setTimeout(()=>{const s=seenLoad();s.ids[b.dataset.id]=Date.now();seenSave();seenIO.unobserve(b);b.classList.add("seen");updBadges()},600)});
+  clearTimeout(b._t);b._t=setTimeout(()=>{if(!b.isConnected||document.hidden||b._seenMe!==me)return;
+    const s=seenLoad();s.ids[b.dataset.id]=Date.now();seenSave();seenIO.unobserve(b);b.classList.add("seen");updBadges();
+    if(b.dataset.kind==="order")clearReadOrderNotifications()},600)});
   es.forEach(e=>{if(!e.isIntersecting)clearTimeout(e.target._t)})},{threshold:1}):null;
 // manual=true: 화면에 보이기만 해서는 읽음 처리 안 함 (자료실 메모는 열어 봐야 사라짐)
-const newB=(it,manual)=>{const b=el("span",{class:"newb","aria-label":"새 글","data-id":it.id},"N");if(seenIO&&!manual)requestAnimationFrame(()=>seenIO.observe(b));return b};
+const newB=(it,manual,kind)=>{const b=el("span",{class:"newb","aria-label":"새 글","data-id":it.id,...(kind?{"data-kind":kind}:{})},"N");b._seenMe=me;if(seenIO&&!manual)requestAnimationFrame(()=>seenIO.observe(b));return b};
+// 발주 화면에서 모두 확인한 뒤에는 알림 센터의 발주 알림도 정리. 다른 종류의 알림은 유지.
+async function clearReadOrderNotifications(){if(!isBoss()||newCount("order")||!("serviceWorker" in navigator))return;
+  const who=me;try{const reg=await navigator.serviceWorker.getRegistration();if(!reg)return;
+    const ns=await reg.getNotifications();if(me!==who||!isBoss()||newCount("order"))return;
+    ns.filter(n=>n.title==="발주 요청").forEach(n=>n.close())}catch(e){}}
 document.addEventListener("visibilitychange",()=>{if(!me||document.hidden)return;seenSnap=JSON.parse(JSON.stringify(seenLoad()));if(!busy())draw()});
 /* 이름 버튼 줄 맞추기: koha까지 한 줄(최우준 옆), 나머지는 다음 줄. 한 줄 폭에 꽉 차게 글씨·여백 조절 */
 function fitNameChips(box,lastKey="koha"){ // 첫 줄(…koha)은 따로 묶어 양끝을 창 폭에 맞추고, 나머지(장호정)는 다음 줄 왼쪽부터
@@ -2310,7 +2317,10 @@ const oItems=()=>oCat().items||[];
 // 품목 찾기: id → 이름 그대로 → (이름 앞부분이 하나만 맞을 때만) — 애매하면 연결 안 함
 const itemOf=o=>{const its=oItems();const byId=o.itemId&&its.find(i=>i.id===o.itemId);if(byId)return byId;const n=String(o.text||"").trim().toLowerCase();
   const ex=its.find(i=>String(i.name).trim().toLowerCase()===n);if(ex)return ex;if(o.itemId)return null;const c=its.filter(i=>orderKey(i.name)===orderKey(o.text));return c.length===1?c[0]:null};
-const supOf=o=>{const it=itemOf(o);return it?oSups().find(s=>s.id===it.sup)||null:null};
+// 와인(뱅쇼용)은 코스트코 구매 품목. 오래된 itemId·목록 로딩 순서에 영향받지 않음.
+const costcoWine=o=>String(o.text||o.name||"").replace(/\s+/g,"").replace(/（/g,"(").replace(/）/g,")")==="와인(뱅쇼용)";
+const supOf=o=>{if(costcoWine(o))return oSups().find(s=>String(s.name||"").replace(/\s+/g,"")==="코스트코")||{id:"__costco",name:"코스트코",how:"visit"};
+  const it=itemOf(o);return it?oSups().find(s=>s.id===it.sup)||null:null};
 // 직원이 직접 사 올 수 있는 거래처(다이소·사러가·동일마트)는 직원도 구매 완료 체크 가능
 const STAFF_BUY=/다이소|사러가|동일마트/;
 const staffBuy=o=>{const s=supOf(o);return !!s&&STAFF_BUY.test(String(s.name||"").replace(/\s/g,""))};
@@ -2439,7 +2449,7 @@ function vOrder(v){
     const cb=el("input",{type:"checkbox",class:"chk","aria-label":"주문 완료",disabled:!canDoneOrder(o)});cb.checked=!!o.done;
     cb.onchange=()=>setDone([o],cb.checked,cb.checked?"주문 완료":"요청으로 되돌림");
     const at=staffBuy(o)?el("span",{class:"by ord-who",style:"display:inline-block;margin-left:8px;white-space:nowrap"},buyLine(o)):el("span",{class:"by ord-who",style:"display:inline-block;margin-left:8px;white-space:nowrap"},`${fwho(o.by)||"?"} 요청${o.createdAt?" "+hm(o.createdAt):""}`,o.done?el("span",{class:"ord-done"},` · ${o.doneAt?md(iso(new Date(o.doneAt)))+" ":""}주문 완료`):null);
-    const txt=el("div",{class:"txt"},el("div",{},...orderStores(o).map(st=>el("span",{class:"pill "+st},STORES[st])),el("span",{},orderLabel(o)),at));
+    const txt=el("div",{class:"txt"},el("div",{},...orderStores(o).map(st=>el("span",{class:"pill "+st},STORES[st])),el("span",{},orderLabel(o)),isNew(o)?newB(o,false,"order"):null,at));
     // 어플 주문 거래처(예: 마켓봄)는 품목 줄 같은 자리에 "어플 열기 ›"
     const sp=supOf(o);const appL=!link&&sp&&sp.how==="app"?safeUrl(sp.url):"";
     const pay=isBoss()&&(link||appL)&&!o.done?el("a",{class:"ord-link",href:link||appL,target:"_blank",rel:"noopener noreferrer","aria-label":link?"주문 페이지 열기":"주문 어플 열기",title:link?"주문 페이지":"어플 열기"},svgI('<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2"/><circle cx="9.5" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/></svg>'),el("span",{class:"ord-chev"},"›")):null; // 장바구니 ›
@@ -2447,7 +2457,8 @@ function vOrder(v){
     return el("li",{class:o.done?"done":""},cb,txt,pay)}; // 발주 탭에는 × 없음 (취소는 오늘 화면에서)
   // 거래처별로 묶기 (거래처 순서대로, 거래처 없는 품목은 맨 아래 '기타')
   const groups=[...oSups().map(s=>({s,os:[]})),{s:{id:"",name:"기타",how:""},os:[]}];
-  pend.forEach(o=>{const s=supOf(o);(groups.find(g=>g.s.id===(s?s.id:""))||groups[groups.length-1]).os.push(o)});
+  pend.forEach(o=>{const s=supOf(o);let g=groups.find(g=>g.s.id===(s?s.id:""));
+    if(!g&&s){g={s,os:[]};groups.splice(groups.length-1,0,g)}(g||groups[groups.length-1]).os.push(o)});
   const sec=el("section",{},el("h2",{},isBoss()?"주문하기":"발주 요청",el("span",{class:"meta"},`${pend.length}건 남음`)),pend.length>1?el("p",{class:"hint",style:"margin:-10px 0 10px"},"발주 항목을 길게 눌러 순서를 바꿀 수 있어요"):null);
   groups.forEach(({s,os})=>{
     if(!os.length)return; // 요청이 들어온 거래처만 보임
