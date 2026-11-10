@@ -1011,7 +1011,7 @@ function pickDoc(q,onPick){
   inp.oninput=draw;draw();
   ov.addEventListener("pointerdown",e=>{if(e.target===ov)ov.remove()});document.body.append(ov)}
 /* 자동 연결: 체크 항목 글(띄어쓰기 무시)에 kw가 있고, make면 '만들기·제조'도 함께 있을 때 → doc(메모) 또는 cat(폴더)을 여는 작은 아이콘 */
-const AUTO_DOC=[{kw:"티라미수",make:true,doc:"note0328"},{kw:"바나나브레드",make:true,doc:"note0316"},{kw:"밀크티in",doc:"note0005"},{kw:"우롱차in",cat:"직원 메모장/우준/우롱차 냉침"},...["콜드브루in","콜드브루out","디카페인in","디카페인out"].map(kw=>({kw,cat:"음료/콜드브루/대형 토디 일지"}))];
+const AUTO_DOC=[{kw:"티라미수",make:true,doc:"note0328"},{kw:"바나나브레드",make:true,doc:"note0316"},{kw:"밀크티in",doc:"note0005"},{kw:"우롱차in",title:"우롱차 냉침",cat:"직원 메모장/우준"},...["콜드브루in","콜드브루out","디카페인in","디카페인out"].map(kw=>({kw,cat:"음료/콜드브루/대형 토디 일지"}))];
 /* 체크리스트 'in' 항목(예: 콜드브루in, 밀크티 in, 오시 in) → 다음 날 같은 매장에 'out' 체크 항목을 자동으로 만듦. in을 지우면 아직 안 한 out도 지움 */
 // 형식: '이름 in 시간 (몇 통)' → '이름 out 시간 (몇 통)'. 시간·통 수는 그대로, in이 붙어 있어도(밀크티in) '밀크티 out'처럼 띄움
 const inToOut=t=>{const re=/(^|[^a-z])in(?![a-z])/i;const m=t.match(re);if(!m||/(^|[^a-z])out(?![a-z])/i.test(t))return null;
@@ -1024,8 +1024,14 @@ const autoDoc=t=>{const s=sq(t);return AUTO_DOC.find(x=>s.includes(x.kw.toLowerC
 const openFolder=c=>{location.hash="docs";tab="docs";docCat=c;mView.docs="detail";draw();window.scrollTo(0,0)};
 const dIcon=(t,go,ic)=>el("button",{class:"dlink",type:"button",title:t,"aria-label":t+" 열기",onclick:e=>{e.stopPropagation();go()}},svgI(ic));
 function docChip(n){
-  if(n.docId){const d=S.docs.find(x=>x.id===n.docId);return d&&docOK(d)?dIcon(dTitle(d),()=>notePage(d),IC.memo):null}
+  if(n.docId){const d=S.docs.find(x=>x.id===n.docId);if(d&&docOK(d))return dIcon(dTitle(d),()=>notePage(d),IC.memo)}
   const a=autoDoc(n.text);if(!a)return null;
+  if(a.title){
+    if(!can("tab:docs"))return null;
+    const d=S.docs.find(d=>docOK(d)&&(d.cat===a.cat||String(d.cat||"").startsWith(a.cat+"/"))&&sq(dTitle(d))===sq(a.title));
+    if(d)return dIcon(dTitle(d),()=>notePage(d),IC.memo);
+    if(!catOK(a.cat))return null;
+    return dIcon(a.title,()=>openFolder(a.cat),IC.memo)}
   if(a.cat){if(!can("tab:docs")||!catOK(a.cat))return null;return dIcon(a.cat.split("/").pop(),()=>openFolder(a.cat),IC.folder)}
   const d=S.docs.find(x=>x.id===a.doc);return d&&docOK(d)?dIcon(dTitle(d),()=>notePage(d),IC.memo):null}
 function inlineEdit(li,span,it,colName,opt={}){
@@ -1391,8 +1397,10 @@ function verCheck(){const V=window.__APP_VER||"";if(!WEB||!V||!isBoss())return;
     if(seen!==V){try{localStorage.setItem("pn.seenVer",V)}catch(e){}setTimeout(()=>alertBox("새 버전이 반영됐어요",[window.__APP_NOTE||"앱이 새로 바뀌었어요",verWhen(V)].filter(Boolean).join("\n\n"),true),700)}}
   if(verPolling)return;verPolling=true;
   const poll=async()=>{if(!isBoss())return;try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});const j=await r.json();
-    if(!j.v)return;
-    if(j.v===V){try{localStorage.removeItem(verPromptKey)}catch(e){};return}
+    if(!r.ok||!Number.isFinite(Date.parse(j.v)))return;
+    // 배포 시 화면과 버전 파일이 잠시 엇갈려도 이전 버전은 새 버전으로 알리지 않음.
+    if(Date.parse(j.v)<=Date.parse(V)){
+      const old=document.querySelector(".verbar");if(old)old.remove();verNew="";return}
     if(j.v!==verNew){verNew=j.v;let prompted="";try{prompted=localStorage.getItem(verPromptKey)||""}catch(e){}
       if(prompted===j.v)return;
       try{localStorage.setItem(verPromptKey,j.v)}catch(e){}
@@ -2199,7 +2207,7 @@ function noticeCard(store,emptyText,placeholder,opt={}){
     const at=attrib(n);
     if(n.check&&n.done&&fwho(n.doneBy)){const d=el("span",{},` · ${fwho(n.doneBy)} 완료 ${hm(n.doneAt)}`);if(at)at.append(d);else txt.append(el("div",{class:"by attr"},d))}
     if(at) txt.append(at);
-    const dc=n.check?docChip(n):null; // 오른쪽 × 왼쪽에 작은 메모·폴더 아이콘
+    const dc=(n.check||opt.alwaysCheck)?docChip(n):null; // 오른쪽 × 왼쪽에 작은 메모·폴더 아이콘
     const li=el("li",{},el("span",{class:"pre-chk ie-pc","aria-hidden":"true"}),lead,txt,dc,x);(n.html||inlineEdit(li,sp,n,C,{check:C==="notices"&&!opt.alwaysCheck,media:C==="notices",doc:!!n.check}));li._it=n;li._grp=n.check&&n.done?null:(n.check?"c":"p");ul.append(li)});card.append(ul);enableDrag(ul,"notices")}
   const key=store||"all";
   const tog=opt.alwaysCheck?null:iconBtn(ICON_CHECK,"체크 항목으로 쓰기",{"aria-pressed":String(!!noticeCheckMode[key])});
