@@ -3950,9 +3950,10 @@ function notePage(d){
     ed.addEventListener("focus",()=>chgClear(ed))}
   // 뒤로: 아이폰 메모처럼 바로 닫힘(화면만 숨김). 저장은 뒤에서 하고, 실패했을 때만 메모를 다시 띄워 알려줌
   let closing=false,leaving=false;
-  const close=async()=>{if(closing)return;
+  const close=async()=>{if(closing||!root.contains(page))return;
+    closing=true;
     if(!saving&&!contentEdited&&cat===baseCat&&teamKey()===baseTeam&&!finalized){closeSheet();return}
-    closing=true;clearTimeout(timer);let ok=false,why="";
+    clearTimeout(timer);let ok=false,why="";
     leaving=true;page.classList.add("np-leaving");document.documentElement.classList.remove("np-lock");
     try{ok=await Promise.race([save(),new Promise(r=>setTimeout(()=>r("timeout"),20000))])}catch(e){why=String(e&&e.message||e);ok=false}
     closing=false;
@@ -3977,6 +3978,11 @@ function notePage(d){
   const npUR=edit?el("span",{class:"np-urg"},urBtn(-1,"되돌리기",'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'),urBtn(1,"다시 실행",'<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>')):null;
   if(npUR){const [ub,rb]=npUR.children;urUpd=()=>{ub.style.opacity=uhI>0||ed.innerHTML!==UH[uhI]?"":".4";rb.style.opacity=uhI<UH.length-1?"":".4"};ed.addEventListener("input",()=>setTimeout(urUpd,0));urUpd()}
   const back=el("button",{class:"np-circ np-back",type:"button",onclick:close,title:"뒤로 ("+(cat?cat.split("/").pop():"자료실")+")","aria-label":"뒤로"},svgI('<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>'));
+  // iOS에서 본문의 blur로 키보드·화면이 움직이면 click이 누락될 수 있음.
+  // 누를 때 포커스를 유지하고 뗄 때 닫음. click은 키보드 조작용으로 유지.
+  back.addEventListener("pointerdown",e=>{if(e.button===0)e.preventDefault()});
+  back.addEventListener("mousedown",e=>e.preventDefault());
+  back.addEventListener("pointerup",e=>{if(e.button!==0)return;e.preventDefault();e.stopPropagation();close()});
   const by=d&&fwho(d.createdBy||d.by)?`${fwho(d.createdBy||d.by)} 작성`:""; // 수정 시각은 바뀐 부분 옆에 표시
   const teamLine=el("div",{class:"np-team"});
   const canTeam=()=>edit;
