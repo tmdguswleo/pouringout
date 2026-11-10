@@ -45,8 +45,7 @@ window.__noteDebug=(()=>{
   }
   const startedAt=Date.now(),key=RUN+startedAt+"."+Math.random().toString(36).slice(2,8);
   const previous=readRuns();
-  // 이 진단 전용 기록만 최대 4개 유지. 현재 실행과 이전 실행은 서로 다른 키 사용.
-  try{previous.slice(3).forEach(r=>localStorage.removeItem(r.key))}catch(e){}
+  // 기존 진단 기록은 자동 삭제하지 않음. 현재 실행과 이전 실행은 서로 다른 키 사용.
   let seq=0,state=()=>({}),writing=false,storageOK=false,status=null,lastMove=0,lastFrame=performance.now(),lastBeat=performance.now(),lastVisible=document.visibilityState;
   const data={schema:2,startedAt,build:window.__APP_VER||"local",fix:"persistent-note-diagnostic-2",events:[],lastState:{},lastHeartbeat:null,writeMaxMs:0,support:{longtask:false}};
   const persist=()=>{if(writing)return;writing=true;const t=performance.now();try{localStorage.setItem(key,JSON.stringify(data));storageOK=true}catch(e){storageOK=false}finally{data.writeMaxMs=Math.max(data.writeMaxMs,Math.round(performance.now()-t));writing=false}};
@@ -82,7 +81,7 @@ window.__noteDebug=(()=>{
   bar.setAttribute("data-note-debug-status","");status=bar;document.body.append(bar);
   const updateStatus=()=>{const text="진단 켜짐 · 실행 "+data.build+" · "+(storageOK?"기기 자동 저장 중":"기기 저장 불가")+" · 이전 기록 "+previous.length+"개";if(status.textContent!==text)status.textContent=text};
   const ui=make("div",null,"position:fixed;right:8px;bottom:84px;z-index:2147483003;max-width:calc(100vw - 16px);font:13px sans-serif;font-weight:400");
-  const recoveryLink=make("a","이전 기록 확인·내보내기","display:inline-block;background:#fff;color:#111;border:1px solid #555;padding:8px");recoveryLink.href="?noteDebug=view";ui.append(recoveryLink);document.body.append(ui);
+  const recoveryLink=make("a","이전 기록 확인·내보내기","display:inline-block;background:#fff;color:#111;border:1px solid #555;padding:8px");recoveryLink.href="recovery.html";ui.append(recoveryLink);document.body.append(ui);
   const heartbeat=()=>{const now=performance.now(),gap=Math.round(now-lastBeat);if(gap>2500)record("heartbeat-gap",{delay:gap,beforeVisibility:lastVisible,visibility:document.visibilityState,frameGap:Math.round(now-lastFrame)});
     lastBeat=now;lastVisible=document.visibilityState;sample();data.lastHeartbeat={at:Date.now(),ms:Math.round(now),visibility:lastVisible,frameGap:Math.round(now-lastFrame)};persist();updateStatus()};
   record("boot",{previousRuns:previous.length});sample();persist();updateStatus();setInterval(heartbeat,1000);

@@ -3,12 +3,21 @@ const CACHE = "po-v4";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon3-180.png", "./icon3-192.png", "./icon3-512.png",
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).catch(() => {})); self.skipWaiting(); });
-self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE && k !== "po-badge").map(k => caches.delete(k)))).then(() => self.clients.claim())); });
+// 업데이트 시 기존 앱 캐시·오프라인 데이터는 지우지 않음.
+self.addEventListener("activate", e => { e.waitUntil(self.clients.claim()); });
 self.addEventListener("fetch", e => {
   const u = new URL(e.request.url);
   if (e.request.method !== "GET") return;
   if (u.hostname.endsWith("supabase.co")) return; // 데이터·사진은 늘 서버에서
   if (u.pathname.endsWith("version.json")) return; // 새 버전 확인은 늘 서버에서
+  // 독립 복구는 앱 첫 화면으로 대체하지 않음. 외부 리소스·앱 실행 없이 읽는 페이지.
+  if (u.origin === location.origin && u.pathname.endsWith("/recovery.html")) {
+    e.respondWith(fetch(e.request, { cache: "no-store" }).catch(() => new Response(
+      "독립 복구 페이지를 불러오지 못했습니다. 인터넷 연결을 확인하고 recovery.html을 다시 여세요. 앱 화면으로 대체하지 않았습니다.",
+      { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } }
+    )));
+    return;
+  }
   const isPage = e.request.mode === "navigate" || u.pathname.endsWith("/") || u.pathname.endsWith(".html");
   if (isPage) { // 화면: 새 버전 먼저, 안 되면 저장해 둔 것
     e.respondWith(fetch(e.request, { cache: "no-cache" }).then(r => { const c = r.clone(); caches.open(CACHE).then(x => x.put(e.request, c)); return r; })
