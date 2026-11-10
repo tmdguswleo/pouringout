@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-10T08:23:10Z";window.__APP_NOTE="직원 희망휴무 날짜도 사장과 같은 두 칸 배치로 표시"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-10T09:01:23Z";window.__APP_NOTE="레시피 아이콘을 독립 읽기 화면과 기본 뒤로가기 동작으로 변경"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -862,6 +862,16 @@ body:not(.show-attr) .chg-at{display:none}
 .nr-th{flex:none;width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
 html.np-lock,html.np-lock body{overflow:hidden;height:100%;overscroll-behavior:none}
 .notepage.np-leaving{opacity:0;pointer-events:none}
+/* 체크리스트 레시피 보기: 브라우저 최상위 모달 + 기본 form 닫기. 편집기와 분리. */
+.recipe-reader{position:fixed;inset:0;width:100%;height:100%;height:100dvh;max-width:none;max-height:none;margin:0;border:0;padding:0;background:var(--surface);color:var(--ink)}
+.recipe-reader:not([open]){display:none}.recipe-reader[open]{display:flex;flex-direction:column}
+.recipe-reader::backdrop{background:rgba(0,0,0,.4)}
+.recipe-reader-head{display:flex;align-items:center;gap:12px;flex:none;margin:0;padding:calc(8px + env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 8px max(14px,env(safe-area-inset-left,0px));background:var(--surface)}
+.recipe-reader-head h2{flex:1;min-width:0;margin:0;font-size:16px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.recipe-reader .np-back{touch-action:manipulation;font-size:28px}
+.recipe-reader-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px max(20px,env(safe-area-inset-right,0px)) calc(32px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px))}
+.recipe-reader-body>.note-body{max-width:760px;margin:0 auto;min-height:0}
+.recipe-reader .note-body>:first-child{font-size:inherit;font-weight:400;line-height:inherit;margin-bottom:0}
 .notepage{position:fixed;inset:0;z-index:30;background:var(--surface);color:var(--ink);display:flex;flex-direction:column}
 .np-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(8px + env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 8px max(14px,env(safe-area-inset-left,0px))}
 .np-right{display:flex;align-items:center;gap:2px;min-width:0}
@@ -1099,16 +1109,16 @@ const autoDoc=t=>{const s=sq(t);return AUTO_DOC.find(x=>s.includes(x.kw.toLowerC
 const openFolder=c=>{location.hash="docs";tab="docs";docCat=c;mView.docs="detail";draw();window.scrollTo(0,0)};
 const dIcon=(t,go,ic)=>el("button",{class:"dlink",type:"button",title:t,"aria-label":t+" 열기",onclick:e=>{e.stopPropagation();go()}},svgI(ic));
 function docChip(n){
-  if(n.docId){const d=S.docs.find(x=>x.id===n.docId);if(d&&docOK(d))return dIcon(dTitle(d),()=>notePage(d),IC.memo)}
+  if(n.docId){const d=S.docs.find(x=>x.id===n.docId);if(d&&docOK(d))return dIcon(dTitle(d),()=>recipeReader(d),IC.memo)}
   const a=autoDoc(n.text);if(!a)return null;
   if(a.title){
     if(!can("tab:docs"))return null;
     const d=S.docs.find(d=>docOK(d)&&(d.cat===a.cat||String(d.cat||"").startsWith(a.cat+"/"))&&sq(dTitle(d))===sq(a.title));
-    if(d)return dIcon(dTitle(d),()=>notePage(d),IC.memo);
+    if(d)return dIcon(dTitle(d),()=>recipeReader(d),IC.memo);
     if(!catOK(a.cat))return null;
     return dIcon(a.title,()=>openFolder(a.cat),IC.memo)}
   if(a.cat){if(!can("tab:docs")||!catOK(a.cat))return null;return dIcon(a.cat.split("/").pop(),()=>openFolder(a.cat),IC.folder)}
-  const d=S.docs.find(x=>x.id===a.doc);return d&&docOK(d)?dIcon(dTitle(d),()=>notePage(d),IC.memo):null}
+  const d=S.docs.find(x=>x.id===a.doc);return d&&docOK(d)?dIcon(dTitle(d),()=>recipeReader(d),IC.memo):null}
 function inlineEdit(li,span,it,colName,opt={}){
   const orig=it.text||"";let chk=!!it.check;
   const bar=el("div",{class:"iedit-bar"});
@@ -3939,6 +3949,25 @@ function chgApply(root,hist,lastRev){chgClear(root);root.normalize();if(!hist||!
       if(b===b0)f.append(el("span",{class:"chg-at","data-noexport":"",contenteditable:"false",style:hv(o.by)},`${who(o.by)}${o.at?" "+hm(o.at):""}`));at=b});
     if(at<en)f.append(tx.slice(at-st));node.replaceWith(f)}}
 const noteDebug=window.__noteDebug;
+// 아이콘으로 연 레시피는 읽기 전용. 닫기는 touchend·click·저장 상태가 아닌 브라우저 기본 동작.
+function recipeReader(d){
+  if(!d||!can("tab:docs")||!docOK(d))return;
+  if(typeof HTMLDialogElement==="undefined"||!HTMLDialogElement.prototype.showModal){notePage(d);return}
+  const old=document.querySelector("dialog.recipe-reader");if(old){old.close();old.remove()}
+  const back=el("button",{class:"np-circ np-back",type:"submit",value:"back",autofocus:true,"aria-label":"뒤로",title:"뒤로"},"‹");
+  const head=el("form",{method:"dialog",class:"recipe-reader-head"},back,el("h2",{},dTitle(d)));
+  const body=el("div",{class:"note-body"});
+  body.append(...docClean(d.titleSep?docHtml(d):stripTitleBlock(docHtml(d))).childNodes);
+  const reader=el("dialog",{class:"recipe-reader","aria-label":dTitle(d)},head,el("div",{class:"recipe-reader-body"},body));
+  let navSession=0;
+  if(canWrite)head.append(el("button",{class:"btn ghost sm",type:"button",onclick:()=>{reader.close("edit");notePage(d)}},"수정"));
+  reader.addEventListener("close",()=>{reader.remove();noteDebug.record("reader-closed",{session:navSession,reason:reader.returnValue||"native"})},{once:true});
+  document.body.append(reader);reader.showModal();
+  navSession=noteDebug.open(()=>({reader:true,attached:reader.isConnected,open:reader.open,closing:false,saving:false}));
+  noteDebug.record("reader-ready",{session:navSession,nativeForm:true});
+  // 열람 표시만 기기에 저장. 레시피 데이터와 수정 이력은 쓰지 않음.
+  if(me){const sl=seenLoad();sl.ids[d.id]=Date.now();seenSave();if(seenSnap&&seenSnap.ids)seenSnap.ids[d.id]=sl.ids[d.id];updBadges()}
+}
 function notePage(d){
   if(sheetNoteOff)sheetNoteOff();
   const root=$("sheetRoot");root.textContent="";
