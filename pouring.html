@@ -1026,7 +1026,7 @@ const dIcon=(t,go,ic)=>el("button",{class:"dlink",type:"button",title:t,"aria-la
 function docChip(n){
   if(n.docId){const d=S.docs.find(x=>x.id===n.docId);return d&&docOK(d)?dIcon(dTitle(d),()=>notePage(d),IC.memo):null}
   const a=autoDoc(n.text);if(!a)return null;
-  if(a.cat){if(!can("tab:docs")||!catOK(a.cat)||!docCats().includes(a.cat))return null;return dIcon(a.cat.split("/").pop(),()=>openFolder(a.cat),IC.folder)}
+  if(a.cat){if(!can("tab:docs")||!catOK(a.cat))return null;return dIcon(a.cat.split("/").pop(),()=>openFolder(a.cat),IC.folder)}
   const d=S.docs.find(x=>x.id===a.doc);return d&&docOK(d)?dIcon(dTitle(d),()=>notePage(d),IC.memo):null}
 function inlineEdit(li,span,it,colName,opt={}){
   const orig=it.text||"";let chk=!!it.check;
@@ -2134,8 +2134,8 @@ function enableDrag(ul,colOf,ordKey="ord"){
       W(()=>Promise.all(arr.map((it,k)=>it[ordKey]===k?null:col(it._col||colOf).doc(it.id).update({[ordKey]:k}))),"순서 바꿨어요")}
   })}
 function noticeCard(store,emptyText,placeholder,opt={}){
-  const hasAutoOutForDay=n=>!!n.autoOut&&S.notices.some(o=>o.id===n.autoOut&&o.autoFrom===n.id&&o.date===dayDate);
-  const nsN=S.notices.filter(n=>visN(n)&&n.date<=dayDate&&!(store&&n.date<dayDate&&hasAutoOutForDay(n))&&!(!store&&dayDate>=TODAY&&n.date!==dayDate&&!(n.check&&(!n.done||n.doneAt&&iso(new Date(n.doneAt))>=dayDate)))&&(!n.past||n.date===dayDate)&&(n.store||"")===store&&!(n.check&&n.done&&n.doneAt&&iso(new Date(n.doneAt))<dayDate)).map(n=>({...n,...(opt.alwaysCheck&&!n.html?{check:true}:{}),_col:"notices"})); // 내일 out 항목이 생긴 in 항목은 중복해서 보여 주지 않음
+  const hasAutoOutForDay=n=>S.notices.some(o=>o.date===dayDate&&(o.autoFrom===n.id||!!n.autoOut&&o.id===n.autoOut)&&(o.store||"")===(n.store||""));
+  const nsN=S.notices.filter(n=>visN(n)&&n.date<=dayDate&&!(n.date<dayDate&&hasAutoOutForDay(n))&&!(!store&&dayDate>=TODAY&&n.date!==dayDate&&!(n.check&&(!n.done||n.doneAt&&iso(new Date(n.doneAt))>=dayDate)))&&(!n.past||n.date===dayDate)&&(n.store||"")===store&&!(n.check&&n.done&&n.doneAt&&iso(new Date(n.doneAt))<dayDate)).map(n=>({...n,...(opt.alwaysCheck&&!n.html?{check:true}:{}),_col:"notices"})); // 다음 날 out이 있는 in은 중복 표시하지 않음
   const nsC=(opt.checks||[]).filter(visN).filter(c=>!c.done||!c.doneAt||iso(new Date(c.doneAt))>=dayDate).map(c=>({...c,check:true,date:"",_col:"checks"}));
   const ns=[...nsN,...nsC].sort((a,b)=>((!!a.check)-(!!b.check))||doneFirst(a,b));
   if(opt.defaultCheck&&noticeCheckMode[store||"all"]===undefined)noticeCheckMode[store||"all"]=true;
