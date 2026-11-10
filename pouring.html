@@ -3863,6 +3863,35 @@ function chgApply(root,hist,lastRev){chgClear(root);root.normalize();if(!hist||!
       f.append(el("mark",{class:"chg",style:hv(o.by)},tx.slice(a-st,b-st)));
       if(b===b0)f.append(el("span",{class:"chg-at","data-noexport":"",contenteditable:"false",style:hv(o.by)},`${who(o.by)}${o.at?" "+hm(o.at):""}`));at=b});
     if(at<en)f.append(tx.slice(at-st));node.replaceWith(f)}}
+/* 뒤로가기 진단: ?noteDebug=1 에서만 실행. 본문·직원·로그인 정보는 기록하지 않음. */
+const noteDebug=(()=>{
+  const enabled=new URLSearchParams(location.search).get("noteDebug")==="1";
+  const events=[];let seq=0,readState=()=>({}),out=null;
+  const node=n=>n&&n.nodeType===1?String(n.tagName).toLowerCase()+Array.from(n.classList||[]).map(c=>"."+c).join(""):"";
+  const record=(event,data={})=>{if(!enabled)return;events.push({ms:Math.round(performance.now()),event,...data});if(events.length>160)events.shift()};
+  const report=()=>JSON.stringify({build:window.__APP_VER||"local",fix:"note-nav-diagnostic-1",viewport:{w:innerWidth,h:innerHeight,scale:window.visualViewport&&visualViewport.scale},state:readState(),events},null,2);
+  if(enabled){
+    const capture=e=>{const back=document.querySelector(".np-back");if(!back)return;
+      const pt=(e.changedTouches&&e.changedTouches[0])||e;const r=back.getBoundingClientRect();
+      const near=pt.clientX>=r.left-12&&pt.clientX<=r.right+12&&pt.clientY>=r.top-12&&pt.clientY<=r.bottom+12;
+      if(!near&&!back.contains(e.target))return;
+      const stack=Number.isFinite(pt.clientX)?document.elementsFromPoint(pt.clientX,pt.clientY).slice(0,6).map(n=>{const c=getComputedStyle(n);return {node:node(n),z:c.zIndex,opacity:c.opacity,pointer:c.pointerEvents}}):[];
+      record("capture:"+e.type,{target:node(e.target),pointer:e.pointerType||"",cancelled:e.defaultPrevented,backHit:back.contains(e.target),stack,...readState()});
+      setTimeout(()=>record("after:"+e.type,{cancelled:e.defaultPrevented}),0)};
+    ["pointerdown","pointerup","pointercancel","touchstart","touchmove","touchend","touchcancel","click"].forEach(t=>document.addEventListener(t,capture,{capture:true,passive:true}));
+    window.addEventListener("error",e=>record("error",{name:e.error&&e.error.name||"Error",line:e.lineno||0}));
+    window.addEventListener("unhandledrejection",e=>record("rejection",{name:e.reason&&e.reason.name||"Error"}));
+    const ui=el("div",{"data-note-debug":"",style:"position:fixed;right:8px;bottom:84px;z-index:2147483001;max-width:calc(100vw - 16px);font-weight:400"});
+    const b=el("button",{type:"button",style:"font:inherit;font-weight:400;padding:8px",onclick:()=>{
+      if(out){out.remove();out=null;return}
+      const text=el("textarea",{readOnly:true,"aria-label":"뒤로가기 진단 기록",style:"width:100%;height:40vh;box-sizing:border-box;font-size:12px"});text.value=report();
+      out=el("div",{style:"width:330px;max-width:calc(100vw - 32px);background:var(--surface);border:1px solid var(--line);padding:8px"},text,
+        el("button",{type:"button",onclick:()=>{text.value=report()}},"새로 확인"),
+        el("button",{type:"button",onclick:()=>{const u=URL.createObjectURL(new Blob([report()],{type:"text/plain"}));const a=el("a",{href:u,download:"recipe-back-diagnostic.txt"});a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}},"기록 저장"));ui.append(out);
+    }},"뒤로가기 진단");ui.append(b);document.body.append(ui);
+  }
+  return {record,open:state=>{if(!enabled)return 0;const id=++seq;readState=()=>({session:id,...state()});record("open",readState());return id},report};
+})();
 function notePage(d){
   if(sheetNoteOff)sheetNoteOff();
   const root=$("sheetRoot");root.textContent="";
@@ -3961,13 +3990,14 @@ function notePage(d){
     ed.addEventListener("focus",()=>chgClear(ed))}
   // 뒤로: 아이폰 메모처럼 바로 닫힘(화면만 숨김). 저장은 뒤에서 하고, 실패했을 때만 메모를 다시 띄워 알려줌
   let closing=false,leaving=false;
-  const close=async()=>{if(closing||!root.contains(page))return;
+  let navSession=0;
+  const close=async()=>{noteDebug.record("close-request",{session:navSession,closing,attached:root.contains(page)});if(closing||!root.contains(page)){noteDebug.record("close-ignored",{session:navSession,closing,attached:root.contains(page)});return}
     closing=true;
     if(!saving&&!contentEdited&&cat===baseCat&&teamKey()===baseTeam&&!finalized){try{closeSheet()}finally{closing=false}return}
     clearTimeout(timer);let ok=false,why="";
     leaving=true;page.classList.add("np-leaving");document.documentElement.classList.remove("np-lock");
     try{ok=await Promise.race([save(),new Promise(r=>setTimeout(()=>r("timeout"),20000))])}catch(e){why=String(e&&e.message||e);ok=false}
-    closing=false;
+    closing=false;noteDebug.record("save-result",{session:navSession,result:ok===true?"ok":ok==="timeout"?"timeout":"failed"});
     const mine=()=>$("sheetRoot").contains(page); // 그 사이 다른 메모를 열었으면 그 화면은 건드리지 않음
     if(ok===true){if(mine())closeSheet();return}
     if(!mine())return;
@@ -3988,14 +4018,14 @@ function notePage(d){
   let urUpd=()=>{};
   const npUR=edit?el("span",{class:"np-urg"},urBtn(-1,"되돌리기",'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'),urBtn(1,"다시 실행",'<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>')):null;
   if(npUR){const [ub,rb]=npUR.children;urUpd=()=>{ub.style.opacity=uhI>0||ed.innerHTML!==UH[uhI]?"":".4";rb.style.opacity=uhI<UH.length-1?"":".4"};ed.addEventListener("input",()=>setTimeout(urUpd,0));urUpd()}
-  const back=el("button",{class:"np-circ np-back",type:"button",onclick:close,title:"뒤로 ("+(cat?cat.split("/").pop():"자료실")+")","aria-label":"뒤로"},svgI('<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>'));
+  const back=el("button",{class:"np-circ np-back",type:"button",onclick:()=>{noteDebug.record("button:click",{session:navSession});close()},title:"뒤로 ("+(cat?cat.split("/").pop():"자료실")+")","aria-label":"뒤로"},svgI('<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>'));
   // 터치는 touchend에서 기본 클릭을 취소한 뒤 닫음. pointerup에서 먼저 닫으면
   // 뒤따르는 합성 click이 뒤의 레시피 버튼으로 전달돼 다시 열릴 수 있음.
   // 본문 blur가 버튼 위치를 바꾸지 않도록 포커스 이동·상위 pointerdown도 막음.
-  back.addEventListener("pointerdown",e=>{if(e.button!==0)return;e.preventDefault();e.stopPropagation()});
+  back.addEventListener("pointerdown",e=>{if(e.button!==0)return;noteDebug.record("button:pointerdown",{session:navSession});e.preventDefault();e.stopPropagation()});
   back.addEventListener("mousedown",e=>e.preventDefault());
   back.addEventListener("touchstart",e=>e.stopPropagation(),{passive:true});
-  back.addEventListener("touchend",e=>{e.preventDefault();e.stopPropagation();close()},{passive:false});
+  back.addEventListener("touchend",e=>{noteDebug.record("button:touchend",{session:navSession});e.preventDefault();e.stopPropagation();close()},{passive:false});
   const by=d&&fwho(d.createdBy||d.by)?`${fwho(d.createdBy||d.by)} 작성`:""; // 수정 시각은 바뀐 부분 옆에 표시
   const teamLine=el("div",{class:"np-team"});
   const canTeam=()=>edit;
@@ -4065,13 +4095,14 @@ function notePage(d){
     const ov=overlay(box,"np-menuwrap")};
   page.querySelector(".np-more").before(attrBtn);
   root.append(page);
+  navSession=noteDebug.open(()=>({closing,leaving,attached:root.contains(page),saving:!!saving,edited:contentEdited}));
   // 메모 기록 색 입히기는 긴 본문에서 무거울 수 있어, 편집창이 먼저 반응한 뒤 유휴 시간에만 표시.
   if(document.body.classList.contains("show-attr")){
     const paint=()=>{if(root.contains(page)&&document.body.classList.contains("show-attr"))showChg()};
     if("requestIdleCallback" in window)requestIdleCallback(paint,{timeout:1200});else setTimeout(paint,180);
   }
   const dispose=[];
-  sheetNoteOff=()=>{clearTimeout(timer);clearTimeout(uhT);document.removeEventListener("selectionchange",onSel);window.removeEventListener("scroll",pin);dispose.forEach(fn=>fn());sheetNoteOff=null};
+  sheetNoteOff=()=>{noteDebug.record("cleanup",{session:navSession});clearTimeout(timer);clearTimeout(uhT);document.removeEventListener("selectionchange",onSel);window.removeEventListener("scroll",pin);dispose.forEach(fn=>fn());sheetNoteOff=null};
   // 상단 ‹ ••• 고정: 메모가 열린 동안 바깥 페이지가 밀려 올라가지 않게 막음
   const keepY=window.scrollY;document.documentElement.classList.add("np-lock");
   const pin=()=>{if(!document.body.contains(page)){window.removeEventListener("scroll",pin);document.documentElement.classList.remove("np-lock");return}if(leaving)return;if(Math.abs(window.scrollY-keepY)>1||window.scrollX)window.scrollTo(0,keepY)};
@@ -4108,6 +4139,7 @@ function notePage(d){
     scroller.addEventListener("scroll",hold,{passive:true});if(vv){vv.addEventListener("scroll",hold);dispose.push(()=>vv.removeEventListener("scroll",hold))}
   }
   sheetDismiss=close;document.addEventListener("keydown",escClose);
+  noteDebug.record("ready",{session:navSession,backButtons:page.querySelectorAll(".np-back").length});
   // 안내 문구: 글자가 없으면 계속 보이고(커서가 있어도), 입력을 시작하면 사라짐
   let phEmpty=false;
   const phUpd=()=>{const empty=!ed.textContent.trim()&&!ed.querySelector("img,video,li");if(empty!==phEmpty){phEmpty=empty;ed.classList.toggle("is-empty",empty)}};
@@ -4176,9 +4208,9 @@ function closeSheet(){
   // 정리 함수는 먼저 비워 재진입·다음 메모 열기에 남지 않도록 함.
   // 한 리스너 정리가 실패해도 화면 닫기와 다른 리스너 정리는 반드시 수행.
   const cleanups=[sheetNoteOff,sheetFitOff];sheetNoteOff=null;sheetFitOff=null;sheetDismiss=null;
-  for(const off of cleanups)if(off)try{off()}catch(e){console.error("메모 화면 정리 실패",e)}
+  for(const off of cleanups)if(off)try{off()}catch(e){noteDebug.record("cleanup-error",{name:e&&e.name||"Error"});console.error("메모 화면 정리 실패",e)}
   $("sheetRoot").textContent="";document.documentElement.classList.remove("np-lock");document.removeEventListener("keydown",escClose);
-  if(pendingRender)render()}
+  noteDebug.record("closed");if(pendingRender)render()}
 
 
 /* ---------- data ---------- */
