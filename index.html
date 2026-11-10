@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-10T05:12:01Z";window.__APP_NOTE="레시피 뒤로가기 원인 확인용 터치·겹침·닫기 상태 진단 추가"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-10T05:21:04Z";window.__APP_NOTE="터치 불가 시 자동 진단 저장 및 이전 기록 복구 보기"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -14,6 +14,81 @@
 .spare .sp-inline[hidden]{display:none}
 .spare-notes:empty{display:none}.spare-notes:not(:empty){border-bottom:2px solid var(--line);margin-bottom:8px}.spare-notes .edt{display:block;min-height:1.45em;white-space:pre-wrap;overflow-wrap:anywhere;outline:none}
 </style></head><body>
+<script>
+/* 진단 전용 저장소. 앱 데이터·로그인·레시피 본문에는 접근하지 않음. */
+window.__noteDebug=(()=>{
+  const PREFIX="pn.noteDebug.v2.",FLAG=PREFIX+"enabled",RUN=PREFIX+"run.";
+  const mode=new URLSearchParams(location.search).get("noteDebug"),recovery=mode==="view";
+  let enabled=mode==="1";
+  try{if(mode==="1")localStorage.setItem(FLAG,"1");else if(mode==="0")localStorage.removeItem(FLAG);else if(!recovery)enabled=localStorage.getItem(FLAG)==="1"}catch(e){}
+  const noop={record:()=>{},open:()=>0,recovery};
+  if(!enabled&&!recovery)return noop;
+  const make=(tag,text,style="")=>{const e=document.createElement(tag);if(text!=null)e.textContent=text;e.style.cssText=style;return e};
+  const readRuns=()=>{const list=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k||!k.startsWith(RUN))continue;
+    try{const d=JSON.parse(localStorage.getItem(k));if(d&&d.schema===2&&Array.isArray(d.events))list.push({key:k,data:d})}catch(e){}}}catch(e){}return list.sort((a,b)=>b.data.startedAt-a.data.startedAt)};
+  const downloads=[];
+  const download=(text,label)=>{const a=make("a",label,"display:inline-block;margin:6px;padding:8px;color:inherit;border:1px solid currentColor");
+    try{const u=URL.createObjectURL(new Blob([text],{type:"application/json"}));downloads.push(u);a.href=u;a.download="recipe-back-diagnostic.json"}catch(e){a.textContent="아래 기록을 선택해서 복사하세요"}return a};
+  const showRuns=(host,runs)=>{host.textContent="";if(!runs.length){host.append(make("p","저장된 진단 기록이 없습니다."));return}
+    for(const {data} of runs){const section=make("section",null,"margin:12px 0;border-top:1px solid #888;padding-top:8px");
+      const text=JSON.stringify(data,null,2);section.append(make("p",new Date(data.startedAt).toLocaleString()+" · 실행 "+data.build));
+      const inputs=data.events.filter(e=>e.event.startsWith("capture:")).length,errors=data.events.filter(e=>e.event==="error"||e.event==="rejection").length,gaps=data.events.filter(e=>e.event==="heartbeat-gap").length;
+      section.append(make("p",`저장된 신호: 입력 ${inputs}건 · 오류 ${errors}건 · 긴 실행 간격 ${gaps}건. 이것만으로 원인을 단정하지 않습니다.`));
+      section.append(download(text,"이 기록 내보내기"));const ta=make("textarea",null,"width:100%;height:160px;box-sizing:border-box;font-size:12px");ta.readOnly=true;ta.value=text;ta.setAttribute("aria-label","저장된 뒤로가기 진단 기록");section.append(ta);host.append(section)}
+  };
+  if(recovery){
+    const page=make("div",null,"position:fixed;inset:0;z-index:2147483647;background:#fff;color:#111;overflow:auto;padding:20px;box-sizing:border-box;font:14px sans-serif;font-weight:400");
+    page.setAttribute("data-note-debug-recovery","");page.append(make("h1","이전 진단 기록","font-size:18px;font-weight:400"),make("p","복구 보기 · 실행 "+(window.__APP_VER||"local")),make("p","앱 실행은 멈춘 채 이 기기에 저장된 기록만 표시합니다. 새 기록으로 덮어쓰지 않습니다."));
+    const runs=readRuns();page.append(download(JSON.stringify({schema:2,runs:runs.map(r=>r.data)},null,2),"전체 기록 내보내기"));
+    const home=make("a","진단을 켜고 앱 열기","display:inline-block;margin:6px;padding:8px;color:inherit");home.href="?noteDebug=1";page.append(home);
+    const list=make("div");showRuns(list,runs);page.append(list);document.body.append(page);return noop;
+  }
+  const startedAt=Date.now(),key=RUN+startedAt+"."+Math.random().toString(36).slice(2,8);
+  const previous=readRuns();
+  // 이 진단 전용 기록만 최대 4개 유지. 현재 실행과 이전 실행은 서로 다른 키 사용.
+  try{previous.slice(3).forEach(r=>localStorage.removeItem(r.key))}catch(e){}
+  let seq=0,state=()=>({}),writing=false,storageOK=false,status=null,lastMove=0,lastFrame=performance.now(),lastBeat=performance.now(),lastVisible=document.visibilityState;
+  const data={schema:2,startedAt,build:window.__APP_VER||"local",fix:"persistent-note-diagnostic-2",events:[],lastState:{},lastHeartbeat:null,writeMaxMs:0,support:{longtask:false}};
+  const persist=()=>{if(writing)return;writing=true;const t=performance.now();try{localStorage.setItem(key,JSON.stringify(data));storageOK=true}catch(e){storageOK=false}finally{data.writeMaxMs=Math.max(data.writeMaxMs,Math.round(performance.now()-t));writing=false}};
+  const record=(event,detail={})=>{data.events.push({at:Date.now(),ms:Math.round(performance.now()),event,...detail});if(data.events.length>100)data.events.shift();persist()};
+  const node=n=>n&&n.nodeType===1?String(n.tagName).toLowerCase()+Array.from(n.classList||[]).slice(0,4).map(c=>"."+String(c).slice(0,40)).join(""):"";
+  const stack=(x,y)=>document.elementsFromPoint(x,y).slice(0,4).map(n=>{const c=getComputedStyle(n);return {node:node(n),z:c.zIndex,opacity:c.opacity,pointer:c.pointerEvents}});
+  const snapshot=()=>{let nav={};try{nav=state()}catch(e){nav={stateError:e.name}}
+    const b=document.querySelector(".np-back"),r=b&&b.getBoundingClientRect(),vv=window.visualViewport;
+    return {...nav,visibility:document.visibilityState,focused:document.hasFocus(),active:node(document.activeElement),lock:document.documentElement.classList.contains("np-lock"),pages:document.querySelectorAll(".notepage").length,overlays:document.querySelectorAll(".np-ov,.alertov,.verbar").length,
+      viewport:{w:innerWidth,h:innerHeight,top:vv?vv.offsetTop:0,height:vv?vv.height:innerHeight,scale:vv?vv.scale:1},
+      back:r?{rect:{x:r.x,y:r.y,w:r.width,h:r.height},centerHitsBack:b.contains(document.elementsFromPoint(r.left+r.width/2,r.top+r.height/2)[0]),centerStack:stack(r.left+r.width/2,r.top+r.height/2)}:null};
+  };
+  const sample=()=>{try{data.lastState=snapshot()}catch(e){data.lastState={sampleError:e.name}}};
+  const capture=e=>{
+    const move=e.type==="touchmove"||e.type==="pointermove";if(move&&performance.now()-lastMove<250)return;if(move)lastMove=performance.now();
+    const pt=e.changedTouches&&e.changedTouches[0]||e;
+    // 먼저 최소 기록을 동기 저장. 뒤의 앱 이벤트 처리나 화면 조사에서 멈춰도 이 입력은 남음.
+    record("capture:"+e.type,{target:node(e.target),pointer:e.pointerType||"",x:Number.isFinite(pt.clientX)?Math.round(pt.clientX):null,y:Number.isFinite(pt.clientY)?Math.round(pt.clientY):null,cancelled:e.defaultPrevented});
+    if(!move){sample();persist();setTimeout(()=>record("after:"+e.type,{cancelled:e.defaultPrevented}),0)}
+  };
+  ["pointerdown","pointerup","pointercancel","touchstart","touchmove","touchend","touchcancel","click"].forEach(t=>window.addEventListener(t,capture,{capture:true,passive:true}));
+  window.addEventListener("error",e=>record("error",{name:e.error&&e.error.name||"ResourceError",line:e.lineno||0,column:e.colno||0,source:String(e.filename||"").split("?")[0].split("/").pop(),resource:node(e.target)}),true);
+  window.addEventListener("unhandledrejection",e=>record("rejection",{name:e.reason&&e.reason.name||"Error"}));
+  window.addEventListener("pagehide",e=>{sample();record("pagehide",{persisted:e.persisted})});
+  window.addEventListener("pageshow",e=>{lastBeat=performance.now();lastVisible=document.visibilityState;sample();record("pageshow",{persisted:e.persisted})});
+  document.addEventListener("visibilitychange",()=>{sample();record("visibility",{value:document.visibilityState})});
+  window.addEventListener("focus",()=>record("window-focus"));window.addEventListener("blur",()=>record("window-blur"));
+  try{if("PerformanceObserver" in window&&PerformanceObserver.supportedEntryTypes&&PerformanceObserver.supportedEntryTypes.includes("longtask")){
+    const observer=new PerformanceObserver(list=>{for(const e of list.getEntries())record("longtask",{start:Math.round(e.startTime),duration:Math.round(e.duration)})});observer.observe({type:"longtask",buffered:true});data.support.longtask=true;
+  }}catch(e){}
+  const frame=()=>{lastFrame=performance.now();requestAnimationFrame(frame)};requestAnimationFrame(frame);
+  const bar=make("div",null,"position:fixed;top:0;left:0;right:0;z-index:2147483002;background:#fff4bf;color:#111;padding:3px 8px;font:11px sans-serif;font-weight:400;pointer-events:none");
+  bar.setAttribute("data-note-debug-status","");status=bar;document.body.append(bar);
+  const updateStatus=()=>{const text="진단 켜짐 · 실행 "+data.build+" · "+(storageOK?"기기 자동 저장 중":"기기 저장 불가")+" · 이전 기록 "+previous.length+"개";if(status.textContent!==text)status.textContent=text};
+  const ui=make("div",null,"position:fixed;right:8px;bottom:84px;z-index:2147483003;max-width:calc(100vw - 16px);font:13px sans-serif;font-weight:400");
+  const recoveryLink=make("a","이전 기록 확인·내보내기","display:inline-block;background:#fff;color:#111;border:1px solid #555;padding:8px");recoveryLink.href="?noteDebug=view";ui.append(recoveryLink);document.body.append(ui);
+  const heartbeat=()=>{const now=performance.now(),gap=Math.round(now-lastBeat);if(gap>2500)record("heartbeat-gap",{delay:gap,beforeVisibility:lastVisible,visibility:document.visibilityState,frameGap:Math.round(now-lastFrame)});
+    lastBeat=now;lastVisible=document.visibilityState;sample();data.lastHeartbeat={at:Date.now(),ms:Math.round(now),visibility:lastVisible,frameGap:Math.round(now-lastFrame)};persist();updateStatus()};
+  record("boot",{previousRuns:previous.length});sample();persist();updateStatus();setInterval(heartbeat,1000);
+  return {recovery:false,record,open:read=>{const id=++seq;state=()=>({session:id,...read()});sample();record("open",{session:id});return id}};
+})();
+</script>
 <title>pouring out</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -898,6 +973,7 @@ section.koha .empty{padding:6px 10px;font-size:12px}
 <div id="sheetRoot"></div>
 
 <script>
+if(!window.__noteDebug.recovery){
 const STAFF=[{key:"seunghyun",name:"승현",full:"김승현"},{key:"daseul",name:"다슬",full:"황다슬"},{key:"junhyung",name:"준형",full:"강준형"},{key:"jeonghan",name:"정한",full:"최정한"},{key:"wonseok",name:"원석",full:"성원석"},{key:"woojun",name:"우준",full:"최우준"},{key:"koha",name:"koha",full:"koha",shift:false},{key:"hojeong",name:"호정",full:"장호정",shift:false}];
 const WSTAFF=STAFF.filter(x=>x.shift!==false);
 const ORD=k=>{const i=STAFF.findIndex(s=>s.key===k);return i<0?99:i};
@@ -3863,35 +3939,7 @@ function chgApply(root,hist,lastRev){chgClear(root);root.normalize();if(!hist||!
       f.append(el("mark",{class:"chg",style:hv(o.by)},tx.slice(a-st,b-st)));
       if(b===b0)f.append(el("span",{class:"chg-at","data-noexport":"",contenteditable:"false",style:hv(o.by)},`${who(o.by)}${o.at?" "+hm(o.at):""}`));at=b});
     if(at<en)f.append(tx.slice(at-st));node.replaceWith(f)}}
-/* 뒤로가기 진단: ?noteDebug=1 에서만 실행. 본문·직원·로그인 정보는 기록하지 않음. */
-const noteDebug=(()=>{
-  const enabled=new URLSearchParams(location.search).get("noteDebug")==="1";
-  const events=[];let seq=0,readState=()=>({}),out=null;
-  const node=n=>n&&n.nodeType===1?String(n.tagName).toLowerCase()+Array.from(n.classList||[]).map(c=>"."+c).join(""):"";
-  const record=(event,data={})=>{if(!enabled)return;events.push({ms:Math.round(performance.now()),event,...data});if(events.length>160)events.shift()};
-  const report=()=>JSON.stringify({build:window.__APP_VER||"local",fix:"note-nav-diagnostic-1",viewport:{w:innerWidth,h:innerHeight,scale:window.visualViewport&&visualViewport.scale},state:readState(),events},null,2);
-  if(enabled){
-    const capture=e=>{const back=document.querySelector(".np-back");if(!back)return;
-      const pt=(e.changedTouches&&e.changedTouches[0])||e;const r=back.getBoundingClientRect();
-      const near=pt.clientX>=r.left-12&&pt.clientX<=r.right+12&&pt.clientY>=r.top-12&&pt.clientY<=r.bottom+12;
-      if(!near&&!back.contains(e.target))return;
-      const stack=Number.isFinite(pt.clientX)?document.elementsFromPoint(pt.clientX,pt.clientY).slice(0,6).map(n=>{const c=getComputedStyle(n);return {node:node(n),z:c.zIndex,opacity:c.opacity,pointer:c.pointerEvents}}):[];
-      record("capture:"+e.type,{target:node(e.target),pointer:e.pointerType||"",cancelled:e.defaultPrevented,backHit:back.contains(e.target),stack,...readState()});
-      setTimeout(()=>record("after:"+e.type,{cancelled:e.defaultPrevented}),0)};
-    ["pointerdown","pointerup","pointercancel","touchstart","touchmove","touchend","touchcancel","click"].forEach(t=>document.addEventListener(t,capture,{capture:true,passive:true}));
-    window.addEventListener("error",e=>record("error",{name:e.error&&e.error.name||"Error",line:e.lineno||0}));
-    window.addEventListener("unhandledrejection",e=>record("rejection",{name:e.reason&&e.reason.name||"Error"}));
-    const ui=el("div",{"data-note-debug":"",style:"position:fixed;right:8px;bottom:84px;z-index:2147483001;max-width:calc(100vw - 16px);font-weight:400"});
-    const b=el("button",{type:"button",style:"font:inherit;font-weight:400;padding:8px",onclick:()=>{
-      if(out){out.remove();out=null;return}
-      const text=el("textarea",{readOnly:true,"aria-label":"뒤로가기 진단 기록",style:"width:100%;height:40vh;box-sizing:border-box;font-size:12px"});text.value=report();
-      out=el("div",{style:"width:330px;max-width:calc(100vw - 32px);background:var(--surface);border:1px solid var(--line);padding:8px"},text,
-        el("button",{type:"button",onclick:()=>{text.value=report()}},"새로 확인"),
-        el("button",{type:"button",onclick:()=>{const u=URL.createObjectURL(new Blob([report()],{type:"text/plain"}));const a=el("a",{href:u,download:"recipe-back-diagnostic.txt"});a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}},"기록 저장"));ui.append(out);
-    }},"뒤로가기 진단");ui.append(b);document.body.append(ui);
-  }
-  return {record,open:state=>{if(!enabled)return 0;const id=++seq;readState=()=>({session:id,...state()});record("open",readState());return id},report};
-})();
+const noteDebug=window.__noteDebug;
 function notePage(d){
   if(sheetNoteOff)sheetNoteOff();
   const root=$("sheetRoot");root.textContent="";
@@ -4272,6 +4320,7 @@ draw();
   const set=()=>{r.style.setProperty("--hh",h.getBoundingClientRect().height+"px");if(n)r.style.setProperty("--th",n.getBoundingClientRect().height+"px")};
   try{new ResizeObserver(set).observe(h);n&&new ResizeObserver(set).observe(n)}catch(e){}set();
   let on=false;window.addEventListener("scroll",()=>{const v=window.scrollY>30;if(v!==on){on=v;document.body.classList.toggle("scrolled",v)}},{passive:true});})();
+}
 </script>
 
 </body></html>
