@@ -198,8 +198,8 @@ table.oc{table-layout:fixed;width:100%}table.oc th:first-child,table.oc td:first
 .oc th{font-weight:400}
 .oc .oc-lab{text-align:left}
 .oc .oc-lab small{font-weight:400;color:var(--muted);font-size:11px}
-.hd{display:grid;grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:4px 8px;margin-bottom:6px;font-size:13px;font-variant-numeric:tabular-nums} /* 날짜를 칸 맞춰 정렬 */
-.hdt{display:inline-block}.hchip .x{margin-left:1px}
+.hd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px;margin-bottom:6px;font-size:13px;font-variant-numeric:tabular-nums} /* 사장·직원 모두 날짜를 두 칸씩 정렬 */
+.hdt{display:inline-block;white-space:nowrap}.hchip .x{margin-left:1px}
 .hd:empty{display:none}
 .hchip{display:inline-flex;align-items:center}
 .hadd{display:flex;gap:6px}

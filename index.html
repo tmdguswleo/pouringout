@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-10T05:44:35Z";window.__APP_NOTE="앱과 분리된 읽기 전용 텍스트 복구 페이지 추가"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-10T08:23:10Z";window.__APP_NOTE="직원 희망휴무 날짜도 사장과 같은 두 칸 배치로 표시"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -198,8 +198,8 @@ table.oc{table-layout:fixed;width:100%}table.oc th:first-child,table.oc td:first
 .oc th{font-weight:400}
 .oc .oc-lab{text-align:left}
 .oc .oc-lab small{font-weight:400;color:var(--muted);font-size:11px}
-.hd{display:grid;grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:4px 8px;margin-bottom:6px;font-size:13px;font-variant-numeric:tabular-nums} /* 날짜를 칸 맞춰 정렬 */
-.hdt{display:inline-block}.hchip .x{margin-left:1px}
+.hd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px;margin-bottom:6px;font-size:13px;font-variant-numeric:tabular-nums} /* 사장·직원 모두 날짜를 두 칸씩 정렬 */
+.hdt{display:inline-block;white-space:nowrap}.hchip .x{margin-left:1px}
 .hd:empty{display:none}
 .hchip{display:inline-flex;align-items:center}
 .hadd{display:flex;gap:6px}
