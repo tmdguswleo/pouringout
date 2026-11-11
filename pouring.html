@@ -55,7 +55,7 @@ window.__noteDebug=(()=>{
   const snapshot=()=>{let nav={};try{nav=state()}catch(e){nav={stateError:e.name}}
     const b=document.querySelector(".np-back"),r=b&&b.getBoundingClientRect(),vv=window.visualViewport;
     return {...nav,visibility:document.visibilityState,focused:document.hasFocus(),active:node(document.activeElement),lock:document.documentElement.classList.contains("np-lock"),pages:document.querySelectorAll(".notepage").length,overlays:document.querySelectorAll(".np-ov,.alertov,.verbar").length,
-      viewport:{w:innerWidth,h:innerHeight,top:vv?vv.offsetTop:0,height:vv?vv.height:innerHeight,scale:vv?vv.scale:1},
+      viewport:{w:innerWidth,h:innerHeight,scrollY:window.scrollY,documentHeight:document.documentElement.scrollHeight,top:vv?vv.offsetTop:0,height:vv?vv.height:innerHeight,scale:vv?vv.scale:1},
       back:r?{rect:{x:r.x,y:r.y,w:r.width,h:r.height},centerHitsBack:b.contains(document.elementsFromPoint(r.left+r.width/2,r.top+r.height/2)[0]),centerStack:stack(r.left+r.width/2,r.top+r.height/2)}:null};
   };
   const sample=()=>{try{data.lastState=snapshot()}catch(e){data.lastState={sampleError:e.name}}};
@@ -3939,6 +3939,32 @@ function chgApply(root,hist,lastRev){chgClear(root);root.normalize();if(!hist||!
       if(b===b0)f.append(el("span",{class:"chg-at","data-noexport":"",contenteditable:"false",style:hv(o.by)},`${who(o.by)}${o.at?" "+hm(o.at):""}`));at=b});
     if(at<en)f.append(tx.slice(at-st));node.replaceWith(f)}}
 const noteDebug=window.__noteDebug;
+function bindNoteHeaderTap(button){
+  let down=null,handledAt=-Infinity;
+  button.style.touchAction="manipulation";
+  button.addEventListener("pointerdown",e=>{
+    down=e.pointerType==="touch"&&e.isPrimary!==false?{id:e.pointerId,x:e.clientX,y:e.clientY}:null;
+  });
+  button.addEventListener("pointermove",e=>{
+    if(down&&down.id===e.pointerId&&Math.hypot(e.clientX-down.x,e.clientY-down.y)>10)down=null;
+  });
+  button.addEventListener("pointercancel",()=>{down=null});
+  button.addEventListener("pointerup",e=>{
+    const start=down;down=null;
+    if(!start||start.id!==e.pointerId||Math.hypot(e.clientX-start.x,e.clientY-start.y)>10||button.disabled)return;
+    const hit=document.elementFromPoint(e.clientX,e.clientY);
+    if(!hit||!button.contains(hit))return;
+    e.preventDefault();handledAt=performance.now();
+    noteDebug.record("header:touch-activate",{button:button.getAttribute("aria-label")||button.title});
+    button.click();
+  });
+  button.addEventListener("click",e=>{
+    if(e.isTrusted&&e.detail!==0&&performance.now()-handledAt<800){
+      e.preventDefault();e.stopImmediatePropagation();
+      noteDebug.record("header:duplicate-click",{button:button.getAttribute("aria-label")||button.title});
+    }
+  },true);
+}
 function notePage(d){
   if(sheetNoteOff)sheetNoteOff();
   const root=$("sheetRoot");root.textContent="";
@@ -4138,6 +4164,10 @@ function notePage(d){
       edit&&mineOrBoss()?it(svgI(IC.trash),"삭제",doDelete,"danger"):null);
     const ov=overlay(box,"np-menuwrap")};
   page.querySelector(".np-more").before(attrBtn);
+  // iOS에서는 포커스/레이아웃 변경 뒤 호환 click이 오지 않을 수 있다.
+  // 헤더는 이동 없는 터치 pointerup에서 한 번 실행하고 뒤따르는 click만 억제한다.
+  page.querySelectorAll(".np-bar button").forEach(bindNoteHeaderTap);
+
   root.append(page);
   navSession=noteDebug.open(()=>({closing,leaving,attached:root.contains(page),saving:!!saving,edited:contentEdited}));
   // 메모 기록 색 입히기는 긴 본문에서 무거울 수 있어, 편집창이 먼저 반응한 뒤 유휴 시간에만 표시.
