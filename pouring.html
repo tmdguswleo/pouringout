@@ -4368,7 +4368,11 @@ function blendTag(store){const bid="blend_"+store;const bd=(S.monthnotes||[]).fi
   return el("span",{class:"blend"},el("span",{class:"bl-lab"},"블렌드"),box,d&&n>=1?el("span",{class:"bl-n"},`${n}일차`):null)}
 /* 블렌드 제조일 고르기: 앱 달력 창(아이폰 기본 날짜 창 대신). 날짜를 누르면 저장하고 닫힘. 오늘 이후는 못 고름 */
 function blendPick(store,d){let ym=(d||TODAY).slice(0,7);const cal=el("div",{class:"bl-cal"});
-  const save=v=>{closeSheet();if(v===d)return;W(()=>col("monthnotes").doc("blend_"+store).set({date:v,editedBy:me,editedAt:now(),updatedAt:now()}),v?`${STORES[store]} 블렌드 제조일 ${md(v)}`:`${STORES[store]} 블렌드 제조일 지움`)};
+  // 고른 날짜를 화면에 먼저 바로 보여주고(일차 즉시 바뀜) 저장은 뒤에서 (실시간 값이 먼저 와도 유지, 실패하면 마지막 서버 값으로 되돌림)
+  const save=v=>{closeSheet();if(v===d)return;const bid="blend_"+store,data={date:v,editedBy:me,editedAt:now(),updatedAt:now()};
+    const has=(S.monthnotes||[]).some(x=>x.id===bid),st=has?optimisticPatch("monthnotes",[bid],data):null;if(!has)optimisticAdd("monthnotes",bid,data);
+    W(()=>col("monthnotes").doc(bid).set(data),v?`${STORES[store]} 블렌드 제조일 ${md(v)}`:`${STORES[store]} 블렌드 제조일 지움`)
+      .then(ok=>{if(has)patchEnd("monthnotes",[bid],ok?[]:[bid],st);else if(ok)optimisticDone("monthnotes",bid);else{const cur=(S.monthnotes||[]).find(x=>x.id===bid);if(cur&&cur.editedAt===data.editedAt&&!(SRV.monthnotes&&SRV.monthnotes.has(bid)))optimisticDrop("monthnotes",bid)}})};
   const draw=()=>{cal.textContent="";const [y,m]=ym.split("-").map(Number);const first=new Date(y,m-1,1),days=new Date(y,m,0).getDate();
     const mv=k=>{const t=new Date(y,m-1+k,1);ym=t.getFullYear()+"-"+pad(t.getMonth()+1);draw()};
     const canNext=ym<TODAY.slice(0,7);
