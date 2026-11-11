@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-11T12:49:26Z";window.__APP_NOTE="콜드브루 일지 새 글: 제목에 오늘 날짜·요일이 붙고 콜드브루/디카페인을 고를 수 있어요. 영점 조절 확인 뒤에 체크 동그라미, 특이사항은 아래 줄에 써요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-11T12:57:18Z";window.__APP_NOTE="콜드브루 일지: 제목 칸에서 메라키 콜드브루/디카페인을 골라요. 항목 이름은 지워지지 않고, ' : ' 뒤 한 칸 띄고 써져요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -908,7 +908,12 @@ html.np-lock,html.np-lock body{overflow:hidden;height:100%;overscroll-behavior:n
 .note-body li.ck.ck-r::before{content:none;display:none}
 .note-body li.ck.ck-r::after,.note-body li.ck.ck-r.done::after{content:"";display:inline-block;position:static;vertical-align:-5px;margin-left:8px;width:22px;height:22px;border:2px solid var(--line);border-radius:50%;box-sizing:border-box;background:var(--surface);transform:none;cursor:pointer;pointer-events:auto}
 .note-body li.ck.ck-r.done::after{background:var(--accent) var(--ck-mark) center/14px no-repeat;border-color:var(--accent)}
-.np-tplpick{gap:6px;margin:0 0 10px}
+.np-title[hidden]{display:none}
+.np-ttlrow{display:flex;align-items:baseline;gap:.3em;cursor:pointer}
+.np-ttlwrap{position:relative;display:inline-flex;align-items:baseline}
+.np-ttlsel{-webkit-appearance:none;appearance:none;border:0;background:none;color:var(--ink);font-family:inherit;font-size:21px!important;font-weight:700;font-synthesis:weight;line-height:inherit;padding:0 20px 0 0;margin:0;cursor:pointer;outline:none}
+.np-ttlarr{position:absolute;right:2px;pointer-events:none;color:var(--muted);font-size:15px}
+.note-body .tpl-l{-webkit-user-select:none;user-select:none}
 /* 사진·영상 모서리는 둥글리지 않음 */
 .note-body img,.note-body video,.nimg,.nvid,.man-invid,.man-inimg,.dimg,.man-photos img,.np-mg,.np-mg img{border-radius:0!important}
 .note-body ul.dash{list-style:none}.note-body ul.dash>li::before{content:"–";display:inline-block;width:1.1em;margin-left:-1.1em}
@@ -3886,6 +3891,7 @@ function docClean(html,forSave){
     if(c.nodeType!==1)return;
     if(c.hasAttribute("data-noexport"))return; // 기록 표시용 꼬리표는 저장 안 함
     const t=c.tagName;
+    if(t==="SPAN"&&c.classList.contains("tpl-l")){const e=document.createElement("span");e.className="tpl-l";if(!forSave)e.contentEditable="false";walk(c,e,inA);to.append(e);return} // 양식 글자
     if(!DOC_TAGS.has(t)){walk(c,to);return}
     if(t==="IMG"||t==="VIDEO"){const id=c.getAttribute("data-id")||"";if(!ASSET_ID.test(id))return;
       const e=document.createElement(t);e.setAttribute("data-id",id);if(c.getAttribute("data-size")==="l")e.setAttribute("data-size","l");
@@ -3993,9 +3999,31 @@ const noteDebug=window.__noteDebug;
    콜드브루 일지: 경로에 '콜드브루'가 있고 마지막 폴더 이름에 '일지'가 들어간 폴더 (예: 음료/콜드브루/대형 토디 일지) */
 // kinds: 제목 '11/11(수) 콜드브루'처럼 오늘 날짜·요일 뒤에 붙는 종류(첫 번째가 기본). ck-r = 글 뒤에 체크 동그라미
 const NOTE_TEMPLATES=[{when:c=>{const ps=String(c||"").split("/");return ps.some(x=>x.includes("콜드브루"))&&ps[ps.length-1].includes("일지")},
-  kinds:["콜드브루","디카페인"],
-  html:"<div>분쇄도 : </div><div>RD : </div><div>물 : </div><div>in : </div><ul><li class=\"ck ck-r\">영점 조절 확인</li></ul><div>특이사항 :</div><div><br></div>"}];
+  kinds:["메라키 콜드브루","메라키 디카페인"],
+  html:["분쇄도","RD","물","in"].map(x=>`<div><span class="tpl-l">${x} :\u00a0</span><br></div>`).join("")+'<ul><li class="ck ck-r"><span class="tpl-l">영점 조절 확인</span></li></ul><div><span class="tpl-l">특이사항 :</span></div><div><br></div>'}];
+// 양식 글자(span.tpl-l)는 지우거나 고칠 수 없음: 그 글자에 걸치는 삭제·입력, 양식 줄과 합쳐지는 삭제를 막음
+function tplGuard(ed){
+  const blk=n=>{while(n&&n.parentNode!==ed)n=n.parentNode;return n};
+  const hasL=b=>!!(b&&b.nodeType===1&&(b.classList.contains("tpl-l")||b.querySelector(".tpl-l")));
+  const labels=()=>[...ed.querySelectorAll(".tpl-l")];
+  const hitsLabel=r=>!r.collapsed&&labels().some(l=>r.intersectsNode(l));
+  const crosses=r=>{if(r.collapsed)return false;const a=blk(r.startContainer),b=blk(r.endContainer);return a!==b&&(hasL(a)||hasL(b))};
+  ed.addEventListener("beforeinput",e=>{if(!ed.querySelector(".tpl-l"))return;const t=e.inputType||"";
+    const sel=getSelection();const cur=sel.rangeCount?sel.getRangeAt(0):null;
+    const rs=[];if(cur&&ed.contains(cur.commonAncestorContainer))rs.push(cur);
+    if(t.startsWith("delete")&&e.getTargetRanges)e.getTargetRanges().forEach(sr=>{try{const r=document.createRange();r.setStart(sr.startContainer,sr.startOffset);r.setEnd(sr.endContainer,sr.endOffset);rs.push(r)}catch(x){}});
+    let bad=rs.some(r=>hitsLabel(r)||(t.startsWith("delete")&&crosses(r)));
+    // 대상 범위를 못 받은 경우: 커서가 양식 글자 바로 뒤(지우기)·줄 끝에서 다음 양식 줄(앞으로 지우기)
+    if(!bad&&cur&&cur.collapsed&&t.startsWith("delete")&&!(e.getTargetRanges&&e.getTargetRanges().length)){const b=blk(cur.startContainer);
+      if(/Backward/.test(t)&&b){const pre=document.createRange();pre.setStart(b,0);pre.setEnd(cur.startContainer,cur.startOffset);
+        const lt=hasL(b)?b.querySelector(".tpl-l").textContent:"";if(hasL(b)&&pre.toString().length<=lt.length)bad=true;
+        if(!pre.toString().length&&hasL(b.previousSibling))bad=true}
+      if(/Forward/.test(t)&&b){const post=document.createRange();post.setStart(cur.startContainer,cur.startOffset);post.setEnd(b,b.childNodes.length);if(!post.toString().length&&hasL(b.nextSibling))bad=true}}
+    if(bad)e.preventDefault()});
+  // 붙여넣기(execCommand)는 beforeinput 검사를 거치지 않으므로 선택이 양식 글자에 걸치는지 따로 알려 줌
+  return()=>{const sel=getSelection();if(!sel.rangeCount)return false;const r=sel.getRangeAt(0);return ed.contains(r.commonAncestorContainer)&&(hitsLabel(r)||crosses(r))}}
 const noteTemplate=c=>NOTE_TEMPLATES.find(x=>x.when(c))||null;
+const tplCaret=div=>{if(!div)return;const l=div.querySelector(".tpl-l");try{const r=document.createRange();if(l)r.setStartAfter(l);else{r.selectNodeContents(div);r.collapse(false)}r.collapse(true);const sl=getSelection();sl.removeAllRanges();sl.addRange(r)}catch(err){}};
 // 메모가 열린 동안 뒤 문서를 맨 위(0)에 두고, 닫을 때 원래 위치로 되돌림.
 // 스크롤된 문서에 overflow:hidden을 걸어 둔 채 위치를 붙잡으면 iOS에서 고정 화면의 터치 위치가 어긋날 수 있음(미확정 원인 대응).
 let npRestoreY=null;
@@ -4045,11 +4073,12 @@ function notePage(d){
   const titleIn=el("input",{class:"np-title",type:"text",placeholder:"제목","aria-label":"제목",maxlength:"80"});titleIn.value=d?(d.title||""):"";
   if(tplTitles.length)titleIn.value=tplTitles[0];
   if(!edit)titleIn.readOnly=true;let baseTitle=titleIn.value;
-  // 양식 종류 고르기(콜드브루/디카페인): 누르면 제목 끝의 종류만 바뀜
-  const tplPick=tplTitles.length>1?el("div",{class:"chips np-tplpick"}):null;
-  if(tplPick){const draw=()=>{tplPick.textContent="";tplDef.kinds.forEach((k,i)=>{const t=tplTitles[i];tplPick.append(el("button",{class:"chip",type:"button","aria-pressed":String(titleIn.value===t),
-    onclick:()=>{const cur=titleIn.value,old=tplTitles.find(x=>x===cur);if(old||!cur.trim()){titleIn.value=t;titleIn.dispatchEvent(new Event("input"))}draw()}},k))})};draw();
-    titleIn.addEventListener("input",draw)}
+  // 양식 글: 제목 칸 = 오늘 날짜·요일 + 종류 고르기(메라키 콜드브루/메라키 디카페인). 실제 제목 값은 숨긴 titleIn에 넣어 저장
+  let tplPick=null;
+  if(tplTitles.length>1){const sel=el("select",{class:"np-ttlsel","aria-label":"종류"},...tplDef.kinds.map((k,i)=>el("option",{value:String(i)},k)));
+    sel.onchange=()=>{titleIn.value=tplTitles[+sel.value];titleIn.dispatchEvent(new Event("input"))};
+    tplPick=el("label",{class:"np-title np-ttlrow"},el("span",{},mdw(TODAY)+" "),el("span",{class:"np-ttlwrap"},sel,el("span",{class:"np-ttlarr","aria-hidden":"true"},"▾")));
+    titleIn.hidden=true}
   const ed=el("div",{class:"note-body","data-ph":"메모를 입력하세요"});
   ed.append(...docClean(html0).childNodes);
   const wireEd=()=>wireBody(ed,()=>ed.dispatchEvent(new Event("input")),edit);wireEd();
@@ -4058,7 +4087,8 @@ function notePage(d){
   ed.addEventListener("click",e=>{const lk=e.target.closest&&e.target.closest("a[href]");if(lk){e.preventDefault();window.open(lk.href,"_blank","noopener");return}
     const li=ckHit(e,ed);if(li){e.preventDefault();if(edit){li.classList.toggle("done");ed.dispatchEvent(new Event("input"))}return}
     });
-  ed.addEventListener("paste",e=>{if(!edit)return;e.preventDefault();document.execCommand("insertText",false,(e.clipboardData||window.clipboardData).getData("text/plain"))});
+  const tplHit=edit?tplGuard(ed):()=>false;
+  ed.addEventListener("paste",e=>{if(!edit)return;if(tplHit()){e.preventDefault();flash("양식 글자는 바꿀 수 없어요",true);return}e.preventDefault();document.execCommand("insertText",false,(e.clipboardData||window.clipboardData).getData("text/plain"))});
   let range=null;const keep=()=>{const s=getSelection();if(s.rangeCount&&ed.contains(s.getRangeAt(0).commonAncestorContainer))range=s.getRangeAt(0).cloneRange()};
   ["keyup","mouseup","input","blur"].forEach(ev=>ed.addEventListener(ev,keep));
   // 아이폰에서 끌어서 선택한 범위도 기억 (selectionchange)
@@ -4196,8 +4226,8 @@ function notePage(d){
       el("div",{class:"np-date"},noteDateLong(d?docTime(d):now())),
       by?el("div",{class:"np-by attr"},by):null,
       teamLine,
-      titleIn,
       tplPick,
+      titleIn,
       ed)));
   /* ••• 메뉴 (아이폰 메모처럼) */
   let findBar=null,marks=[],mi=0;
@@ -4298,8 +4328,8 @@ function notePage(d){
   });
   if(edit){titleIn.addEventListener("input",()=>{contentEdited=true;clearTimeout(timer);timer=setTimeout(save,1500)});titleIn.addEventListener("blur",()=>{clearTimeout(timer);save()});
     titleIn.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();if(!ed.firstChild)ed.append(el("div",{},el("br")));ed.focus();
-      if(tpl&&!contentEdited&&ed.firstChild){try{const r=document.createRange();r.selectNodeContents(ed.firstChild);r.collapse(false);const sl=getSelection();sl.removeAllRanges();sl.addRange(r)}catch(err){}}}})}
-  if(!d&&edit&&tpl&&ed.firstChild){ed.focus();try{const r=document.createRange();r.selectNodeContents(ed.firstChild);r.collapse(false);const sl=getSelection();sl.removeAllRanges();sl.addRange(r)}catch(err){}} // 양식: 제목은 자동, '분쇄도 : ' 뒤부터
+      if(tpl&&!contentEdited&&ed.firstChild)tplCaret(ed.firstChild)}})}
+  if(!d&&edit&&tpl&&ed.firstChild){ed.focus();tplCaret(ed.firstChild)} // 양식: 제목은 자동, '분쇄도 : ' 뒤부터
   else if(!d&&edit)titleIn.focus(); // 새 메모: 제목 칸부터 (누른 순간 키보드)
 }
 
