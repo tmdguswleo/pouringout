@@ -3999,7 +3999,7 @@ const noteDebug=window.__noteDebug;
    콜드브루 일지: 경로에 '콜드브루'가 있고 마지막 폴더 이름에 '일지'가 들어간 폴더 (예: 음료/콜드브루/대형 토디 일지) */
 // kinds: 제목 '11/11(수) 콜드브루'처럼 오늘 날짜·요일 뒤에 붙는 종류(첫 번째가 기본). ck-r = 글 뒤에 체크 동그라미
 const NOTE_TEMPLATES=[{when:c=>{const ps=String(c||"").split("/");return ps.some(x=>x.includes("콜드브루"))&&ps[ps.length-1].includes("일지")},
-  kinds:["메라키 콜드브루","메라키 디카페인"],
+  kinds:["메라키 콜드브루","디카페인"],
   html:["분쇄도","RD","물","in"].map(x=>`<div><span class="tpl-l">${x} :\u00a0</span>\u200b</div>`).join("")+'<ul><li class="ck ck-r"><span class="tpl-l">영점 조절 확인</span></li></ul><div><span class="tpl-l">특이사항 :</span></div><div><br></div>'}];
 // 양식 글자(span.tpl-l)는 지우거나 고칠 수 없음: 그 글자에 걸치는 삭제·입력, 양식 줄과 합쳐지는 삭제를 막음
 function tplGuard(ed){
