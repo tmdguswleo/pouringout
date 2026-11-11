@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-11T12:37:53Z";window.__APP_NOTE="콜드브루 일지 폴더에서 새 글을 쓰면 분쇄도·RD·물·in·영점 조절 확인·특이사항 양식이 나와요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-11T12:49:26Z";window.__APP_NOTE="콜드브루 일지 새 글: 제목에 오늘 날짜·요일이 붙고 콜드브루/디카페인을 고를 수 있어요. 영점 조절 확인 뒤에 체크 동그라미, 특이사항은 아래 줄에 써요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -900,6 +900,15 @@ html.np-lock,html.np-lock body{overflow:hidden;height:100%;overscroll-behavior:n
 .note-body li.ck::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:22px;height:22px;border:2px solid var(--line);border-radius:50%;box-sizing:border-box;background:var(--surface);cursor:pointer}
 .note-body li.ck.done::before{background:var(--accent);border-color:var(--accent)}
 .note-body li.ck.done::after{content:"";position:absolute;left:8px;top:50%;width:6px;height:11px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:translateY(-62%) rotate(45deg);pointer-events:none}
+/* 글 뒤에 붙는 체크 동그라미 (양식의 '영점 조절 확인 ○') */
+:root{--ck-mark:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E")}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ck-mark:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b1410' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E")}}
+:root[data-theme="dark"]{--ck-mark:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b1410' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E")}
+.note-body li.ck.ck-r{padding-left:0}
+.note-body li.ck.ck-r::before{content:none;display:none}
+.note-body li.ck.ck-r::after,.note-body li.ck.ck-r.done::after{content:"";display:inline-block;position:static;vertical-align:-5px;margin-left:8px;width:22px;height:22px;border:2px solid var(--line);border-radius:50%;box-sizing:border-box;background:var(--surface);transform:none;cursor:pointer;pointer-events:auto}
+.note-body li.ck.ck-r.done::after{background:var(--accent) var(--ck-mark) center/14px no-repeat;border-color:var(--accent)}
+.np-tplpick{gap:6px;margin:0 0 10px}
 /* 사진·영상 모서리는 둥글리지 않음 */
 .note-body img,.note-body video,.nimg,.nvid,.man-invid,.man-inimg,.dimg,.man-photos img,.np-mg,.np-mg img{border-radius:0!important}
 .note-body ul.dash{list-style:none}.note-body ul.dash>li::before{content:"–";display:inline-block;width:1.1em;margin-left:-1.1em}
@@ -3890,7 +3899,7 @@ function docClean(html,forSave){
     const e=document.createElement(t==="P"?"DIV":t);
     if(t==="A"){const h=c.getAttribute("href")||"";if(/^https?:\/\//i.test(h)){e.setAttribute("href",h);if(!forSave){e.target="_blank";e.rel="noopener noreferrer";if(/^\u25B6\uFE0E?$/.test(c.textContent.trim())){e.className="playlink";e.setAttribute("aria-label","영상 보기");e.contentEditable="false"}}}}
     if(t==="UL"&&c.classList.contains("dash"))e.className="dash";
-    if(t==="LI"&&c.classList.contains("ck"))e.className=c.classList.contains("done")?"ck done":"ck";
+    if(t==="LI"&&c.classList.contains("ck"))e.className="ck"+(c.classList.contains("ck-r")?" ck-r":"")+(c.classList.contains("done")?" done":"");
     walk(c,e,inA||t==="A");to.append(e)})};
   walk(src,out);return out;
 }
@@ -3923,6 +3932,10 @@ function kbHeightEst(){const vv=window.visualViewport;const real=vv?Math.max(0,w
   return Math.round((land?0.55:0.345)*Math.min(sh,window.innerHeight+120))+IOS_ACC}
 /* 체크리스트: li.ck (체크됨 li.ck.done). 왼쪽 네모를 누르면 체크/해제 */
 function ckHit(e,root){if(e.target.closest&&e.target.closest("img,video"))return null;const li=e.target.closest&&e.target.closest("li.ck");if(!li||!root.contains(li))return null;
+  if(li.classList.contains("ck-r")){ // 글 뒤 동그라미: 글 끝 바로 오른쪽 칸
+    const rg=document.createRange();rg.selectNodeContents(li);const rs=rg.getClientRects(),lr=li.getBoundingClientRect();const last=rs.length?rs[rs.length-1]:null;const end=last?last.right:lr.left;
+    if(last&&e.clientY>last.bottom+2)return e.clientX-lr.left<40?li:null; // 글이 길어 동그라미가 다음 줄 맨 앞으로 넘어간 경우
+    return e.clientX>=end+2&&e.clientX<=end+40?li:null}
   const r=li.getBoundingClientRect();return e.clientX-r.left<30?li:null}
 function normDoc(html){const c=docClean(html,true);
   const isEmpty=n=>n&&n.nodeType===1&&n.nodeName==="DIV"&&!n.textContent.trim()&&!n.querySelector("img,video");
@@ -3978,9 +3991,11 @@ function chgApply(root,hist,lastRev){chgClear(root);root.normalize();if(!hist||!
 const noteDebug=window.__noteDebug;
 /* 새 글 양식: 폴더에 맞는 양식이 있으면 새 메모 본문에 미리 넣음 (안 고치고 나가면 저장하지 않음)
    콜드브루 일지: 경로에 '콜드브루'가 있고 마지막 폴더 이름에 '일지'가 들어간 폴더 (예: 음료/콜드브루/대형 토디 일지) */
+// kinds: 제목 '11/11(수) 콜드브루'처럼 오늘 날짜·요일 뒤에 붙는 종류(첫 번째가 기본). ck-r = 글 뒤에 체크 동그라미
 const NOTE_TEMPLATES=[{when:c=>{const ps=String(c||"").split("/");return ps.some(x=>x.includes("콜드브루"))&&ps[ps.length-1].includes("일지")},
-  html:"<div>분쇄도: </div><div>RD: </div><div>물: </div><div>in: </div><ul><li class=\"ck\">영점 조절 확인</li></ul><div>특이사항: </div>"}];
-const noteTemplate=c=>{const t=NOTE_TEMPLATES.find(x=>x.when(c));return t?t.html:""};
+  kinds:["콜드브루","디카페인"],
+  html:"<div>분쇄도 : </div><div>RD : </div><div>물 : </div><div>in : </div><ul><li class=\"ck ck-r\">영점 조절 확인</li></ul><div>특이사항 :</div><div><br></div>"}];
+const noteTemplate=c=>NOTE_TEMPLATES.find(x=>x.when(c))||null;
 // 메모가 열린 동안 뒤 문서를 맨 위(0)에 두고, 닫을 때 원래 위치로 되돌림.
 // 스크롤된 문서에 overflow:hidden을 걸어 둔 채 위치를 붙잡으면 iOS에서 고정 화면의 터치 위치가 어긋날 수 있음(미확정 원인 대응).
 let npRestoreY=null;
@@ -4022,11 +4037,19 @@ function notePage(d){
   // 직원 메모장 맨 위 폴더에는 메모를 둘 수 없음 → 새 메모는 내 이름 폴더(없으면 첫 폴더)로
   if(!d&&cat===STAFF_MEMO){const mine=STAFF_MEMO+"/"+((byKey[me]||{}).name||"");cat=docCats().includes(mine)&&catOK(mine)?mine:(cl[0]||cat)}
   // 제목은 따로 칸에. 예전 메모(titleSep 없음)는 본문 첫 줄이 제목이었으므로 본문에서 떼어냄
-  const tpl=!d&&canWrite?noteTemplate(cat):""; // 새 글 양식 (폴더별)
+  const tplDef=!d&&canWrite?noteTemplate(cat):null,tpl=tplDef?tplDef.html:""; // 새 글 양식 (폴더별)
+  const tplTitles=tplDef&&tplDef.kinds?tplDef.kinds.map(k=>`${mdw(TODAY)} ${k}`):[];
+  const tplUntouched=tv=>!tv||tplTitles.includes(tv); // 제목이 비었거나 자동 제목 그대로
   const html0=d?(d.titleSep?docHtml(d):stripTitleBlock(docHtml(d))):tpl;
   const base=normDoc(html0).innerHTML;
   const titleIn=el("input",{class:"np-title",type:"text",placeholder:"제목","aria-label":"제목",maxlength:"80"});titleIn.value=d?(d.title||""):"";
+  if(tplTitles.length)titleIn.value=tplTitles[0];
   if(!edit)titleIn.readOnly=true;let baseTitle=titleIn.value;
+  // 양식 종류 고르기(콜드브루/디카페인): 누르면 제목 끝의 종류만 바뀜
+  const tplPick=tplTitles.length>1?el("div",{class:"chips np-tplpick"}):null;
+  if(tplPick){const draw=()=>{tplPick.textContent="";tplDef.kinds.forEach((k,i)=>{const t=tplTitles[i];tplPick.append(el("button",{class:"chip",type:"button","aria-pressed":String(titleIn.value===t),
+    onclick:()=>{const cur=titleIn.value,old=tplTitles.find(x=>x===cur);if(old||!cur.trim()){titleIn.value=t;titleIn.dispatchEvent(new Event("input"))}draw()}},k))})};draw();
+    titleIn.addEventListener("input",draw)}
   const ed=el("div",{class:"note-body","data-ph":"메모를 입력하세요"});
   ed.append(...docClean(html0).childNodes);
   const wireEd=()=>wireBody(ed,()=>ed.dispatchEvent(new Event("input")),edit);wireEd();
@@ -4087,13 +4110,13 @@ function notePage(d){
     const plain=ed.innerText.replace(/\u00a0/g," ").replace(/[\u200b-\u200d\ufeff]/g,"").replace(/\n{3,}/g,"\n\n").trim();
     const media=[...clean.querySelectorAll("img,video")].map(x=>({k:x.nodeName==="IMG"?"image":"video",id:x.getAttribute("data-id")}));
     if(!curId&&!plain&&!media.length&&!tv)return true;
-    if(!curId&&tpl&&htmlNew===base&&!tv)return true; // 양식만 있고 아무것도 안 적은 새 글은 저장하지 않음
+    if(!curId&&tpl&&htmlNew===base&&tplUntouched(tv))return true; // 양식만 있고 아무것도 안 적은 새 글은 저장하지 않음
     // 이번에 새로 만든 메모를 다 지우고 나가면 빈 메모로 남기지 않고 없앰
-    if(!d&&curId&&!tv&&((!plain&&!media.length)||(tpl&&htmlNew===base))){const id0=curId;curId=null;baseHtml=htmlNew;baseTitle="";saving=W(()=>col("docs").doc(id0).delete(),null).then(ok=>ok);const ok=await saving;saving=null;return ok!==false}
+    if(!d&&curId&&((!tv&&!plain&&!media.length)||(tpl&&htmlNew===base&&tplUntouched(tv)))){const id0=curId;curId=null;baseHtml=htmlNew;baseTitle="";saving=W(()=>col("docs").doc(id0).delete(),null).then(ok=>ok);const ok=await saving;saving=null;return ok!==false}
     // 내용을 쓰거나 고친 사람은 참여 인원에 자동으로 남김
     // 고친 사람을 참여 인원에 자동으로 넣지 않음 (참여 인원은 '+ 참여'로만)
     const lines=plain.split("\n").map(x=>x.trim()).filter(Boolean);
-    const title=(tv||(tpl?`${md(TODAY)} ${String(cat||"").split("/").pop()}`:"")||lines[0]||(media.length?"사진":"새 메모")).slice(0,80); // 양식 글은 제목을 비우면 '11/11 대형 토디 일지' 
+    const title=(tv||(tplTitles[0]||"")||lines[0]||(media.length?"사진":"새 메모")).slice(0,80); // 양식 글은 제목을 비우면 자동 제목
     const id=curId||newId();const t=now();
     // 수정 기록: 처음 기록이 없는 예전 메모는 열었을 때 내용을 바탕으로 삼음
     // 항상 서버의 최신 기록에 이어 씀
@@ -4174,6 +4197,7 @@ function notePage(d){
       by?el("div",{class:"np-by attr"},by):null,
       teamLine,
       titleIn,
+      tplPick,
       ed)));
   /* ••• 메뉴 (아이폰 메모처럼) */
   let findBar=null,marks=[],mi=0;
@@ -4275,7 +4299,8 @@ function notePage(d){
   if(edit){titleIn.addEventListener("input",()=>{contentEdited=true;clearTimeout(timer);timer=setTimeout(save,1500)});titleIn.addEventListener("blur",()=>{clearTimeout(timer);save()});
     titleIn.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();if(!ed.firstChild)ed.append(el("div",{},el("br")));ed.focus();
       if(tpl&&!contentEdited&&ed.firstChild){try{const r=document.createRange();r.selectNodeContents(ed.firstChild);r.collapse(false);const sl=getSelection();sl.removeAllRanges();sl.addRange(r)}catch(err){}}}})}
-  if(!d&&edit)titleIn.focus(); // 새 메모: 제목 칸부터 (누른 순간 키보드)
+  if(!d&&edit&&tpl&&ed.firstChild){ed.focus();try{const r=document.createRange();r.selectNodeContents(ed.firstChild);r.collapse(false);const sl=getSelection();sl.removeAllRanges();sl.addRange(r)}catch(err){}} // 양식: 제목은 자동, '분쇄도 : ' 뒤부터
+  else if(!d&&edit)titleIn.focus(); // 새 메모: 제목 칸부터 (누른 순간 키보드)
 }
 
 /* 매장 체크리스트 제목 오른쪽 끝: 블렌드 제조일 + 며칠째(제조일 = 1일차, 보고 있는 날짜 기준). 매장마다 monthnotes/blend_<매장> {date} */
