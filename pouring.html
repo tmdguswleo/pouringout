@@ -2772,7 +2772,9 @@ function editDay(k,back){ // back: 저장하거나 닫으면 돌아갈 창(스�
   parts.push(el("div",{style:"display:grid;grid-template-columns:1fr 1fr;gap:8px"},el("div",{},el("div",{class:"lab"},"메라키 메모"),noteM),el("div",{},el("div",{class:"lab"},"푸어링 메모"),noteP)));
   parts.push(el("div",{},el("div",{class:"lab"},"그날 메모"),note));
   if(fwho(s.editedBy)) parts.push(el("div",{class:"by"},`마지막 수정: ${fwho(s.editedBy)} ${hm(s.editedAt)}`));
-  openSheet(`${mdw(k)} 근무`,parts,async()=>W(()=>col("schedule").doc(k).set({date:k,...(s.starWork?{starWork:s.starWork}:{}),...state,note:note.value.trim(),note_meraki:noteM.value.trim(),note_pouring:noteP.value.trim(),editedBy:me,editedAt:now(),updatedAt:now()}),`${md(k)} 근무 저장됨`).then(ok=>{if(ok){draftPin(k);if(back)setTimeout(back,0)}return ok}));
+  // 아무것도 안 바꾸고 저장하면 쓰지 않음 → 초안 중인 날이 실수로 '고정'되지 않게
+  const same=()=>SLOTS.every(sl=>sameV([...(s[sl.k]||[])],state[sl.k]))&&sameV([...(s.off||[])],state.off)&&note.value.trim()===(s.note||"")&&noteM.value.trim()===(s.note_meraki||"")&&noteP.value.trim()===(s.note_pouring||"");
+  openSheet(`${mdw(k)} 근무`,parts,async()=>same()?(back&&setTimeout(back,0),true):W(async()=>{const v={date:k,...(s.starWork?{starWork:s.starWork}:{}),...state,note:note.value.trim(),note_meraki:noteM.value.trim(),note_pouring:noteP.value.trim(),editedBy:me,editedAt:now(),updatedAt:now()};await col("schedule").doc(k).set(v);localPut("schedule",k,v)},`${md(k)} 근무 저장됨`).then(ok=>{if(ok){draftPin(k);setTimeout(render,0);if(back)setTimeout(back,0)}return ok}));
   if(back){const c=[...$("sheetRoot").querySelectorAll(".btn.ghost")].find(b=>b.textContent==="닫기");if(c)c.onclick=()=>{closeSheet();setTimeout(back,0)};sheetDismiss=()=>{closeSheet();setTimeout(back,0)}}
 }
 
@@ -3024,14 +3026,16 @@ const draftDays=hs=>[...Array(14)].map((_,i)=>addDays(hs,i));
 const draftDoc=k=>S.schedule.find(x=>x.id===k);
 const draftOn=hs=>draftDays(hs).some(k=>{const r=draftDoc(k);return r&&"draftBase" in r});
 const draftPinCount=hs=>draftOn(hs)?draftDays(hs).filter(k=>{const r=draftDoc(k);return r&&!("draftBase" in r)}).length:0;
+// 저장한 값을 화면 자료(S)에도 바로 넣음 → 실시간 동기화가 늦거나 빠져도 근무표가 바로 바뀜 (서버 값이 오면 그걸로 덮임)
+const localPut=(c,id,d)=>{const a=S[c];if(!a)return;const i=a.findIndex(x=>x.id===id);if(d==null){if(i>=0)a.splice(i,1);return}const v={...JSON.parse(JSON.stringify(d)),id};if(i<0)a.push(v);else a[i]=v};
 const draftStrip=r=>{if(!r)return null;const {id,_col,draftBase,...b}=JSON.parse(JSON.stringify(r));return b};
 async function draftClear(hs){draftReqSave(hs,"");delete draftLast[hs];
   const ok=await W(async()=>{for(const k of draftDays(hs)){const r=draftDoc(k);if(!r||!("draftBase" in r))continue;
-    if(r.draftBase)await col("schedule").doc(k).set(r.draftBase);else await col("schedule").doc(k).delete()}},"초안을 비웠어요");
+    if(r.draftBase){await col("schedule").doc(k).set(r.draftBase);localPut("schedule",k,r.draftBase)}else{await col("schedule").doc(k).delete();localPut("schedule",k,null)}}},"초안을 비웠어요");
   if(ok)draw()}
 async function draftConfirm(hs){draftReqSave(hs,"");delete draftLast[hs];
   const ok=await W(async()=>{for(const k of draftDays(hs)){const r=draftDoc(k);if(!r||!("draftBase" in r))continue;
-    await col("schedule").doc(k).set(draftStrip(r))}},"초안을 확정했어요. 이제 '공개하기'만 누르면 돼요");
+    const v=draftStrip(r);await col("schedule").doc(k).set(v);localPut("schedule",k,v)}},"초안을 확정했어요. 이제 '공개하기'만 누르면 돼요");
   if(ok)draw()}
 async function draftApply(hs,seed,req){
   const days=draftDays(hs),on=draftOn(hs);
@@ -3039,8 +3043,11 @@ async function draftApply(hs,seed,req){
   const orig={},pinned=new Set();
   days.forEach(k=>{const r=draftDoc(k);if(r&&"draftBase" in r)orig[k]=r.draftBase||null;else{orig[k]=draftStrip(r);if(on&&r)pinned.add(k)}});
   const res=draftHalf(hs,seed,orig,req||draftReqParse(draftReqText(hs),hs));
+  let n=0;
   const ok=await W(async()=>{for(const d of res.plan){if(pinned.has(d.k))continue;const r=orig[d.k]||{};const wed=parse(d.k).getDay()===3;
-    await col("schedule").doc(d.k).set({...r,date:d.k,m1:(r.m1&&r.m1.length)?r.m1:["seunghyun"],m2:d.O,b1:wed?(r.b1||[]):((r.b1&&r.b1.length)?r.b1:["seunghyun"]),b2:wed?[]:d.C,off:d.off,draftBase:orig[d.k],editedBy:me,editedAt:now(),updatedAt:now()})}},"초안을 근무표에 넣었어요");
+    const v={...r,date:d.k,m1:(r.m1&&r.m1.length)?r.m1:["seunghyun"],m2:d.O,b1:wed?(r.b1||[]):((r.b1&&r.b1.length)?r.b1:["seunghyun"]),b2:wed?[]:d.C,off:d.off,draftBase:orig[d.k],editedBy:me,editedAt:now(),updatedAt:now()};
+    await col("schedule").doc(d.k).set(v);localPut("schedule",d.k,v);n++}},null);
+  if(ok)flash(!n?"모든 날이 고정돼 있어서 바꾼 날이 없어요. 고정된 날은 아래에 적혀 있어요":pinned.size?`${n}일을 새로 짰어요 · 고정된 ${pinned.size}일은 그대로 뒀어요`:"초안을 근무표에 넣었어요",!n);
   return ok?res:null}
 function draftPin(){} // 고정은 draftBase가 빠지는 것으로 처리
 // 초안 요청 글은 monthnotes/draftreq 에 2주 시작일별로 저장 (다시 만들기 때도 반영)
@@ -3088,6 +3095,7 @@ function renderTools(){const b=toolsBody;if(!b)return;b.textContent="";const nm=
   b.append(el("div",{class:"lab",style:"margin-top:12px"},"더 반영할 내용"),el("div",{class:"dreq"},inp,go));
   const L=draftLast[hs],lines=[];
   const said=draftReqParse(draftReqText(hs),hs);if(said.said.length)lines.push("반영한 요청: "+said.said.join(" · "));
+  const pd=draftDays(hs).filter(k=>{const r=draftDoc(k);return r&&!("draftBase" in r)});if(pd.length)lines.push(`고정된 날(칸을 직접 저장한 날, 다시 만들어도 그대로): ${pd.map(md).join(", ")}`);
   if(L){if(L.req.unknown)lines.push(`이해하지 못한 부분: '${L.req.unknown}'`);
     lines.push("이번 2주 오픈: "+DRAFT_STAFF.map(p=>`${nm(p)} ${L.res.open2[p]}`).join(" · "));
     lines.push("오픈 횟수(지난 4주+이번 2주): "+DRAFT_STAFF.map(p=>`${nm(p)} ${L.res.open[p]}`).join(" · "));
@@ -3112,7 +3120,7 @@ function draftWrap(hs,on,acts){if(!on)return acts;
     lines.length?el("p",{class:"hint",style:"margin:0;white-space:pre-line;font-size:12px"},lines.join("\n")):null)}
 // 적은 요청은 칸에서 지우고, 앞서 반영한 요청에 이어 붙여 저장 → 다시 만들 때도 모두 반영 (비우기·확정하기 때 지움)
 async function draftReqSave(hs,t){const cur=((S.monthnotes||[]).find(x=>x.id==="draftreq")||{}).req||{};const nx={...cur};if(t)nx[hs]=t;else delete nx[hs];
-  return W(()=>col("monthnotes").doc("draftreq").set({req:nx,editedBy:me,editedAt:now(),updatedAt:now()}),null)}
+  const v={req:nx,editedBy:me,editedAt:now(),updatedAt:now()};const ok=await W(()=>col("monthnotes").doc("draftreq").set(v),null);if(ok)localPut("monthnotes","draftreq",v);return ok}
 async function draftReqRun(hs,t){if(!t){flash("반영할 내용을 적어 주세요",true);return null}
   const all=[draftReqText(hs),t].filter(Boolean).join(", ");await draftReqSave(hs,all);
   const req=draftReqParse(all,hs);const res=await draftApply(hs,Date.now()%2147483647,req);if(!res)return null;
