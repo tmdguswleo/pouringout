@@ -1666,7 +1666,7 @@ async function pushOn(){
   catch(e){flash("알림을 켜지 못했어요. 다시 해 주세요",true);return false}}
 /* 알림 켜기 팝업. 지금은 시험: 사장 화면에만, 이 기기에서 한 번 (주소에 ?ask=1 이면 다시). 직원에게 띄우는 건 사용자가 '해줘' 하면 */
 function notifyAsk(){if(!WEB||!me||!isBoss()||document.querySelector(".alertov"))return;
-  const again=/[?&]ask=1/.test(location.search),key="po-ask-test2";try{if(!again&&localStorage.getItem(key))return;localStorage.setItem(key,"1")}catch(e){}
+  const again=/[?&]ask=1/.test(location.search),key="po-ask-test3";try{if(!again&&localStorage.getItem(key))return;localStorage.setItem(key,"1")}catch(e){}
   const p=el("p",{},"피로도를 낮추기 위해 알림은\n근무 시간에만 오고 휴무일엔 오지 않습니다.\n\n새 전달사항·체크리스트·회의록을 알려 드려요.\n'밀크티 out 11:00'처럼 시간이 적힌 항목은 그 시간에 해당 매장 근무자에게 알려 드려요.\n앱 아이콘의 숫자는 아직 안 본 글의 수예요.");
   const btn=el("button",{class:"btn",type:"button"},"알림 켜기");
   const ov=el("div",{class:"alertov",role:"alertdialog","aria-label":"알림을 켜 주세요"},el("div",{class:"ap np-ask"},el("h4",{},"알림을 켜 주세요"),p,btn));
