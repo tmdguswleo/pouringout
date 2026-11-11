@@ -2890,7 +2890,7 @@ function draftReqParse(text,hs){
   const nmRe=NM.map(x=>x[0]).join("|");const keyOf=n=>(NM.find(x=>x[0]===n)||[])[1];
   const NUM={"하루":1,"한":1,"하나":1,"이틀":2,"두":2,"둘":2,"사흘":3,"세":3,"셋":3};
   const cnt=s=>{if(!s)return 1;const d=s.match(/\d+/);if(d)return +d[0];for(const k in NUM)if(s.includes(k))return NUM[k];return 1};
-  const out={bias:{},offBias:{},fix:[],said:[],unknown:""};let rest=" "+String(text||"")+" ";
+  const out={bias:{},offBias:{},openT:{},fix:[],said:[],unknown:""};let rest=" "+String(text||"")+" ";
   const days=[...Array(14)].map((_,i)=>addDays(hs,i));
   const dayOf=(m,d)=>days.find(k=>{const x=parse(k);return(!m||x.getMonth()+1===+m)&&x.getDate()===+d});
   // 날짜 지정: 11/20 다슬 휴무 · 다슬 11/20 오픈 · 20일 정한 마감
@@ -2902,6 +2902,25 @@ function draftReqParse(text,hs){
   rest=rest.replace(cRe,(m,n,w,c,v)=>{const p=keyOf(n);if(!p)return m;const k=cnt(c),sign=/줄|빼|덜|감소/.test(v)?-1:1;
     if(w==="휴무"){out.offBias[p]=(out.offBias[p]||0)+sign*k}else{const d=(w==="오픈"?1:-1)*sign*k;out.bias[p]=(out.bias[p]||0)+d}
     out.said.push(`${byKey[p].name} ${w} ${k}번 ${sign>0?"늘리기":"줄이기"}`);return " "});
+  // 오픈 횟수 정하기(이번 2주, 꼭 지킴): '다슬 오픈 5번' · '다슬 5번 오픈' · '오픈 횟수 다슬 5 준형 4' · '오픈: 다슬 5회, 정한 6회'
+  // 뒤에 적은 숫자가 앞의 숫자를 덮음(요청을 이어 붙여 저장하므로). 정한 사람은 늘려/줄여 조정을 무시
+  const NW="(\\d{1,2}|열한|열두|열세|열네|하루|이틀|사흘|한|두|세|네|다섯|여섯|일곱|여덟|아홉|열)";
+  const KN={"하루":1,"한":1,"이틀":2,"두":2,"사흘":3,"세":3,"네":4,"다섯":5,"여섯":6,"일곱":7,"여덟":8,"아홉":9,"열":10,"열한":11,"열두":12,"열세":13,"열네":14};
+  const num=x=>/\d/.test(x)?+x:KN[x];
+  const setT=(n,c)=>{const p=keyOf(n),v=num(c);if(!p||v==null||v>14)return false;out.openT[p]=v;delete out.bias[p];return true};
+  const tRe1=new RegExp(`(${nmRe})\\s*(?:의|이|가|은|는)?\\s*오픈\\s*(?:횟수|일수)?\\s*(?:을|를|은|는|이|가|:)?\\s*${NW}\\s*(?:번|회|일|날|차례)?\\s*(?:으로|로|만|씩)?`,"g");
+  const tRe2=new RegExp(`(${nmRe})\\s*(?:은|는|이|가)?\\s*${NW}\\s*(?:번|회|일|날|차례)\\s*(?:만|씩)?\\s*오픈`,"g");
+  const lRe=new RegExp(`오픈\\s*(?:횟수|일수)?\\s*(?:는|은|:)?\\s*((?:(?:${nmRe})\\s*(?:은|는|이|가)?\\s*${NW}\\s*(?:번|회|일|날)?\\s*(?:으로|로)?\\s*[,·/]?\\s*)+)`,"g");
+  const pRe=new RegExp(`(${nmRe})\\s*(?:은|는|이|가)?\\s*${NW}`,"g");
+  // 세 형식을 모두 찾은 뒤 글에 적힌 순서대로 적용 → 나중에 적은 숫자가 이김 (겹치면 먼저 시작한·더 긴 것만)
+  const hits=[];
+  for(const m of rest.matchAll(tRe2))hits.push({i:m.index,n:m[0].length,ps:[[m[1],m[2]]]});
+  for(const m of rest.matchAll(tRe1))hits.push({i:m.index,n:m[0].length,ps:[[m[1],m[2]]]});
+  for(const m of rest.matchAll(lRe))hits.push({i:m.index,n:m[0].length,ps:[...m[1].matchAll(pRe)].map(x=>[x[1],x[2]])});
+  hits.sort((x,y)=>x.i-y.i||y.n-x.n);let upto=-1;const used=[];
+  hits.forEach(h=>{if(h.i<upto)return;let ok=false;h.ps.forEach(([n,c])=>{if(setT(n,c))ok=true});if(ok){used.push(h);upto=h.i+h.n}});
+  for(let q=used.length-1;q>=0;q--){const h=used[q];rest=rest.slice(0,h.i)+" "+rest.slice(h.i+h.n)}
+  DRAFT_STAFF.forEach(p=>{if(p in out.openT)out.said.push(`${byKey[p].name} 오픈 ${out.openT[p]}번(이번 2주)`)});
   out.unknown=rest.replace(/(그리고|하고|해\s*줘|해\s*주세요|주세요|줘|요)/g," ").replace(/[\s,.·~!?]+/g," ").trim();
   return out}
 /* 조건 글(› 조건 창)에서 앱이 직접 읽는 줄. 아래 모양이면 고치거나 더해도 초안에 바로 반영:
@@ -2932,6 +2951,7 @@ function schedRulesParse(text){const t=String(text==null?schedRulesText():text);
   return R}
 function draftHalf(hs,seed,orig,req){const RU=schedRulesParse();const pairHit=A=>RU.pairs.some(([a,b])=>A.includes(a)&&A.includes(b));
   req=req||{bias:{},offBias:{},fix:[]};const bias=p=>req.bias[p]||0,offB=p=>req.offBias[p]||0;
+  const T=req.openT||{},hasT=p=>p in T; // 사장이 정한 이번 2주 오픈 횟수 → 반드시 맞춤
   let rnd=seed||Date.now()%2147483647;const rand=()=>(rnd=rnd*16807%2147483647)/2147483647;
   const days=[...Array(14)].map((_,i)=>addDays(hs,i));
   const isWed=k=>parse(k).getDay()===3,dow=k=>parse(k).getDay();
@@ -2957,7 +2977,9 @@ function draftHalf(hs,seed,orig,req){const RU=schedRulesParse();const pairHit=A=
       while(slack>0){const cand=DRAFT_STAFF.filter(p=>!offs[i].has(p)&&!placed.has(p));if(!cand.length)break;
         cand.sort((a,b)=>((offCnt[a]-offB(a))-(offCnt[b]-offB(b)))||(rand()-.5));const p=cand[0];offs[i].add(p);offCnt[p]++;slack--}});
     // 2) 날마다 오픈/마감 나누기
-    const open={...base},last={...prevShift},plan=[];let score=0;const issues=[];
+    const open={...base},last={...prevShift},plan=[];let score=0;const issues=[];const open2={};DRAFT_STAFF.forEach(p=>open2[p]=0);
+    // 정한 횟수용: 오늘 포함 남은 날 중 이 사람이 일하는 날 수
+    const workLeft=(p,i)=>{let n=0;for(let j=i;j<14;j++)if(!offs[j].has(p))n++;return n};
     days.forEach((k,i)=>{const f=fixed[i],n=need(k);const tomorrowOff=p=>i<13&&offs[i+1].has(p);
       const workers=DRAFT_STAFF.filter(p=>!offs[i].has(p));const free=workers.filter(p=>!f.o.includes(p)&&!f.c.includes(p));
       const needO=Math.max(0,n.o-f.o.length),needC=Math.max(0,n.c-f.c.length);
@@ -2967,19 +2989,22 @@ function draftHalf(hs,seed,orig,req){const RU=schedRulesParse();const pairHit=A=
         const O=[...f.o,...oPick],C=[...f.c,...cPick];let s=0;
         if(pairHit(O)||pairHit(C))s+=1000; // 규칙3: 같은 근무지에 겹치면 안 되는 사람들(조건 글)
         O.forEach(p=>{if(RU.noCloseToOpen&&last[p]==="c"&&dow(k)!==1)s+=300; // 규칙4: 마감→오픈은 휴무 뒤·주말 지난 월요일에만
-          s+=(open[p]-bias(p))*10});
+          if(hasT(p)){if(open2[p]>=T[p])s+=5000}else s+=(open[p]-bias(p))*10});
+        // 정한 횟수: 오늘 오픈하지 않으면 남은 날로 못 채우는 사람은 오늘 오픈
+        workers.forEach(p=>{if(hasT(p)&&!O.includes(p)&&T[p]-open2[p]>workLeft(p,i+1))s+=5000});
         if(RU.openBeforeOff)C.forEach(p=>{if(tomorrowOff(p))s+=f.hope.has(p)||fixed[i+1]&&fixed[i+1].hope.has(p)?200:120}); // 규칙5: 쉬는 날 전날은 오픈
         s+=rand();
         if(!bestSplit||s<bestSplit.s)bestSplit={s,O,C}}
       const O=bestSplit?bestSplit.O:f.o,C=bestSplit?bestSplit.C:f.c;score+=bestSplit?bestSplit.s:0;
-      O.forEach(p=>open[p]++);
+      O.forEach(p=>{open[p]++;open2[p]++});
       DRAFT_STAFF.forEach(p=>{last[p]=O.includes(p)?"o":C.includes(p)?"c":"x"});
       if(O.length<n.o||C.length<n.c)score+=500;
       plan.push({k,O,C,off:[...offs[i]]})});
     // 오픈 횟수 고르게 (지난 4주 + 이번 2주 누적의 차이)
-    const vals=DRAFT_STAFF.map(p=>open[p]-bias(p));score+=(Math.max(...vals)-Math.min(...vals))*80;
+    const fr=DRAFT_STAFF.filter(p=>!hasT(p)),vals=fr.map(p=>open[p]-bias(p));if(vals.length)score+=(Math.max(...vals)-Math.min(...vals))*80;
+    DRAFT_STAFF.forEach(p=>{if(hasT(p))score+=Math.abs(open2[p]-T[p])*20000});
     const offV=DRAFT_STAFF.map(p=>offCnt[p]-offB(p));score+=(Math.max(...offV)-Math.min(...offV))*60;
-    if(!best||score<best.score)best={score,plan,open,offCnt}}
+    if(!best||score<best.score)best={score,plan,open,open2,offCnt}}
   // 못 지킨 규칙 정리
   const issues=[];const nm=p=>(byKey[p]||{}).name||p;
   best.plan.forEach((d,i)=>{const n=need(d.k);
@@ -2987,6 +3012,7 @@ function draftHalf(hs,seed,orig,req){const RU=schedRulesParse();const pairHit=A=
     RU.pairs.forEach(([a,b])=>{if((d.O.includes(a)&&d.O.includes(b))||(d.C.includes(a)&&d.C.includes(b)))issues.push(`${md(d.k)}: ${nm(a)}·${nm(b)}이 같은 근무지예요`)});
     const prev=i?best.plan[i-1]:null;if(RU.noCloseToOpen&&prev&&parse(d.k).getDay()!==1)d.O.forEach(p=>{if(prev.C.includes(p))issues.push(`${md(d.k)}: ${nm(p)} 마감 다음 날 오픈`)});
     const nx=best.plan[i+1];if(RU.openBeforeOff&&nx)d.C.forEach(p=>{if(nx.off.includes(p))issues.push(`${md(d.k)}: ${nm(p)} 쉬는 날 전날인데 마감`)})});
+  DRAFT_STAFF.forEach(p=>{if(hasT(p)&&best.open2[p]!==T[p])issues.unshift(`${nm(p)} 오픈 ${T[p]}번으로 정했는데 ${best.open2[p]}번이에요 — 휴무·고정 칸·희망휴무나 다른 사람 숫자 때문에 맞출 수 없어요`)});
   const totalOff=DRAFT_STAFF.reduce((s,p)=>s+best.offCnt[p],0);
   const offT=Math.round(RU.off4w/2);const lowOff=DRAFT_STAFF.filter(p=>best.offCnt[p]<offT);
   if(lowOff.length)issues.push(`휴무 ${offT}회(4주 ${RU.off4w}회)가 안 되는 사람: ${lowOff.map(p=>nm(p)+" "+best.offCnt[p]+"회").join(", ")} — 정직원 ${DRAFT_STAFF.length}명이 하루 ${RU.o+RU.c}명씩 일하면 2주 휴무는 모두 합쳐 ${totalOff}회라 다 채울 수 없어요. 추가근무·승현 근무로 쉬는 날을 더 만들 수 있어요`);
@@ -3063,6 +3089,7 @@ function renderTools(){const b=toolsBody;if(!b)return;b.textContent="";const nm=
   const L=draftLast[hs],lines=[];
   const said=draftReqParse(draftReqText(hs),hs);if(said.said.length)lines.push("반영한 요청: "+said.said.join(" · "));
   if(L){if(L.req.unknown)lines.push(`이해하지 못한 부분: '${L.req.unknown}'`);
+    lines.push("이번 2주 오픈: "+DRAFT_STAFF.map(p=>`${nm(p)} ${L.res.open2[p]}`).join(" · "));
     lines.push("오픈 횟수(지난 4주+이번 2주): "+DRAFT_STAFF.map(p=>`${nm(p)} ${L.res.open[p]}`).join(" · "));
     lines.push("이번 2주 휴무: "+DRAFT_STAFF.map(p=>`${nm(p)} ${L.res.offCnt[p]}`).join(" · "));
     lines.push(L.res.issues.length?"못 지킨 부분\n· "+L.res.issues.join("\n· "):"모든 규칙을 지켰어요")}
@@ -3078,6 +3105,7 @@ function draftWrap(hs,on,acts){if(!on)return acts;
   btn.onclick=async()=>{btn.disabled=true;btn.textContent="만드는 중…";await draftReqRun(hs,inp.value.trim());btn.disabled=false;btn.textContent="반영"};
   const L=draftLast[hs],lines=[];
   if(L){if(L.req.said.length)lines.push("반영한 요청: "+L.req.said.join(" · "));if(L.req.unknown)lines.push(`이해하지 못한 부분: '${L.req.unknown}'`);
+    lines.push("이번 2주 오픈: "+DRAFT_STAFF.map(p=>`${(byKey[p]||{}).name} ${L.res.open2[p]}`).join(" · "));
     lines.push("오픈(지난 4주+이번 2주): "+DRAFT_STAFF.map(p=>`${(byKey[p]||{}).name} ${L.res.open[p]}`).join(" · "));
     const I=L.res.issues;if(I.length)lines.push("못 지킨 부분: "+I.slice(0,3).join(" / ")+(I.length>3?` 외 ${I.length-3}개`:""))}
   return el("div",{style:"grid-column:1/-1;display:grid;gap:6px"},acts,el("div",{class:"dreq"},inp,btn),
@@ -3095,6 +3123,7 @@ async function draftSheet(hs){
   let seed=Date.now()%2147483647;let req=draftReqParse(draftReqText(hs),hs);let res=await draftApply(hs,seed,req);if(!res)return;draftLast[hs]={req,res};
   const nm=p=>(byKey[p]||{}).name||p;const box=el("div",{});
   const drawRes=()=>{box.textContent="";
+    box.append(el("p",{class:"hint",style:"margin:0 0 4px"},"이번 2주 오픈: "+DRAFT_STAFF.map(p=>`${nm(p)} ${res.open2[p]}`).join(" · ")));
     box.append(el("p",{class:"hint",style:"margin:0 0 4px"},"오픈 횟수(지난 4주+이번 2주): "+DRAFT_STAFF.map(p=>`${nm(p)} ${res.open[p]}`).join(" · ")));
     box.append(el("p",{class:"hint",style:"margin:0 0 4px"},"이번 2주 휴무: "+DRAFT_STAFF.map(p=>`${nm(p)} ${res.offCnt[p]}`).join(" · ")));
     if(req.said.length)box.append(el("p",{class:"hint",style:"margin:0 0 4px"},"반영한 요청: "+req.said.join(" · ")));
@@ -3102,7 +3131,7 @@ async function draftSheet(hs){
     box.append(el("p",{class:"hint",style:"margin:0;white-space:pre-line"},res.issues.length?"못 지킨 부분\n· "+res.issues.join("\n· "):"모든 규칙을 지켰어요"))};
   drawRes();
   // 맨 아래: 더 반영할 내용 적기 → '반영해서 다시 만들기'
-  const ta=el("textarea",{rows:"2",placeholder:"더 반영할 내용 (예: 다슬 오픈 하루 줄이고 정한 오픈 하루 늘려 줘 · 11/20 원석 휴무)",style:"width:100%;box-sizing:border-box;font:inherit;font-size:16px;resize:vertical"});
+  const ta=el("textarea",{rows:"2",placeholder:"더 반영할 내용 (예: 다슬 오픈 5번 · 정한 오픈 하루 늘려 줘 · 11/20 원석 휴무)",style:"width:100%;box-sizing:border-box;font:inherit;font-size:16px;resize:vertical"});
   const go=el("button",{class:"btn",type:"button",style:"margin-top:8px;width:100%",onclick:async()=>{go.disabled=true;go.textContent="만드는 중…";
     const r=await draftReqRun(hs,ta.value.trim());if(r){req=r.req;res=r.res;ta.value="";drawRes()}
     go.disabled=false;go.textContent="반영해서 다시 만들기"}},"반영해서 다시 만들기");
