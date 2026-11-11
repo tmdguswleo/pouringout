@@ -863,13 +863,13 @@ body:not(.show-attr) .chg-at{display:none}
 html.np-lock,html.np-lock body{overflow:hidden;height:100%;overscroll-behavior:none}
 .notepage.np-leaving{opacity:0;pointer-events:none}
 .notepage{position:fixed;inset:0;z-index:30;background:var(--surface);color:var(--ink);display:flex;flex-direction:column}
-.np-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(8px + env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 8px max(14px,env(safe-area-inset-left,0px))}
+.np-bar{position:relative;z-index:32;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(8px + env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 8px max(14px,env(safe-area-inset-left,0px))}
 .np-right{display:flex;align-items:center;gap:2px;min-width:0}
 .np-tools{display:flex;align-items:center;justify-content:space-around;gap:2px;max-width:760px;margin:0 auto}
 .np-kbar{display:none;padding:6px max(10px,env(safe-area-inset-right,0px)) 6px max(10px,env(safe-area-inset-left,0px));background:var(--surface)}
-.np-kbar.kb-bottom{position:fixed;left:0;right:0;z-index:31;background:transparent}
+.np-kbar.kb-bottom{pointer-events:none;position:fixed;left:0;right:0;z-index:31;background:transparent}
 .notepage.typing .np-kbar{display:block}
-.np-kbar .np-tools{background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:3px 10px;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.np-kbar .np-tools{pointer-events:auto;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:3px 10px;box-shadow:0 2px 10px rgba(0,0,0,.12)}
 .np-kbar .np-tb{min-width:44px;height:40px;font-size:18px;border-radius:999px}
 .np-urg{display:inline-flex;gap:8px}
 .np-circ{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--soft);color:var(--ink);font:inherit;font-size:18px;cursor:pointer;padding:0;flex:none}
@@ -877,7 +877,7 @@ html.np-lock,html.np-lock body{overflow:hidden;height:100%;overscroll-behavior:n
 .np-right{gap:10px!important}
 .np-tb{display:inline-grid;place-items:center;min-width:36px;height:36px;border:0;border-radius:8px;background:none;color:var(--ink);font:inherit;font-size:16px;cursor:pointer;padding:0 6px}
 .np-tb:hover{background:var(--soft)}.np-tb svg{width:22px;height:22px}
-.np-scroll{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
+.np-scroll{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
 .np-inner{max-width:760px;margin:0 auto;padding:6px max(20px,env(safe-area-inset-right,0px)) calc(80px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px))}
 .np-date{text-align:center;font-size:13px;color:var(--muted);margin:4px 0 4px}
 .note-cat{display:block;margin:0 auto 4px;font:inherit;font-size:12px;color:var(--muted);background:none;border:0;text-align:center;text-align-last:center;cursor:pointer}
@@ -4066,13 +4066,10 @@ function notePage(d){
   const npUR=edit?el("span",{class:"np-urg"},urBtn(-1,"되돌리기",'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'),urBtn(1,"다시 실행",'<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>')):null;
   if(npUR){const [ub,rb]=npUR.children;urUpd=()=>{ub.style.opacity=uhI>0||ed.innerHTML!==UH[uhI]?"":".4";rb.style.opacity=uhI<UH.length-1?"":".4"};ed.addEventListener("input",()=>setTimeout(urUpd,0));urUpd()}
   const back=el("button",{class:"np-circ np-back",type:"button",onclick:()=>{noteDebug.record("button:click",{session:navSession});close()},title:"뒤로 ("+(cat?cat.split("/").pop():"자료실")+")","aria-label":"뒤로"},svgI('<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>'));
-  // 터치는 touchend에서 기본 클릭을 취소한 뒤 닫음. pointerup에서 먼저 닫으면
-  // 뒤따르는 합성 click이 뒤의 레시피 버튼으로 전달돼 다시 열릴 수 있음.
-  // 본문 blur가 버튼 위치를 바꾸지 않도록 포커스 이동·상위 pointerdown도 막음.
-  back.addEventListener("pointerdown",e=>{if(e.button!==0)return;noteDebug.record("button:pointerdown",{session:navSession});e.preventDefault();e.stopPropagation()});
+  // 모든 레시피의 뒤로가기는 기본 click 한 번으로 처리. 터치 시작·종료에서 click을 취소하지 않음.
+  back.style.touchAction="manipulation";
+  back.addEventListener("pointerdown",e=>e.stopPropagation());
   back.addEventListener("mousedown",e=>e.preventDefault());
-  back.addEventListener("touchstart",e=>e.stopPropagation(),{passive:true});
-  back.addEventListener("touchend",e=>{noteDebug.record("button:touchend",{session:navSession});e.preventDefault();e.stopPropagation();close()},{passive:false});
   const by=d&&fwho(d.createdBy||d.by)?`${fwho(d.createdBy||d.by)} 작성`:""; // 수정 시각은 바뀐 부분 옆에 표시
   const teamLine=el("div",{class:"np-team"});
   const canTeam=()=>edit;
@@ -4154,7 +4151,7 @@ function notePage(d){
   const keepY=window.scrollY;document.documentElement.classList.add("np-lock");
   const pin=()=>{if(!document.body.contains(page)){window.removeEventListener("scroll",pin);document.documentElement.classList.remove("np-lock");return}if(leaving)return;if(Math.abs(window.scrollY-keepY)>1||window.scrollX)window.scrollTo(0,keepY)};
   window.addEventListener("scroll",pin,{passive:true});
-  page.addEventListener("pointerdown",e=>{if(edit&&document.activeElement===ed&&!ed.contains(e.target)&&!e.target.closest(".np-kbar")&&!(ed.style.minHeight&&e.target.closest(".np-scroll")&&!e.target.closest(".np-title,.np-team")))ed.blur()});
+  page.addEventListener("pointerdown",e=>{if(e.target.closest(".np-back"))return;if(edit&&document.activeElement===ed&&!ed.contains(e.target)&&!e.target.closest(".np-kbar")&&!(ed.style.minHeight&&e.target.closest(".np-scroll")&&!e.target.closest(".np-title,.np-team")))ed.blur()});
   if(tools){ // 글 쓸 때만 서식 도구. 키보드 높이를 알 수 있으면 키보드 바로 위, 모르면(앱 안 화면) 상단 바 바로 아래
     const kbar=el("div",{class:"np-kbar"},tools);page.querySelector(".np-bar").after(kbar);
     const vv=window.visualViewport;
