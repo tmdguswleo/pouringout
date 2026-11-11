@@ -1605,9 +1605,28 @@ function makeWebDb(){
     async delete(){const {error}=await sb.from("store").delete().eq("col",c).eq("id",id);if(error)throw webErr(error)}});
   const query=(c,o={})=>({orderBy:(f,d)=>query(c,{...o,order:[f,d]}),limit:n=>query(c,{...o,limit:n}),where:()=>query(c,o),doc:id=>docRef(c,id),
     async get(){return snapOf(await rowsOf(c,o))},
-    onSnapshot(cb,errCb){let alive=true,t=null;const run=async()=>{try{const rows=await rowsOf(c,o);if(alive)cb(snapOf(rows))}catch(e){if(alive&&errCb)errCb(e)}};run();
-      const ch=sb.channel("st-"+c+"-"+Math.random().toString(36).slice(2)).on("postgres_changes",{event:"*",schema:"public",table:"store",filter:"col=eq."+c},()=>{clearTimeout(t);t=setTimeout(run,200)}).subscribe();
-      return()=>{alive=false;try{sb.removeChannel(ch)}catch(e){}}}});
+    /* 실시간 반영: 바뀐 한 건(payload)만 목록에 고쳐 넣음. 예전에는 한 건만 바뀌어도 그 종류 전체(최대 1000건, 메모는 본문까지)를 다시 받았음.
+       payload가 없거나 이상하면 예전처럼 전체를 다시 받고, 조용해지면 20초 뒤 한 번 전체를 맞춰 봄(빠진 변경 대비). 앱을 다시 볼 때도 전체를 맞춤 */
+    onSnapshot(cb,errCb){let alive=true,t=null,et=null,st=null,rows=null,hidAt=0,seq=0,gen=0;
+      // 늦게 도착한 예전 응답이 최신 변경을 덮지 않게: 마지막 요청만 쓰고, 받는 사이에 변경이 반영됐으면 다시 받음
+      const run=async()=>{const my=++seq,g0=gen;try{const r=await rowsOf(c,o);if(!alive||my!==seq)return;if(gen!==g0){clearTimeout(t);t=setTimeout(run,200);return}rows=r;cb(snapOf(rows))}catch(e){if(alive&&my===seq&&errCb)errCb(e)}};run();
+      const lim=Math.min(o.limit||1000,1000),f=o.order&&o.order[0],asc=!!(o.order&&o.order[1]!=="desc");
+      const sortRows=()=>{if(f)rows.sort((a,b)=>{const x=a.data&&a.data[f],y=b.data&&b.data[f];if(x==null||y==null)return x==null&&y==null?0:x==null?1:-1;const sx=String(x),sy=String(y);return sx===sy?0:(sx<sy)===asc?-1:1});if(f&&rows.length>lim)rows.length=lim}; // 순서 없는 목록은 자르지 않음(새로 생긴 것이 바로 잘리지 않게)
+      const patch=p=>{if(!rows||!p||p.errors)return false;const ty=p.eventType,nw=p.new,ol=p.old||{};
+        if(f&&rows.length>=lim&&!(ty==="DELETE"&&ol.col&&ol.col!==c))return false; // 개수 한도에 걸린 목록은 경계 밖 항목이 있을 수 있어 전체 다시 받기
+        if(ty==="DELETE"){if(ol.col&&ol.col!==c)return true;if(!ol.col||!ol.id)return false;const i=rows.findIndex(r=>r.id===ol.id);if(i>=0)rows.splice(i,1);return true}
+        if(!nw||nw.col!==c||!nw.id||!nw.data||typeof nw.data!=="object")return false;
+        const i=rows.findIndex(r=>r.id===nw.id),row={id:nw.id,data:nw.data};if(i>=0)rows[i]=row;else rows.push(row);sortRows();return true};
+      const patchGen=p=>{const ok=patch(p);if(ok)gen++;return ok};
+      const full=()=>{clearTimeout(st);st=null;clearTimeout(t);t=setTimeout(run,200)};
+      const ch=sb.channel("st-"+c+"-"+Math.random().toString(36).slice(2)).on("postgres_changes",{event:"*",schema:"public",table:"store",filter:"col=eq."+c},p=>{
+        let ok=false;try{ok=patchGen(p)}catch(e){ok=false}
+        if(!ok){full();return}
+        clearTimeout(et);et=setTimeout(()=>{if(alive&&rows)cb(snapOf(rows))},80); // 몰려온 변경은 한 번에 그림
+        if(!st)st=setTimeout(()=>{st=null;run()},20000)}).subscribe(); // 계속 바뀌어도 20초마다 한 번은 전체 맞춤
+      const vis=()=>{if(document.visibilityState==="hidden"){hidAt=Date.now();return}if(hidAt)full();hidAt=0}; // 앱을 다시 보면 그동안 놓친 변경이 있을 수 있어 전체 맞춤
+      document.addEventListener("visibilitychange",vis);
+      return()=>{alive=false;clearTimeout(t);clearTimeout(et);clearTimeout(st);document.removeEventListener("visibilitychange",vis);try{sb.removeChannel(ch)}catch(e){}}}});
   return{collection:c=>query(c)}}
 function makeWebAssets(){return{async upload(blob){const id=[...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,"0")).join("");
   const {error}=await sb.storage.from("media").upload(id,blob,{contentType:blob.type||"application/octet-stream",upsert:false});if(error)throw webErr(error);return{id,url:BLOB+id,sizeBytes:blob.size,contentType:blob.type}},

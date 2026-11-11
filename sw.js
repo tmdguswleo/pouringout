@@ -19,9 +19,13 @@ self.addEventListener("fetch", e => {
     return;
   }
   const isPage = e.request.mode === "navigate" || u.pathname.endsWith("/") || u.pathname.endsWith(".html");
-  if (isPage) { // 화면: 새 버전 먼저, 안 되면 저장해 둔 것
-    e.respondWith(fetch(e.request, { cache: "no-cache" }).then(r => { const c = r.clone(); caches.open(CACHE).then(x => x.put(e.request, c)); return r; })
-      .catch(() => caches.match(e.request).then(r => r || caches.match("./"))));
+  if (isPage) { // 화면: 새 버전 먼저. 인터넷이 느리면 2.5초만 기다리고 저장해 둔 화면으로 바로 열기(새 버전은 받아 두었다가 다음에 열 때 반영)
+    let saving = null;
+    const net = fetch(e.request, { cache: "no-cache" }).then(r => { if (r.ok) { const c = r.clone(); saving = caches.open(CACHE).then(x => x.put(e.request, c)); } return r; });
+    const cached = () => caches.match(e.request).then(r => r || caches.match("./"));
+    e.respondWith(Promise.race([net.catch(() => null), new Promise(r => setTimeout(() => r(null), 2500))])
+      .then(r => r || cached().then(c => c || net)));
+    e.waitUntil(net.then(() => saving).catch(() => {})); // 새 화면을 끝까지 저장해 다음 실행에 쓰게
     return;
   }
   e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(res => {
