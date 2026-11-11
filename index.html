@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-11T12:57:18Z";window.__APP_NOTE="콜드브루 일지: 제목 칸에서 메라키 콜드브루/디카페인을 골라요. 항목 이름은 지워지지 않고, ' : ' 뒤 한 칸 띄고 써져요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-11T13:01:58Z";window.__APP_NOTE="콜드브루 일지: 커서가 항목 이름 ' : ' 뒤 한 칸 띈 자리에 놓이고, 제목 고르는 글씨를 조금 줄였어요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -909,9 +909,9 @@ html.np-lock,html.np-lock body{overflow:hidden;height:100%;overscroll-behavior:n
 .note-body li.ck.ck-r::after,.note-body li.ck.ck-r.done::after{content:"";display:inline-block;position:static;vertical-align:-5px;margin-left:8px;width:22px;height:22px;border:2px solid var(--line);border-radius:50%;box-sizing:border-box;background:var(--surface);transform:none;cursor:pointer;pointer-events:auto}
 .note-body li.ck.ck-r.done::after{background:var(--accent) var(--ck-mark) center/14px no-repeat;border-color:var(--accent)}
 .np-title[hidden]{display:none}
-.np-ttlrow{display:flex;align-items:baseline;gap:.3em;cursor:pointer}
+.np-ttlrow{display:flex;align-items:baseline;gap:.3em;cursor:pointer;font-size:18px}
 .np-ttlwrap{position:relative;display:inline-flex;align-items:baseline}
-.np-ttlsel{-webkit-appearance:none;appearance:none;border:0;background:none;color:var(--ink);font-family:inherit;font-size:21px!important;font-weight:700;font-synthesis:weight;line-height:inherit;padding:0 20px 0 0;margin:0;cursor:pointer;outline:none}
+.np-ttlsel{-webkit-appearance:none;appearance:none;border:0;background:none;color:var(--ink);font-family:inherit;font-size:18px!important;font-weight:700;font-synthesis:weight;line-height:inherit;padding:0 20px 0 0;margin:0;cursor:pointer;outline:none}
 .np-ttlarr{position:absolute;right:2px;pointer-events:none;color:var(--muted);font-size:15px}
 .note-body .tpl-l{-webkit-user-select:none;user-select:none}
 /* 사진·영상 모서리는 둥글리지 않음 */
@@ -4000,30 +4000,39 @@ const noteDebug=window.__noteDebug;
 // kinds: 제목 '11/11(수) 콜드브루'처럼 오늘 날짜·요일 뒤에 붙는 종류(첫 번째가 기본). ck-r = 글 뒤에 체크 동그라미
 const NOTE_TEMPLATES=[{when:c=>{const ps=String(c||"").split("/");return ps.some(x=>x.includes("콜드브루"))&&ps[ps.length-1].includes("일지")},
   kinds:["메라키 콜드브루","메라키 디카페인"],
-  html:["분쇄도","RD","물","in"].map(x=>`<div><span class="tpl-l">${x} :\u00a0</span><br></div>`).join("")+'<ul><li class="ck ck-r"><span class="tpl-l">영점 조절 확인</span></li></ul><div><span class="tpl-l">특이사항 :</span></div><div><br></div>'}];
+  html:["분쇄도","RD","물","in"].map(x=>`<div><span class="tpl-l">${x} :\u00a0</span>\u200b</div>`).join("")+'<ul><li class="ck ck-r"><span class="tpl-l">영점 조절 확인</span></li></ul><div><span class="tpl-l">특이사항 :</span></div><div><br></div>'}];
 // 양식 글자(span.tpl-l)는 지우거나 고칠 수 없음: 그 글자에 걸치는 삭제·입력, 양식 줄과 합쳐지는 삭제를 막음
 function tplGuard(ed){
   const blk=n=>{while(n&&n.parentNode!==ed)n=n.parentNode;return n};
   const hasL=b=>!!(b&&b.nodeType===1&&(b.classList.contains("tpl-l")||b.querySelector(".tpl-l")));
   const labels=()=>[...ed.querySelectorAll(".tpl-l")];
   const hitsLabel=r=>!r.collapsed&&labels().some(l=>r.intersectsNode(l));
+  // 커서가 양식 글자 앞(줄 맨 앞)에 놓이면 ' : ' 뒤 글자 자리로 옮김 (아이폰은 줄을 누르면 맨 앞에 커서가 놓이기 쉬움)
+  const fixCaret=()=>{if(!ed.isConnected){document.removeEventListener("selectionchange",fixCaret);return}if(document.activeElement!==ed)return;
+    const sel=getSelection();if(!sel.rangeCount||!sel.isCollapsed)return;const cur=sel.getRangeAt(0);if(!ed.contains(cur.startContainer))return;
+    const b=blk(cur.startContainer);if(!b||b===ed)return;const l=b.nodeType===1&&b.querySelector(".tpl-l");if(!l||l.closest("li"))return;
+    const aft=document.createRange();aft.setStartAfter(l);if(cur.compareBoundaryPoints(Range.START_TO_START,aft)>0)return;
+    const n=l.nextSibling;if(cur.startContainer===n&&cur.startOffset>0)return;
+    const r=document.createRange();tplAfter(l,r);r.collapse(true);sel.removeAllRanges();sel.addRange(r)};
+  document.addEventListener("selectionchange",fixCaret);
   const crosses=r=>{if(r.collapsed)return false;const a=blk(r.startContainer),b=blk(r.endContainer);return a!==b&&(hasL(a)||hasL(b))};
   ed.addEventListener("beforeinput",e=>{if(!ed.querySelector(".tpl-l"))return;const t=e.inputType||"";
     const sel=getSelection();const cur=sel.rangeCount?sel.getRangeAt(0):null;
     const rs=[];if(cur&&ed.contains(cur.commonAncestorContainer))rs.push(cur);
     if(t.startsWith("delete")&&e.getTargetRanges)e.getTargetRanges().forEach(sr=>{try{const r=document.createRange();r.setStart(sr.startContainer,sr.startOffset);r.setEnd(sr.endContainer,sr.endOffset);rs.push(r)}catch(x){}});
-    let bad=rs.some(r=>hitsLabel(r)||(t.startsWith("delete")&&crosses(r)));
+    let bad=rs.some(r=>hitsLabel(r)||(t.startsWith("delete")&&(crosses(r)||(!r.collapsed&&!r.toString().replace(/\u200b/g,"")&&labels().some(l=>{const a=document.createRange();a.setStartAfter(l);return r.compareBoundaryPoints(Range.START_TO_START,a)<=0&&r.comparePoint(a.startContainer,a.startOffset)>=0||l.nextSibling&&r.intersectsNode(l.nextSibling)&&l.nextSibling.nodeValue==="\u200b"})))));
     // 대상 범위를 못 받은 경우: 커서가 양식 글자 바로 뒤(지우기)·줄 끝에서 다음 양식 줄(앞으로 지우기)
     if(!bad&&cur&&cur.collapsed&&t.startsWith("delete")&&!(e.getTargetRanges&&e.getTargetRanges().length)){const b=blk(cur.startContainer);
       if(/Backward/.test(t)&&b){const pre=document.createRange();pre.setStart(b,0);pre.setEnd(cur.startContainer,cur.startOffset);
-        const lt=hasL(b)?b.querySelector(".tpl-l").textContent:"";if(hasL(b)&&pre.toString().length<=lt.length)bad=true;
+        const lt=hasL(b)?b.querySelector(".tpl-l").textContent:"";if(hasL(b)&&pre.toString().replace(/\u200b/g,"").length<=lt.length)bad=true;
         if(!pre.toString().length&&hasL(b.previousSibling))bad=true}
       if(/Forward/.test(t)&&b){const post=document.createRange();post.setStart(cur.startContainer,cur.startOffset);post.setEnd(b,b.childNodes.length);if(!post.toString().length&&hasL(b.nextSibling))bad=true}}
     if(bad)e.preventDefault()});
   // 붙여넣기(execCommand)는 beforeinput 검사를 거치지 않으므로 선택이 양식 글자에 걸치는지 따로 알려 줌
   return()=>{const sel=getSelection();if(!sel.rangeCount)return false;const r=sel.getRangeAt(0);return ed.contains(r.commonAncestorContainer)&&(hitsLabel(r)||crosses(r))}}
 const noteTemplate=c=>NOTE_TEMPLATES.find(x=>x.when(c))||null;
-const tplCaret=div=>{if(!div)return;const l=div.querySelector(".tpl-l");try{const r=document.createRange();if(l)r.setStartAfter(l);else{r.selectNodeContents(div);r.collapse(false)}r.collapse(true);const sl=getSelection();sl.removeAllRanges();sl.addRange(r)}catch(err){}};
+const tplAfter=(l,r)=>{const n=l.nextSibling;if(n&&n.nodeType===3)r.setStart(n,n.nodeValue.startsWith("\u200b")?1:0);else{const z=document.createTextNode("\u200b");l.after(z);r.setStart(z,1)}}; // 양식 글자 뒤 글자 자리(보이지 않는 칸) 안에 커서
+const tplCaret=div=>{if(!div)return;const l=div.querySelector(".tpl-l");try{const r=document.createRange();if(l)tplAfter(l,r);else{r.selectNodeContents(div);r.collapse(false)}r.collapse(true);const sl=getSelection();sl.removeAllRanges();sl.addRange(r)}catch(err){}};
 // 메모가 열린 동안 뒤 문서를 맨 위(0)에 두고, 닫을 때 원래 위치로 되돌림.
 // 스크롤된 문서에 overflow:hidden을 걸어 둔 채 위치를 붙잡으면 iOS에서 고정 화면의 터치 위치가 어긋날 수 있음(미확정 원인 대응).
 let npRestoreY=null;
