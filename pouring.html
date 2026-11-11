@@ -3939,6 +3939,12 @@ function chgApply(root,hist,lastRev){chgClear(root);root.normalize();if(!hist||!
       if(b===b0)f.append(el("span",{class:"chg-at","data-noexport":"",contenteditable:"false",style:hv(o.by)},`${who(o.by)}${o.at?" "+hm(o.at):""}`));at=b});
     if(at<en)f.append(tx.slice(at-st));node.replaceWith(f)}}
 const noteDebug=window.__noteDebug;
+// 메모가 열린 동안 뒤 문서를 맨 위(0)에 두고, 닫을 때 원래 위치로 되돌림.
+// 스크롤된 문서에 overflow:hidden을 걸어 둔 채 위치를 붙잡으면 iOS에서 고정 화면의 터치 위치가 어긋날 수 있음(미확정 원인 대응).
+let npRestoreY=null;
+function lockNoteScroll(){if(npRestoreY==null)npRestoreY=window.scrollY;document.documentElement.classList.add("np-lock");
+  if(window.scrollY||window.scrollX)window.scrollTo(0,0);noteDebug.record("scroll-lock",{from:Math.round(npRestoreY),now:Math.round(window.scrollY)})}
+function restoreNoteScroll(){const y=npRestoreY;npRestoreY=null;if(y)window.scrollTo(0,y)}
 function bindNoteHeaderTap(button){
   let down=null,handledAt=-Infinity;
   button.style.touchAction="manipulation";
@@ -4068,13 +4074,13 @@ function notePage(d){
     closing=true;
     if(!saving&&!contentEdited&&cat===baseCat&&teamKey()===baseTeam&&!finalized){try{closeSheet()}finally{closing=false}return}
     clearTimeout(timer);let ok=false,why="";
-    leaving=true;page.classList.add("np-leaving");document.documentElement.classList.remove("np-lock");
+    leaving=true;page.classList.add("np-leaving");document.documentElement.classList.remove("np-lock");restoreNoteScroll();
     try{ok=await Promise.race([save(),new Promise(r=>setTimeout(()=>r("timeout"),20000))])}catch(e){why=String(e&&e.message||e);ok=false}
     closing=false;noteDebug.record("save-result",{session:navSession,result:ok===true?"ok":ok==="timeout"?"timeout":"failed"});
     const mine=()=>$("sheetRoot").contains(page); // 그 사이 다른 메모를 열었으면 그 화면은 건드리지 않음
     if(ok===true){if(mine())closeSheet();return}
     if(!mine())return;
-    leaving=false;page.classList.remove("np-leaving");document.documentElement.classList.add("np-lock");
+    leaving=false;page.classList.remove("np-leaving");lockNoteScroll();
     confirmBox(ok==="timeout"?"저장이 아직 끝나지 않았어요. 그래도 나갈까요?":"저장하지 못했어요"+(why?" ("+why.slice(0,60)+")":"")+". 그래도 나갈까요? 방금 고친 내용이 저장되지 않을 수 있어요","나가기",()=>{if(mine())closeSheet()})};
   // 메모 안 되돌리기 ↶ / 다시 실행 ↷ (위쪽 앱 되돌리기 버튼이 메모 화면에 가려져서 여기에도 둠)
   // 아이폰 기본 되돌리기는 글쓰기 칸을 다시 눌러 키보드·화면이 튀어서, 본문 상태를 직접 기억했다가 되돌림 (커서·키보드는 건드리지 않음)
@@ -4178,8 +4184,8 @@ function notePage(d){
   const dispose=[];
   sheetNoteOff=()=>{noteDebug.record("cleanup",{session:navSession});clearTimeout(timer);clearTimeout(uhT);document.removeEventListener("selectionchange",onSel);window.removeEventListener("scroll",pin);dispose.forEach(fn=>fn());sheetNoteOff=null};
   // 상단 ‹ ••• 고정: 메모가 열린 동안 바깥 페이지가 밀려 올라가지 않게 막음
-  const keepY=window.scrollY;document.documentElement.classList.add("np-lock");
-  const pin=()=>{if(!document.body.contains(page)){window.removeEventListener("scroll",pin);document.documentElement.classList.remove("np-lock");return}if(leaving)return;if(Math.abs(window.scrollY-keepY)>1||window.scrollX)window.scrollTo(0,keepY)};
+  lockNoteScroll();const keepY=0;
+  const pin=()=>{if(!document.body.contains(page)){window.removeEventListener("scroll",pin);document.documentElement.classList.remove("np-lock");restoreNoteScroll();return}if(leaving)return;if(Math.abs(window.scrollY-keepY)>1||window.scrollX)window.scrollTo(0,keepY)};
   window.addEventListener("scroll",pin,{passive:true});
   page.addEventListener("pointerdown",e=>{if(e.target.closest(".np-back"))return;if(edit&&document.activeElement===ed&&!ed.contains(e.target)&&!e.target.closest(".np-kbar")&&!(ed.style.minHeight&&e.target.closest(".np-scroll")&&!e.target.closest(".np-title,.np-team")))ed.blur()});
   if(tools){ // 글 쓸 때만 서식 도구. 키보드 높이를 알 수 있으면 키보드 바로 위, 모르면(앱 안 화면) 상단 바 바로 아래
@@ -4250,6 +4256,8 @@ function blendPick(store,d){let ym=(d||TODAY).slice(0,7);const cal=el("div",{cla
 let sheetDismiss=null,sheetFitOff=null,sheetNoteOff=null;
 function openSheet(title,parts,onSave,saveLabel="저장",extraBtn,opts={}){
   if(sheetNoteOff)sheetNoteOff();
+  // 메모 화면에서 일반 창으로 바뀌면 메모용 잠금을 풀고 뒤 문서 위치를 되돌림
+  document.documentElement.classList.remove("np-lock");restoreNoteScroll();
   if(sheetFitOff)sheetFitOff();
   const root=$("sheetRoot");root.textContent="";
   const cancel=el("button",{class:"btn ghost",type:"button",onclick:closeSheet},"닫기");
@@ -4284,7 +4292,7 @@ function closeSheet(){
   const cleanups=[sheetNoteOff,sheetFitOff];sheetNoteOff=null;sheetFitOff=null;sheetDismiss=null;
   for(const off of cleanups)if(off)try{off()}catch(e){noteDebug.record("cleanup-error",{name:e&&e.name||"Error"});console.error("메모 화면 정리 실패",e)}
   $("sheetRoot").textContent="";document.documentElement.classList.remove("np-lock");document.removeEventListener("keydown",escClose);
-  noteDebug.record("closed");if(pendingRender)render()}
+  noteDebug.record("closed");if(pendingRender)render();restoreNoteScroll()}
 
 
 /* ---------- data ---------- */
@@ -4345,7 +4353,7 @@ draw();
 (()=>{const h=document.querySelector(".topbar"),n=null,r=document.documentElement;
   const set=()=>{r.style.setProperty("--hh",h.getBoundingClientRect().height+"px");if(n)r.style.setProperty("--th",n.getBoundingClientRect().height+"px")};
   try{new ResizeObserver(set).observe(h);n&&new ResizeObserver(set).observe(n)}catch(e){}set();
-  let on=false;window.addEventListener("scroll",()=>{const v=window.scrollY>30;if(v!==on){on=v;document.body.classList.toggle("scrolled",v)}},{passive:true});})();
+  let on=false;window.addEventListener("scroll",()=>{if(document.documentElement.classList.contains("np-lock"))return;const v=window.scrollY>30;if(v!==on){on=v;document.body.classList.toggle("scrolled",v)}},{passive:true});})();
 }
 </script>
 
