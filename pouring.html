@@ -1162,6 +1162,8 @@ function inlineEdit(li,span,it,colName,opt={}){
     if(!r){r=document.createRange();r.selectNodeContents(span);r.collapse(false)}
     sel.removeAllRanges();sel.addRange(r)});
   span.addEventListener("keydown",e=>{if(e.isComposing)return;
+    // 전달사항(매장 체크리스트 말고)은 엔터 = 줄바꿈 (빈 줄로 띄워 쓰기 가능), 바깥을 누르면 저장. 그 밖의 항목은 엔터 = 저장
+    if(e.key==="Enter"&&colName==="notices"&&!it.store){e.preventDefault();document.execCommand("insertLineBreak");return}
     if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();span.blur()}
     if(e.key==="Escape"){span.textContent=orig;chk=!!it.check;span.blur()}});
   span.addEventListener("paste",e=>{if(span.contentEditable==="true"){e.preventDefault();document.execCommand("insertText",false,(e.clipboardData||window.clipboardData).getData("text/plain"))}});
