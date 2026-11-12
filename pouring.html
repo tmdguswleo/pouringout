@@ -377,6 +377,7 @@ li.ie-nochk .chk{opacity:.25}
 body:not(.show-attr) .attr{display:none}
 html,body{touch-action:pan-x pan-y} /* 앱 화면 확대 막기 (사진 크게 보기만 따로 확대) */
 .mv-ov.mv-img,.mv-ov.mv-img img{touch-action:none}
+.mv-ov.mv-closing{opacity:0;transition:opacity .18s ease-out} /* 사진 톡: 바로 사라지기 시작(두 번 톡이면 되돌림) */
 #wm{position:fixed;inset:0;z-index:2147483000;pointer-events:none;opacity:.014;background-repeat:repeat} /* 눈엔 거의 안 보이고, 캡처 사진의 대비를 올리면 드러남 */
 .by,.by *,.ord-by{font-weight:300!important} /* 오늘 발주 칸 안내도 구매 완료 안내와 같은 굵기 */
 /* 기록 보기(눈)로 보이는 "누가 작성·수정" 글씨는 메모 안 기록처럼 작게, 어느 화면이든 같은 크기 */
@@ -3709,12 +3710,14 @@ function mediaView(src,isV){src=String(src||"").replace(/#t=[\d.]+$/,"");
       else if(pan&&sc>1){const dx=e.clientX-pan.x,dy=e.clientY-pan.y;if(Math.abs(dx)+Math.abs(dy)>4)moved=true;tx=pan.tx+dx;ty=pan.ty+dy;apply()}});
     const up=e=>{pts.delete(e.pointerId);if(pts.size<2)st=null;if(pts.size===1){const p=[...pts.values()][0];pan={x:p.x,y:p.y,tx,ty};pinchAt=Date.now()}else if(!pts.size)pan=null;if(moved)pinchAt=Date.now()};
     m.addEventListener("pointerup",up);m.addEventListener("pointercancel",up);
-    var tapT=null,lastTap=0,tapX=0,tapY=0;
+    var tapT=null,lastTap=0,tapX=0,tapY=0,pend2=0;
+    // 첫 톡 뒤 닫히는 중에 두 번째 손가락이 닿으면 바로 닫기 취소 (두 번 톡 확대가 늦은 손가락에도 되게)
+    ov.addEventListener("pointerdown",()=>{if(tapT&&ov.classList.contains("mv-closing")){clearTimeout(tapT);tapT=null;ov.classList.remove("mv-closing");pend2=Date.now()}},true);
     m._dbl=(x,y)=>{if(sc>1.02){sc=1;tx=ty=0;apply()}else zoomAt(2.5,x,y,1,0,0,base())}}
   ov.addEventListener("click",e=>{if(e.target.closest(".mv-x")){ov.remove();return}
     if(e.target===ov||(!isV&&e.target===m)){if(Date.now()-pinchAt<500)return;
-      if(!isV){const now=Date.now();if(now-lastTap<320&&Math.hypot(e.clientX-tapX,e.clientY-tapY)<40){clearTimeout(tapT);lastTap=0;m._dbl(e.clientX,e.clientY);return}
-        lastTap=now;tapX=e.clientX;tapY=e.clientY;clearTimeout(tapT);if(zoomed())return;tapT=setTimeout(()=>{if(!zoomed())ov.remove()},330);return}
+      if(!isV){const now=Date.now();if((now-pend2<700||now-lastTap<320)&&Math.hypot(e.clientX-tapX,e.clientY-tapY)<40){pend2=0;clearTimeout(tapT);lastTap=0;ov.classList.remove("mv-closing");m._dbl(e.clientX,e.clientY);return}
+        pend2=0;lastTap=now;tapX=e.clientX;tapY=e.clientY;clearTimeout(tapT);if(zoomed())return;ov.classList.add("mv-closing");tapT=setTimeout(()=>{if(!zoomed())ov.remove();else ov.classList.remove("mv-closing")},260);return}
       ov.remove()}});document.body.append(ov)}
 function mediaMenu(x,y,isBig,onPick,extra){
   const it=(label,on,big)=>el("button",{class:"np-mi"+(on?" on":""),type:"button",onclick:()=>{ov.remove();if(!on)onPick(big)}},el("span",{class:"np-ic"},on?"✓":""),label);
