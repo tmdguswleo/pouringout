@@ -1172,8 +1172,8 @@ function inlineEdit(li,span,it,colName,opt={}){
     if(!r){r=document.createRange();r.selectNodeContents(span);r.collapse(false)}
     sel.removeAllRanges();sel.addRange(r)});
   span.addEventListener("keydown",e=>{if(e.isComposing)return;
-    // 전달사항(매장 체크리스트 말고)은 엔터 = 줄바꿈 (빈 줄로 띄워 쓰기 가능), 바깥을 누르면 저장. 그 밖의 항목은 엔터 = 저장
-    if(e.key==="Enter"&&colName==="notices"&&!it.store){e.preventDefault();document.execCommand("insertLineBreak");return}
+    // 전달사항·매장 체크리스트는 엔터 = 줄바꿈 (빈 줄로 띄워 쓰기 가능), 바깥을 누르면 저장. 그 밖의 항목은 엔터 = 저장
+    if(e.key==="Enter"&&colName==="notices"){e.preventDefault();document.execCommand("insertLineBreak");return}
     if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();span.blur()}
     if(e.key==="Escape"){span.textContent=orig;chk=!!it.check;span.blur()}});
   span.addEventListener("paste",e=>{if(span.contentEditable==="true"){e.preventDefault();document.execCommand("insertText",false,(e.clipboardData||window.clipboardData).getData("text/plain"))}});
@@ -1798,7 +1798,7 @@ function enhanceAdds(root){const seen={};
     if(a.dataset.plus||a.closest(".login"))return;const inp=a.querySelector("input[type=text],input:not([type]),textarea");if(!inp)return;
     a.dataset.plus="1";const card=a.parentElement;
     {const sec=a.closest("section");const h=sec&&sec.querySelector("h2");const base=(h?h.textContent:"")+"|"+(inp.getAttribute("aria-label")||inp.placeholder||"");seen[base]=(seen[base]||0)+1;a.dataset.key=base+"|"+seen[base]}
-    inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing&&inp.value.trim())addCont={key:a.dataset.key,until:Date.now()+6000}},true);
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing&&inp.value.trim()&&(inp.tagName!=="TEXTAREA"||e.ctrlKey||e.metaKey))addCont={key:a.dataset.key,until:Date.now()+6000}},true);
     {const bs=[...a.querySelectorAll("button")];const g=bs.find(x=>x.textContent.trim()==="추가");if(g)g.classList.add("addgo")}
     const lab=inp.getAttribute("aria-label")||inp.placeholder||"추가";
     const b=el("button",{class:"plusbtn",type:"button","aria-label":lab,title:lab},"+");
@@ -2196,7 +2196,7 @@ function vToday(root){
   const two=el("div",{class:"stores notice-s"});
   ["pouring","meraki"].forEach((st,i)=>{
     two.append(el("div",{class:`st-top st-${st}`,style:"min-width:0"},el("h2",{},el("span",{},el("span",{class:"pill "+st},STORES[st]),"체크리스트"),blendTag(st)),
-      noticeCard(st,"남은 항목이 없어요",`${STORES[st]} 항목 쓰기`,{checks:S.checks.filter(c=>c.store===st),alwaysCheck:true})));
+      noticeCard(st,"남은 항목이 없어요",`${STORES[st]} 항목 쓰기`,{checks:S.checks.filter(c=>c.store===st),alwaysCheck:true,longText:true})));
   });
   if(can("today:checks"))v.append(el("section",{},two));
   // 발주 요청: 오늘 탭에는 푸어링·메라키 두 칸 현황과 작은 + (현황을 누르면 발주 탭, +는 요청 창)
