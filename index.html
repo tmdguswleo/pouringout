@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-12T00:16:19Z";window.__APP_NOTE="전달사항을 고칠 때 엔터로 줄을 바꾸고 빈 줄도 넣을 수 있어요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-12T00:17:39Z";window.__APP_NOTE="근무란에서 이름 시작 위치를 맞췄어요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -175,6 +175,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .shift .st{font-size:12px;font-weight:400;color:var(--muted);margin-bottom:2px}
 .shift .ln{font-size:13px;line-height:1.4;font-variant-numeric:tabular-nums}
 .shift .ln b{font-weight:400;color:var(--muted);margin-right:6px}
+.shift>.ln-grid{display:grid;grid-template-columns:max-content minmax(0,1fr);align-content:start}.shift>.ln-grid>.st{grid-column:1/-1}.shift>.ln-grid>.ln{display:contents}
 .offrow{padding:5px 12px;border-top:1px solid var(--line);font-size:13px}
 .offrow .lab{color:var(--muted);margin-right:6px}
 .koha-row{border-top:1px solid var(--line)}.koha-row>div{padding-top:7px!important;padding-bottom:7px!important}.koha-row .lab{color:var(--muted);font-size:12px}
@@ -2111,7 +2112,8 @@ function shiftCard(date){
     const box=el("div",{},el("div",{class:"st"},STORES[st]));
     if(st==="pouring"&&wed) box.append(el("div",{class:"ln closed"},"휴무"));
     else if(s["note_"+st]) box.append(el("div",{class:"ln"},s["note_"+st]));
-    else SLOTS.filter(x=>x.store===st&&(s[x.k]||[]).length).forEach(sl=>box.append(el("div",{class:"ln"},el("b",{},sl.t),names(s[sl.k],s.starWork)))); // 배정 안 된 시간대는 표시하지 않음
+    else{box.classList.add("ln-grid"); // 시간 칸 너비를 맞춰 이름 시작 위치를 같은 줄로
+      SLOTS.filter(x=>x.store===st&&(s[x.k]||[]).length).forEach(sl=>box.append(el("div",{class:"ln"},el("b",{},sl.t),el("span",{},names(s[sl.k],s.starWork)))))} // 배정 안 된 시간대는 표시하지 않음
     grid.append(box);
   });
   card.append(grid);

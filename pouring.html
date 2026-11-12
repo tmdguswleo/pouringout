@@ -175,6 +175,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .shift .st{font-size:12px;font-weight:400;color:var(--muted);margin-bottom:2px}
 .shift .ln{font-size:13px;line-height:1.4;font-variant-numeric:tabular-nums}
 .shift .ln b{font-weight:400;color:var(--muted);margin-right:6px}
+.shift>.ln-grid{display:grid;grid-template-columns:max-content minmax(0,1fr);align-content:start}.shift>.ln-grid>.st{grid-column:1/-1}.shift>.ln-grid>.ln{display:contents}
 .offrow{padding:5px 12px;border-top:1px solid var(--line);font-size:13px}
 .offrow .lab{color:var(--muted);margin-right:6px}
 .koha-row{border-top:1px solid var(--line)}.koha-row>div{padding-top:7px!important;padding-bottom:7px!important}.koha-row .lab{color:var(--muted);font-size:12px}
@@ -2111,7 +2112,8 @@ function shiftCard(date){
     const box=el("div",{},el("div",{class:"st"},STORES[st]));
     if(st==="pouring"&&wed) box.append(el("div",{class:"ln closed"},"휴무"));
     else if(s["note_"+st]) box.append(el("div",{class:"ln"},s["note_"+st]));
-    else SLOTS.filter(x=>x.store===st&&(s[x.k]||[]).length).forEach(sl=>box.append(el("div",{class:"ln"},el("b",{},sl.t),names(s[sl.k],s.starWork)))); // 배정 안 된 시간대는 표시하지 않음
+    else{box.classList.add("ln-grid"); // 시간 칸 너비를 맞춰 이름 시작 위치를 같은 줄로
+      SLOTS.filter(x=>x.store===st&&(s[x.k]||[]).length).forEach(sl=>box.append(el("div",{class:"ln"},el("b",{},sl.t),el("span",{},names(s[sl.k],s.starWork)))))} // 배정 안 된 시간대는 표시하지 않음
     grid.append(box);
   });
   card.append(grid);
