@@ -1106,6 +1106,9 @@ const AUTO_DOC=[{kw:"티라미수",make:true,doc:"note0328"},{kw:"바나나브�
 // 형식: '이름 in 시간 (몇 통)' → '이름 out 시간 (몇 통)'. 시간·통 수는 그대로, in이 붙어 있어도(밀크티in) '밀크티 out'처럼 띄움
 const inToOut=t=>{const re=/(^|[^a-z])in(?![a-z])/i;const m=t.match(re);if(!m||/(^|[^a-z])out(?![a-z])/i.test(t))return null;
   const at=m.index+m[1].length,name=t.slice(0,at).trim(),rest=t.slice(at+2).trim();return [name,"out",rest].filter(Boolean).join(" ")};
+// in 항목 글을 고치면(예: 나중에 '(2통)' 추가) 다음 날 자동 out 글도 같이 고침. 이미 완료한 out은 그대로
+const syncOut=async(it,t)=>{if(!it||!it.autoOut||t==null)return;const o=(S.notices||[]).find(x=>x.id===it.autoOut);if(!o||o.done||o.autoFrom!==it.id)return;
+  const ot=inToOut(t);if(!ot||ot===o.text)return;const ra=remindFor(o.date,ot);await col("notices").doc(o.id).update({text:ot,remindAt:ra||"",...((ra||"")!==(o.remindAt||"")?{reminded:false}:{}),editedBy:me,editedAt:now()})};
 // 'out' 체크 항목에 시간이 있으면(15:00, 3시, 3시 반) 그 날짜 그 시각에 그 매장 근무자에게 알림 (서버 notify 함수가 1분마다 확인)
 const remindFor=(date,t)=>{if(!/(^|[^a-z])out(?![a-z])/i.test(t||""))return null;let m=t.match(/(\d{1,2})\s*:\s*(\d{2})/),H,M=0;
   if(m){H=+m[1];M=+m[2]}else if((m=t.match(/(\d{1,2})\s*시\s*(?:(\d{1,2})\s*분|(반))?/))){H=+m[1];M=m[2]?+m[2]:m[3]?30:0}else return null;
@@ -1149,7 +1152,7 @@ function inlineEdit(li,span,it,colName,opt={}){
     const up={};
     if(t!==orig.trim()&&(t||it.image||it.video||it.fileId))up.text=t;else setLinked(span,orig);
     if(chk!==!!it.check&&colName==="notices"){up.check=chk;up.done=false}
-    if(Object.keys(up).length){setLinked(span,up.text!=null?up.text:orig);W(()=>col(colName).doc(it.id).update({...up,editedBy:me,editedAt:now()}),"저장됨")}
+    if(Object.keys(up).length){setLinked(span,up.text!=null?up.text:orig);W(async()=>{await col(colName).doc(it.id).update({...up,editedBy:me,editedAt:now()});if(colName==="notices"&&up.text!=null)await syncOut(it,up.text)},"저장됨")}
     if(!skipBlur&&document.activeElement===span)span.blur()};
   li.addEventListener("click",e=>{
     if(li._noClick||e.target.closest("input,button,a,img,video,select,textarea")||span.isContentEditable)return;
@@ -1195,7 +1198,7 @@ function editNotice(n){
     const up={text:t,editedBy:me,editedAt:now(),image:media&&media.k==="image"?media.id:"",video:media&&media.k==="video"?media.id:"",posterId:media&&media.k==="video"?(media.poster||(media.id===n.video?n.posterId:"")||""):""};
     if(check&&!n.check){up.check=true;up.done=false}
     if(!check&&n.check){up.check=false;up.done=false}
-    return W(()=>col("notices").doc(n.id).update(up),"수정됨")},"저장",null,{autosave:true});
+    return W(async()=>{await col("notices").doc(n.id).update(up);await syncOut(n,t)},"수정됨")},"저장",null,{autosave:true});
 }
 function editText(colName,it,title){
   const ta=el("textarea",{id:"editTxt",style:"min-height:90px"});ta.value=it.text||"";
