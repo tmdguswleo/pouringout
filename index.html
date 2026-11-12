@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-12T00:33:06Z";window.__APP_NOTE="밀크티 in에 시간을 안 적으면 쓴 시각이 다음 날 out에 붙어요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-12T01:09:10Z";window.__APP_NOTE="전달사항에 사진을 첨부해도 쓰던 글이 없어지지 않아요"</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -1139,7 +1139,8 @@ function inlineEdit(li,span,it,colName,opt={}){
     tog.onclick=()=>{chk=!chk;tog.setAttribute("aria-pressed",String(chk));li.classList.toggle("ie-chk",chk&&!it.check);li.classList.toggle("ie-nochk",!chk&&!!it.check)};bar.append(tog)}
   const hasM=it.image||it.video||it.fileId;
   if(opt.media&&assets){const cb=iconBtn(ICON_CLIP,hasM?"첨부 바꾸기":"사진·영상·파일 첨부");
-    cb.onclick=async()=>{const m=await upMedia(true);if(!m)return;commit(true);W(()=>col(colName).doc(it.id).update({...mediaUp(m),editedBy:me,editedAt:now()}),"첨부됨");afterPoster(m,pid=>{const cur=(S[colName]||[]).find(x=>x.id===it.id);if(cur&&cur.video===m.id)W(()=>col(colName).doc(it.id).update({posterId:pid}))})};bar.append(cb);
+    cb.onclick=async()=>{const m=await upMedia(true);if(!m)return;const tx=span.innerText.replace(/\u00a0/g," ").replace(/\n{3,}/g,"\n\n").trim();commit(true); // 고치던 글도 첨부와 같이 한 번 더 저장 (글 저장만 실패해도 남게)
+      W(()=>col(colName).doc(it.id).update({...mediaUp(m),...(tx&&tx!==orig.trim()?{text:tx}:{}),editedBy:me,editedAt:now()}),"첨부됨");afterPoster(m,pid=>{const cur=(S[colName]||[]).find(x=>x.id===it.id);if(cur&&cur.video===m.id)W(()=>col(colName).doc(it.id).update({posterId:pid}))})};bar.append(cb);
     if(hasM)bar.append(el("button",{class:"chktog",type:"button",onclick:()=>{commit(true);W(()=>col(colName).doc(it.id).update({image:"",video:"",fileId:"",fileName:"",editedBy:me,editedAt:now()}),"첨부 뺐어요")}},"첨부 빼기"))}
   // 할 일 참여: 누르면 첨부 옆에 참여 인원 + '+ 참여' (더 넣거나 빼기)
   if(opt.join&&canWrite){const Wn=(Array.isArray(it.with)?it.with:[]).filter(k=>byKey[k]);
@@ -1202,7 +1203,8 @@ function editNotice(n){
     const up={text:t,editedBy:me,editedAt:now(),image:media&&media.k==="image"?media.id:"",video:media&&media.k==="video"?media.id:"",posterId:media&&media.k==="video"?(media.poster||(media.id===n.video?n.posterId:"")||""):""};
     if(check&&!n.check){up.check=true;up.done=false}
     if(!check&&n.check){up.check=false;up.done=false}
-    return W(async()=>{await col("notices").doc(n.id).update(up);await syncOut(n,t)},"수정됨")},"저장",null,{autosave:true});
+    ta.readOnly=true; // 저장하는 동안 더 쓴 글이 빠지지 않게 잠금 (실패하면 풀림)
+    const ok=await W(async()=>{await col("notices").doc(n.id).update(up);await syncOut(n,t)},"수정됨");if(!ok)ta.readOnly=false;return ok},"저장",null,{autosave:true});
 }
 function editText(colName,it,title){
   const ta=el("textarea",{id:"editTxt",style:"min-height:90px"});ta.value=it.text||"";
@@ -2341,7 +2343,7 @@ function noticeCard(store,emptyText,placeholder,opt={}){
   const tog=opt.alwaysCheck?null:iconBtn(ICON_CHECK,"체크 항목으로 쓰기",{"aria-pressed":String(!!noticeCheckMode[key])});
   if(tog)tog.onclick=()=>{noticeCheckMode[key]=!noticeCheckMode[key];tog.setAttribute("aria-pressed",String(noticeCheckMode[key]));box.classList.toggle("chkmode",!!noticeCheckMode[key]);inp.focus()};
   const draftKey=(store||"all")+":"+dayDate;
-  const inp=el(opt.longText?"textarea":"input",opt.longText?{class:"notice-long",rows:1,placeholder,"aria-label":placeholder}:{type:"text",placeholder,"aria-label":placeholder});
+  const inp=el(opt.longText?"textarea":"input",opt.longText?{class:"notice-long",rows:1,placeholder,"aria-label":placeholder,"data-dk":draftKey}:{type:"text",placeholder,"aria-label":placeholder,"data-dk":draftKey});
   inp.value=noticeDrafts.get(draftKey)||"";
   const fitInput=()=>{if(!opt.longText)return;inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight,Math.round(window.innerHeight*.35))+"px"};
   inp.oninput=()=>{if(inp.value)noticeDrafts.set(draftKey,inp.value);else noticeDrafts.delete(draftKey);fitInput()};
@@ -2361,12 +2363,16 @@ function noticeCard(store,emptyText,placeholder,opt={}){
     photoBtn.onclick=()=>fi.click();
     fi.onchange=async()=>{const f=fi.files&&fi.files[0];fi.value="";if(!f)return;
       if(!db||!canWrite){flash("보기 전용 계정이에요",true);return}
-      const isV=/^video\//.test(f.type);
+      const isV=/^video\//.test(f.type),d0=dayDate; // 올리는 동안 날짜를 바꿔도 고른 날짜에 저장
       flash(isV?"영상 올리는 중… 잠시만요":"사진 올리는 중…");
       try{const blob=isV?await shrinkVideo(f):await shrinkImage(f);if(isV&&blob.size>VMAX){flash("줄여도 영상이 너무 커요(20MB까지). 짧게 잘라서 올려 주세요",true);return}const r=await assets.upload(blob);
-        const t=inp.value.trim();inp.value="";noticeDrafts.delete(draftKey);fitInput();const c=!!noticeCheckMode[key];
+        // 올리는 동안 화면이 다시 그려져 쓰는 칸이 새로 생겼을 수 있음 → 지금 화면의 칸(없으면 임시 저장 글)에서 글을 읽고, 저장이 끝난 뒤에만 비움 (실패하면 글 그대로)
+        const live=()=>{const x=[...document.querySelectorAll("[data-dk]")].find(e=>e.dataset.dk===draftKey);return x||inp};
+        const li0=live(),raw=document.contains(li0)?li0.value:(noticeDrafts.get(draftKey)||inp.value||""),t=raw.replace(/\u00a0/g," ").trim();const c=!!noticeCheckMode[key];
         const nid=newId(),posterP=isV?videoPoster(f):null;
-        await W(()=>col("notices").doc(nid).set({date:dayDate,store,text:t,[isV?"video":"image"]:r.id,by:me,createdAt:now(),...noticeRelease(dayDate),...(c?{check:true,done:false}:{})}),isV?"영상 첨부됨":"사진 첨부됨");afterPoster({posterP},pid=>{const cur=S.notices.find(x=>x.id===nid);if(!cur||cur.video===r.id)W(()=>col("notices").doc(nid).update({posterId:pid}))});
+        const ok=await W(()=>col("notices").doc(nid).set({date:d0,store,text:t,[isV?"video":"image"]:r.id,by:me,createdAt:now(),...noticeRelease(d0),...(c?{check:true,done:false}:{})}),isV?"영상 첨부됨":"사진 첨부됨");
+        if(ok){const li=live();if(document.contains(li)&&li.value===raw){li.value="";li.dispatchEvent(new Event("input"))}if((noticeDrafts.get(draftKey)||"")===raw)noticeDrafts.delete(draftKey)}
+        if(ok)afterPoster({posterP},pid=>{const cur=S.notices.find(x=>x.id===nid);if(!cur||cur.video===r.id)W(()=>col("notices").doc(nid).update({posterId:pid}))});
       }catch(e){flash(e&&e.code==="quota_exceeded"?"사진 저장 공간이 가득 찼어요":"사진을 올리지 못했어요. 다시 해주세요",true)}};
     card.append(fi);
   }
