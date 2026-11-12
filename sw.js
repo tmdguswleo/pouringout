@@ -39,7 +39,8 @@ async function bumpBadge() { // 아이콘 숫자 하나 올리기 (앱을 열면
 }
 self.addEventListener("push", e => {
   let d = {}; try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data && e.data.text() }; }
-  e.waitUntil(bumpBadge().then(() => self.registration.showNotification(d.title || "pouring out", { body: d.body || "", icon: "icon2-192.png", badge: "icon2-192.png", data: { url: d.url || "./" }, tag: d.tag || undefined })));
+  const tell = () => self.clients.matchAll({ type: "window" }).then(cs => cs.forEach(c => c.postMessage("badge"))).catch(() => {}); // 열린 앱이 숫자를 다시 맞추게
+  e.waitUntil(bumpBadge().then(tell).then(() => self.registration.showNotification(d.title || "pouring out", { body: d.body || "", icon: "icon2-192.png", badge: "icon2-192.png", data: { url: d.url || "./" }, tag: d.tag || undefined })));
 });
 self.addEventListener("notificationclick", e => {
   e.notification.close();

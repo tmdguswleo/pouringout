@@ -1474,7 +1474,7 @@ async function clearReadOrderNotifications(){if(!isBoss()||newCount("order")||!(
   const who=me;try{const reg=await navigator.serviceWorker.getRegistration();if(!reg)return;
     const ns=await reg.getNotifications();if(me!==who||!isBoss()||newCount("order"))return;
     ns.filter(n=>n.title==="발주 요청").forEach(n=>n.close())}catch(e){}}
-document.addEventListener("visibilitychange",()=>{if(!me||document.hidden)return;seenSnap=JSON.parse(JSON.stringify(seenLoad()));if(!busy())draw()});
+document.addEventListener("visibilitychange",()=>{if(!me||document.hidden)return;badgeLast=-1;seenSnap=JSON.parse(JSON.stringify(seenLoad()));if(!busy())draw();else appBadge()});
 /* 이름 버튼 줄 맞추기: koha까지 한 줄(최우준 옆), 나머지는 다음 줄. 한 줄 폭에 꽉 차게 글씨·여백 조절 */
 function fitNameChips(box,lastKey="koha"){ // 첫 줄(…koha)은 따로 묶어 양끝을 창 폭에 맞추고, 나머지(장호정)는 다음 줄 왼쪽부터
   const run=()=>{if(!box.isConnected)return;let row=box.querySelector(".chiprow1");
@@ -1492,9 +1492,9 @@ function fitNameChips(box,lastKey="koha"){ // 첫 줄(…koha)은 따로 묶어 
 let badgeLast=-1;
 function appBadge(){if(!WEB||!("setAppBadge" in navigator))return;let n=0;
   try{if(me)tabList().filter(([k])=>k==="today"||can("tab:"+k)).forEach(([k])=>{n+=newCount(k)})}catch(e){}
-  if(n===badgeLast)return;badgeLast=n;
+  // 알림이 오면 서비스 워커가 아이콘 숫자를 따로 올리므로, 같은 숫자여도 매번 다시 맞춤 (예전엔 숫자가 같으면 건너뛰어 0인데도 아이콘에 1이 남았음)
   try{(n?navigator.setAppBadge(n):navigator.clearAppBadge()).catch(()=>{})}catch(e){}
-  try{caches.open("po-badge").then(c=>c.put("/badge",new Response(String(n)))).catch(()=>{})}catch(e){}}
+  badgeLast=n;try{caches.open("po-badge").then(c=>c.put("/badge",new Response(String(n)))).catch(()=>{})}catch(e){}}
 /* 새 버전 반영 알림(사장만, 새 주소). build_web.py가 index.html에 __APP_VER(올린 시각)·__APP_NOTE(바뀐 내용)를 넣고 version.json도 씀.
    - 새 버전으로 처음 열면: '새 버전이 반영됐어요' 창
    - 앱을 켜 둔 동안 새 버전이 올라오면: 위쪽에 '새 버전이 올라왔어요' 띠 → 누르면 새로 고침 */
@@ -1691,6 +1691,8 @@ async function notifyAsk(){if(!WEB||!me||document.querySelector(".alertov"))retu
     btn.disabled=true;const ok=await pushOn();btn.disabled=false;if(ok)ov.remove();else if("Notification" in window&&Notification.permission==="denied")blocked()};
   document.body.append(ov)}
 async function pushOffNow(){try{const s=await pushSub();if(s){try{await db.collection("pushsubs").doc(await pushDocId(s)).delete()}catch(e){};await s.unsubscribe()}flash("알림을 껐어요")}catch(e){flash("알림을 끄지 못했어요",true)}}
+// 알림이 와서 서비스 워커가 아이콘 숫자를 올리면, 열려 있는 앱이 실제 안 본 글 수로 다시 맞춤
+try{navigator.serviceWorker&&navigator.serviceWorker.addEventListener("message",e=>{if(e.data==="badge")setTimeout(appBadge,1500)})}catch(e){}
 async function webInit(){
   if("serviceWorker" in navigator)try{navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{})}catch(e){} // 빠른 실행 + 알림 (열 때마다 새 버전 확인)
   setStatus("연결 중…");
@@ -2167,7 +2169,13 @@ function fillDateList(side){
     box.append(b);
   }
 }
-function vToday(root){
+/* 오늘 화면에 N 표시 없이 들어가는 항목(체크리스트 기본 항목, 지난 날짜·숨은 글 등)은 볼 방법이 없어 빨간 숫자가 안 사라짐
+   → 오늘 화면을 열면 화면에 N으로 안 나온 오늘 항목은 본 것으로 처리. N으로 나온 글은 지금처럼 화면에 보일 때 사라짐 */
+function sweepToday(){if(!me||tab!=="today"||dayDate!==TODAY||document.hidden||pendingRender||busy()||(isMob()&&mView.today==="list"))return; // 새 글 그리기가 미뤄진 동안은 하지 않음
+  const v=$("view");if(!v||!v.querySelector("section"))return;const shown=new Set([...v.querySelectorAll(".newb[data-id]")].map(b=>b.dataset.id));
+  const s=seenLoad(),t=Date.now();let ch=false;tabItems("today").forEach(it=>{if(isNewIn(it,s)&&!shown.has(it.id)){s.ids[it.id]=t;ch=true}});
+  if(ch){seenSave();updBadges()}}
+function vToday(root){setTimeout(sweepToday,800);
   const side=el("nav",{class:"dlist","aria-label":"날짜 목록"});
   const v=el("div",{class:"dmain"});
   const lay=sideResizable(el("div",{class:"dlayout"},side,v),"today");root.append(lay);
