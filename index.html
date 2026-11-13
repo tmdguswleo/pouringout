@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-13T14:50:38Z";window.__APP_NOTE="koha 스케줄: '지난 근무' 줄을 없애고, 제목 옆 화살표를 누르면 지난 근무가 펼쳐져요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-13T14:53:34Z";window.__APP_NOTE="koha 스케줄: 접기 화살표를 펼쳤을 때와 같은 크기로 키우고, 제목 글씨와 가운데를 맞췄어요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -967,7 +967,10 @@ section.mini .by.attr{padding:0 10px 8px!important;font-size:11.5px}
 section.koha .empty{padding:6px 10px;font-size:12px}
 .kg{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;padding:5px 10px;border-bottom:1px solid var(--line);font-size:12.5px;line-height:1.4;font-variant-numeric:tabular-nums}
 .kg:last-child{border-bottom:0}
-.kfold{display:inline-block;margin-left:4px;padding:0 6px;border:0;background:none;color:var(--muted);font:inherit;font-size:12px;font-weight:400;line-height:1;cursor:pointer;vertical-align:middle}
+.kttl{display:inline-flex;align-items:center}
+.kfold{display:inline-flex;align-items:center;justify-content:center;width:24px;height:20px;margin-left:2px;padding:0;border:0;background:none;color:var(--muted);cursor:pointer}
+.kfold svg{width:12px;height:12px;display:block;margin-top:-1.5px;transition:transform .15s}
+.kfold[aria-expanded="true"] svg{transform:rotate(180deg)}
 .kpast{border-bottom:1px solid var(--line)}.kpast:last-child{border-bottom:0}.kpast .kg:last-child{border-bottom:0}
 .kg.past{color:var(--muted)}.kg.past .pill{opacity:.6}
 .kg .pill{font-size:10.5px;margin-right:0}
@@ -2839,13 +2842,14 @@ function kohaSection(ps,pe){
   let tg=null; // 제목(koha 스케줄) 옆 작은 화살표: 누르면 지난 근무를 카드 위쪽에 펼침
   if(past.length){
     const pbox=el("div",{class:"kpast"},...grp(past).map(g=>row(g,true)));pbox.hidden=!kohaPastOpen;
-    tg=el("button",{class:"kfold",type:"button","aria-label":"지난 근무 보기","aria-expanded":String(kohaPastOpen)},kohaPastOpen?"⌃":"⌄");
-    tg.onclick=()=>{kohaPastOpen=pbox.hidden;pbox.hidden=!kohaPastOpen;tg.setAttribute("aria-expanded",String(kohaPastOpen));tg.textContent=kohaPastOpen?"⌃":"⌄"};
+    tg=el("button",{class:"kfold",type:"button","aria-label":"지난 근무 보기","aria-expanded":String(kohaPastOpen)}); // 같은 꺾쇠 하나를 돌려서 접힘·펼침 크기가 같음
+    tg.innerHTML='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    tg.onclick=()=>{kohaPastOpen=pbox.hidden;pbox.hidden=!kohaPastOpen;tg.setAttribute("aria-expanded",String(kohaPastOpen))};
     card.append(pbox)}
   if(!next.length)card.append(el("div",{class:"empty"},past.length?"앞으로 koha 근무가 없어요":"이 기간 koha 근무가 없어요"));
   grp(next).forEach(g=>card.append(row(g,false)));
   const ed=isBoss()?el("button",{class:"chktog",type:"button",style:"padding:2px 8px",onclick:()=>editKoha(ps,pe)},"편집"):null;
-  return el("section",{class:"koha"},el("h2",{},el("span",{},nameEl("koha")," 스케줄",tg),ed),card);
+  return el("section",{class:"koha"},el("h2",{},el("span",{class:"kttl"},el("span",{},nameEl("koha")," 스케줄"),tg),ed),card);
 }
 function editKoha(ps,pe){
   if(!isBoss())return;
