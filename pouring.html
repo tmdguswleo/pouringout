@@ -967,9 +967,7 @@ section.mini .by.attr{padding:0 10px 8px!important;font-size:11.5px}
 section.koha .empty{padding:6px 10px;font-size:12px}
 .kg{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;padding:5px 10px;border-bottom:1px solid var(--line);font-size:12.5px;line-height:1.4;font-variant-numeric:tabular-nums}
 .kg:last-child{border-bottom:0}
-.kfold{display:flex;width:100%;box-sizing:border-box;min-height:28.6875px;align-items:center;justify-content:space-between;padding:5px 10px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--muted);font:inherit;font-size:12px;font-weight:400;text-align:left;cursor:pointer}
-.kfold:last-child{border-bottom:0}
-.kf-ar{font-size:11px;line-height:1}
+.kfold{display:inline-block;margin-left:4px;padding:0 6px;border:0;background:none;color:var(--muted);font:inherit;font-size:12px;font-weight:400;line-height:1;cursor:pointer;vertical-align:middle}
 .kpast{border-bottom:1px solid var(--line)}.kpast:last-child{border-bottom:0}.kpast .kg:last-child{border-bottom:0}
 .kg.past{color:var(--muted)}.kg.past .pill{opacity:.6}
 .kg .pill{font-size:10.5px;margin-right:0}
@@ -2838,16 +2836,16 @@ function kohaSection(ps,pe){
   // 오늘 이후만 펼쳐 보이고, 지난 날짜는 '지난 근무' 줄 안에 접어 둠
   const past=list.filter(e=>e.date<TODAY),next=list.filter(e=>e.date>=TODAY);
   const card=el("div",{class:"card"});
+  let tg=null; // 제목(koha 스케줄) 옆 작은 화살표: 누르면 지난 근무를 카드 위쪽에 펼침
   if(past.length){
     const pbox=el("div",{class:"kpast"},...grp(past).map(g=>row(g,true)));pbox.hidden=!kohaPastOpen;
-    const n=new Set(past.map(e=>e.date)).size;
-    const tg=el("button",{class:"kfold",type:"button","aria-expanded":String(kohaPastOpen)},`지난 근무 ${n}일`,el("span",{class:"kf-ar"},kohaPastOpen?"⌃":"⌄"));
-    tg.onclick=()=>{kohaPastOpen=!kohaPastOpen;pbox.hidden=!kohaPastOpen;tg.setAttribute("aria-expanded",String(kohaPastOpen));tg.lastChild.textContent=kohaPastOpen?"⌃":"⌄"};
-    card.append(tg,pbox)}
+    tg=el("button",{class:"kfold",type:"button","aria-label":"지난 근무 보기","aria-expanded":String(kohaPastOpen)},kohaPastOpen?"⌃":"⌄");
+    tg.onclick=()=>{kohaPastOpen=pbox.hidden;pbox.hidden=!kohaPastOpen;tg.setAttribute("aria-expanded",String(kohaPastOpen));tg.textContent=kohaPastOpen?"⌃":"⌄"};
+    card.append(pbox)}
   if(!next.length)card.append(el("div",{class:"empty"},past.length?"앞으로 koha 근무가 없어요":"이 기간 koha 근무가 없어요"));
   grp(next).forEach(g=>card.append(row(g,false)));
   const ed=isBoss()?el("button",{class:"chktog",type:"button",style:"padding:2px 8px",onclick:()=>editKoha(ps,pe)},"편집"):null;
-  return el("section",{class:"koha"},el("h2",{},el("span",{},nameEl("koha")," 스케줄"),ed),card);
+  return el("section",{class:"koha"},el("h2",{},el("span",{},nameEl("koha")," 스케줄",tg),ed),card);
 }
 function editKoha(ps,pe){
   if(!isBoss())return;
