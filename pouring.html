@@ -361,7 +361,7 @@ html[data-theme="dark"] .edt:empty::before{color:#474747}
 .edt:not([contenteditable]):empty::before{content:""}
 .iedit-bar{display:none;gap:4px;align-items:center;margin-top:4px}
 .fperm{font-size:12.5px;color:var(--muted);opacity:.6;margin:-11px 0 -1px;line-height:1.45;text-align:center}
-.np-guide{font-size:12.5px;color:var(--muted);opacity:.6;line-height:1.45;margin:10px 0 6px;white-space:pre-line;word-break:keep-all;pointer-events:none;-webkit-user-select:none;user-select:none} /* 메모 위 안내(보건증 등): 연하고 작게, 누르거나 고칠 수 없음 */
+.np-guide{font-size:12.5px;color:var(--muted);line-height:1.45;margin:10px 0 6px;white-space:pre-line;word-break:keep-all;pointer-events:none;-webkit-user-select:none;user-select:none;opacity:.9} /* 메모 위 안내(보건증 등): 연하고 작게, 누르거나 고칠 수 없음 */
 .dlink{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:26px;height:22px;margin:0 -6px 0 auto;padding:0;border:0;background:none;color:var(--muted);cursor:pointer}.dlink svg{width:17px;height:17px}li.editing .dlink{visibility:hidden}
 .dpick-q{display:block;width:calc(100% - 28px);margin:0 14px 6px;box-sizing:border-box;font:inherit;font-size:16px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}.dpick-c{display:block;font-size:12px;color:var(--muted);margin-top:2px}
 li.editing .iedit-bar{display:flex}
@@ -1726,7 +1726,7 @@ function hcCheck(){if(!loaded||!me||!db||!canWrite)return;if(document.querySelec
   const test=isBoss()&&!!cfg.test;
   const e0=parse(exp),fromD=new Date(e0.getFullYear(),e0.getMonth()-1,1);fromD.setDate(Math.min(e0.getDate(),new Date(e0.getFullYear(),e0.getMonth(),0).getDate()));const from=iso(fromD); // 3/31 → 2/28(29)
   if(!test&&!(TODAY>=from&&TODAY<=exp))return;
-  const lk="pn.hc."+me;try{if(localStorage.getItem(lk)===TODAY)return;localStorage.setItem(lk,TODAY)}catch(e){}
+  const lk="pn.hc."+me,lv=TODAY+(test?":"+cfg.test:"");try{if(localStorage.getItem(lk)===lv)return;localStorage.setItem(lk,lv)}catch(e){} // 하루 한 번. 시험은 test 값이 바뀌면 다시
   const [,mm,dd]=exp.split("-").map(Number);const left=Math.round((parse(exp)-parse(TODAY))/864e5);
   const when=`${mm}월 ${dd}일(${DOW[parse(exp).getDay()]})`;
   const msg=`보건증 만료일이 다가와요.\n만료일: ${when}`+(left>0?` · ${left}일 남음`:left===0?" · 오늘":"");
@@ -4553,6 +4553,7 @@ function subAll(){
       if(name==="dayoffs"&&window.__hopeCalDraw)try{window.__hopeCalDraw()}catch(e){}
       if(first){first=false;ready++;if(ready===total){loaded=true;clearTimeout(timer);setStatus("실시간 동기화 중");setTimeout(notifyAsk,700);setTimeout(hcCheck,1800)}}
       if(loaded&&(name==="notices"||ready===total))setTimeout(healAutoOut,1500);
+      if(loaded&&name==="monthnotes")setTimeout(hcCheck,1500); // 보건증 설정·갱신 기록이 바뀌면 바로 반영
       saveCacheSoon();
       // 새 주소에서 저장해 둔 데이터 없이 처음 받을 때는, 근무·전달사항 등이 하나씩 튀어나오지 않게 다 받은 뒤 한 번에 그림
       if(WEB&&!loaded&&!cacheShown)return;
