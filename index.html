@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-13T04:08:10Z";window.__APP_NOTE="보건증 메모에서 koha 날짜가 다른 직원 날짜와 같은 자리에 맞춰져요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-13T13:59:21Z";window.__APP_NOTE="보건증 알림 창이 1주일 간격으로 떠요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -1710,7 +1710,7 @@ async function notifyAsk(){if(!WEB||!me||document.querySelector(".alertov"))retu
   document.body.append(ov)}
 /* ---------- 보건증 만료 알림 ----------
    자료실 '보건증 만료 날짜' 메모의 '이름 YY.MM.DD' 줄에서 내 만료일을 읽음(날짜는 메모만 고치면 됨).
-   만료 한 달 전부터 만료일까지, 본인에게만 하루 한 번(기기마다) 알림 창. '갱신 완료'를 누르면 그 만료일로는 더 뜨지 않음(monthnotes/hcdone_<key>).
+   만료 한 달 전부터 만료일까지, 본인에게만 1주일에 한 번(기기마다) 알림 창. '갱신 완료'를 누르면 그 만료일로는 더 뜨지 않음(monthnotes/hcdone_<key>).
    monthnotes/healthcert {all:true} = 모든 직원, 없으면 사장만. {test:true} = 사장에게 날짜와 상관없이 띄움(시험용) */
 const HC_DOC="mweec3dxifid6";
 function hcMine(){const st=byKey[me];if(!st)return null;
@@ -1727,7 +1727,10 @@ function hcCheck(){if(!loaded||!me||!db||!canWrite)return;if(document.querySelec
   const test=isBoss()&&!!cfg.test;
   const e0=parse(exp),fromD=new Date(e0.getFullYear(),e0.getMonth()-1,1);fromD.setDate(Math.min(e0.getDate(),new Date(e0.getFullYear(),e0.getMonth(),0).getDate()));const from=iso(fromD); // 3/31 → 2/28(29)
   if(!test&&!(TODAY>=from&&TODAY<=exp))return;
-  const lk="pn.hc."+me,lv=TODAY+(test?":"+cfg.test:"");try{if(localStorage.getItem(lk)===lv)return;localStorage.setItem(lk,lv)}catch(e){} // 하루 한 번. 시험은 test 값이 바뀌면 다시
+  // 1주일에 한 번(기기마다): 마지막으로 띄운 날 + 7일부터 다시. 시험은 test 값이 바뀌면 바로 다시. 저장 값 '날짜(10자) + 구분 1자 + 시험 값'
+  const lk="pn.hc."+me,tk=test?String(cfg.test):"";let last="",ltk="";try{const v=localStorage.getItem(lk)||"";last=v.slice(0,10);ltk=v.slice(11)}catch(e){}
+  if(!((test&&ltk!==tk)||!/^\d{4}-\d{2}-\d{2}$/.test(last)||TODAY>=addDays(last,7)))return;
+  try{localStorage.setItem(lk,TODAY+"|"+tk)}catch(e){}
   const [,mm,dd]=exp.split("-").map(Number);const left=Math.round((parse(exp)-parse(TODAY))/864e5);
   const when=`${mm}월 ${dd}일(${DOW[parse(exp).getDay()]})`;
   const msg=`보건증 만료일이 다가와요.\n만료일: ${when}`+(left>0?` · ${left}일 남음`:left===0?" · 오늘":"");
@@ -4343,7 +4346,7 @@ function notePage(d){
       teamLine,
       tplPick,
       titleIn,
-      d&&d.id===HC_DOC?el("div",{class:"np-guide"},"만료 한 달 전부터 만료일까지 본인에게 알림 창이 주기적으로 떠요.\n보건증을 갱신했다면 알림 창의 '갱신 완료' 버튼을 눌러 주세요. 그 뒤로는 알림이 뜨지 않아요."):null, // 고칠 수 없는 안내 (본문 밖)
+      d&&d.id===HC_DOC?el("div",{class:"np-guide"},"만료 한 달 전부터 만료일까지 1주일마다 본인에게 알림 창이 떠요.\n보건증을 갱신했다면 알림 창의 '갱신 완료' 버튼을 눌러 주세요. 그 뒤로는 알림이 뜨지 않아요."):null, // 고칠 수 없는 안내 (본문 밖)
       ed)));
   /* ••• 메뉴 (아이폰 메모처럼) */
   let findBar=null,marks=[],mi=0;
