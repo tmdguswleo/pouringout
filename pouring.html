@@ -968,7 +968,8 @@ section.koha .empty{padding:6px 10px;font-size:12px}
 .kg{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;padding:5px 10px;border-bottom:1px solid var(--line);font-size:12.5px;line-height:1.4;font-variant-numeric:tabular-nums}
 .kg:last-child{border-bottom:0}
 .kttl{display:inline-flex;align-items:center}
-.kfold{display:inline-flex;align-items:center;justify-content:center;width:24px;height:20px;margin-left:2px;padding:0;border:0;background:none;color:var(--muted);cursor:pointer}
+.kfold{position:relative;display:inline-flex;align-items:center;justify-content:center;width:12px;height:20px;margin-left:4px;padding:0;border:0;background:none;color:var(--muted);cursor:pointer} /* 글씨와 꺾쇠 사이 = 오픈일수와 ? 사이(6px) */
+.kfold::before{content:"";position:absolute;inset:-4px -10px} /* 누르기 쉽게 */
 .kfold svg{width:12px;height:12px;display:block;margin-top:1px;transition:transform .15s}
 .kfold[aria-expanded="true"] svg{transform:rotate(180deg)}
 .kpast{border-bottom:1px solid var(--line)}.kpast:last-child{border-bottom:0}.kpast .kg:last-child{border-bottom:0}
