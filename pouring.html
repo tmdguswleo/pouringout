@@ -2257,6 +2257,7 @@ function doneFirst(a,b){const ad=!!a.done,bd=!!b.done;if(ad!==bd)return ad?-1:1;
   if(ad)return String(a.doneAt||"").localeCompare(String(b.doneAt||""));
   const ka=a.ord!=null?a.ord:tsOf(a.createdAt),kb=b.ord!=null?b.ord:tsOf(b.createdAt);return ka-kb}
 /* 항목 꾹 눌러서 위아래로 옮기기 (아이폰 메모처럼). li._it, li._grp 필요 */
+const mouseDragGo=(e,sx,sy)=>e.pointerType==="mouse"&&Math.abs(e.clientY-sy)>6&&Math.abs(e.clientY-sy)>Math.abs(e.clientX-sx);
 function enableDrag(ul,colOf,ordKey="ord"){
   [...ul.children].forEach(li=>{if(!li._grp)return;
     let t=null,sx=0,sy=0,drag=false,sibs,rc,i,to,hgt;
@@ -2266,7 +2267,8 @@ function enableDrag(ul,colOf,ordKey="ord"){
     const cancelT=()=>{clearTimeout(t);t=null};
     li.addEventListener("pointerdown",e=>{if(e.button>0||li.classList.contains("editing")||e.target.closest("input,button,a,img,video,.iedit-bar"))return;
       sx=e.clientX;sy=e.clientY;cancelT();const pid=e.pointerId;t=setTimeout(()=>{t=null;start(pid)},450)});
-    li.addEventListener("pointermove",e=>{if(t&&Math.hypot(e.clientX-sx,e.clientY-sy)>8)cancelT();if(drag)move(e)});
+    // 컴퓨터(마우스·트랙패드): 꾹 누르기 전이라도 눌러서 위아래로 끌면 바로 옮기기 시작
+    li.addEventListener("pointermove",e=>{if(t&&mouseDragGo(e,sx,sy)){cancelT();start(e.pointerId)}else if(t&&Math.hypot(e.clientX-sx,e.clientY-sy)>8)cancelT();if(drag)move(e)});
     li.addEventListener("pointerup",()=>{cancelT();if(drag)end()});
     li.addEventListener("pointercancel",()=>{cancelT();if(drag)end(true)});
     function start(pid){sibs=[...ul.children].filter(x=>x._grp===li._grp);i=sibs.indexOf(li);if(sibs.length<2)return;drag=true;to=i;
@@ -3555,7 +3557,7 @@ function enableDocDrag(card){
     row.addEventListener("touchmove",e=>{if(drag)e.preventDefault()},{passive:false});
     row.addEventListener("contextmenu",e=>{if(drag||t)e.preventDefault()});
     row.addEventListener("pointerdown",e=>{if(e.button>0||row._open||docDragBusy)return;sx=e.clientX;sy=e.clientY;lastY=sy;cancelT();const pid=e.pointerId;t=setTimeout(()=>{t=null;start(pid)},450)});
-    row.addEventListener("pointermove",e=>{if(t&&Math.hypot(e.clientX-sx,e.clientY-sy)>8)cancelT();if(drag){lastY=e.clientY;layout()}});
+    row.addEventListener("pointermove",e=>{if(t&&mouseDragGo(e,sx,sy)){cancelT();start(e.pointerId)}else if(t&&Math.hypot(e.clientX-sx,e.clientY-sy)>8)cancelT();if(drag){lastY=e.clientY;layout()}});
     row.addEventListener("pointerup",()=>{cancelT();if(drag)end()});
     row.addEventListener("pointercancel",()=>{cancelT();if(drag)end(true)});
     row.addEventListener("pointerleave",()=>{if(!drag)cancelT()});

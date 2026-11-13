@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-12T13:11:41Z";window.__APP_NOTE="전달사항 사진을 크게 본 뒤 한 번 누르면 바로 닫혀요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-13T00:00:12Z";window.__APP_NOTE="컴퓨터에서도 항목을 꾹 누르거나 눌러서 위아래로 끌면 순서를 바꿀 수 있어요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -2257,6 +2257,7 @@ function doneFirst(a,b){const ad=!!a.done,bd=!!b.done;if(ad!==bd)return ad?-1:1;
   if(ad)return String(a.doneAt||"").localeCompare(String(b.doneAt||""));
   const ka=a.ord!=null?a.ord:tsOf(a.createdAt),kb=b.ord!=null?b.ord:tsOf(b.createdAt);return ka-kb}
 /* 항목 꾹 눌러서 위아래로 옮기기 (아이폰 메모처럼). li._it, li._grp 필요 */
+const mouseDragGo=(e,sx,sy)=>e.pointerType==="mouse"&&Math.abs(e.clientY-sy)>6&&Math.abs(e.clientY-sy)>Math.abs(e.clientX-sx);
 function enableDrag(ul,colOf,ordKey="ord"){
   [...ul.children].forEach(li=>{if(!li._grp)return;
     let t=null,sx=0,sy=0,drag=false,sibs,rc,i,to,hgt;
@@ -2266,7 +2267,8 @@ function enableDrag(ul,colOf,ordKey="ord"){
     const cancelT=()=>{clearTimeout(t);t=null};
     li.addEventListener("pointerdown",e=>{if(e.button>0||li.classList.contains("editing")||e.target.closest("input,button,a,img,video,.iedit-bar"))return;
       sx=e.clientX;sy=e.clientY;cancelT();const pid=e.pointerId;t=setTimeout(()=>{t=null;start(pid)},450)});
-    li.addEventListener("pointermove",e=>{if(t&&Math.hypot(e.clientX-sx,e.clientY-sy)>8)cancelT();if(drag)move(e)});
+    // 컴퓨터(마우스·트랙패드): 꾹 누르기 전이라도 눌러서 위아래로 끌면 바로 옮기기 시작
+    li.addEventListener("pointermove",e=>{if(t&&mouseDragGo(e,sx,sy)){cancelT();start(e.pointerId)}else if(t&&Math.hypot(e.clientX-sx,e.clientY-sy)>8)cancelT();if(drag)move(e)});
     li.addEventListener("pointerup",()=>{cancelT();if(drag)end()});
     li.addEventListener("pointercancel",()=>{cancelT();if(drag)end(true)});
     function start(pid){sibs=[...ul.children].filter(x=>x._grp===li._grp);i=sibs.indexOf(li);if(sibs.length<2)return;drag=true;to=i;
@@ -3555,7 +3557,7 @@ function enableDocDrag(card){
     row.addEventListener("touchmove",e=>{if(drag)e.preventDefault()},{passive:false});
     row.addEventListener("contextmenu",e=>{if(drag||t)e.preventDefault()});
     row.addEventListener("pointerdown",e=>{if(e.button>0||row._open||docDragBusy)return;sx=e.clientX;sy=e.clientY;lastY=sy;cancelT();const pid=e.pointerId;t=setTimeout(()=>{t=null;start(pid)},450)});
-    row.addEventListener("pointermove",e=>{if(t&&Math.hypot(e.clientX-sx,e.clientY-sy)>8)cancelT();if(drag){lastY=e.clientY;layout()}});
+    row.addEventListener("pointermove",e=>{if(t&&mouseDragGo(e,sx,sy)){cancelT();start(e.pointerId)}else if(t&&Math.hypot(e.clientX-sx,e.clientY-sy)>8)cancelT();if(drag){lastY=e.clientY;layout()}});
     row.addEventListener("pointerup",()=>{cancelT();if(drag)end()});
     row.addEventListener("pointercancel",()=>{cancelT();if(drag)end(true)});
     row.addEventListener("pointerleave",()=>{if(!drag)cancelT()});
