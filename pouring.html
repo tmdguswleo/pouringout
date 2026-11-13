@@ -1103,7 +1103,7 @@ function pickDoc(q,onPick){
   inp.oninput=draw;draw();
   ov.addEventListener("pointerdown",e=>{if(e.target===ov)ov.remove()});document.body.append(ov)}
 /* 자동 연결: 체크 항목 글(띄어쓰기 무시)에 kw가 있고, make면 '만들기·제조'도 함께 있을 때 → doc(메모) 또는 cat(폴더)을 여는 작은 아이콘 */
-const AUTO_DOC=[{kw:"티라미수",make:true,doc:"note0328"},{kw:"바나나브레드",make:true,doc:"note0316"},{kw:"밀크티in",doc:"note0005"},{kw:"우롱차in",title:"우롱차 냉침",cat:"직원 메모장/우준"},...["콜드브루in","콜드브루out","디카페인in","디카페인out"].map(kw=>({kw,cat:"음료/콜드브루/대형 토디 일지"}))];
+const AUTO_DOC=[{kw:"티라미수",make:true,doc:"note0328"},{kw:"바나나브레드",make:true,doc:"note0316"},{kw:"밀크티in",doc:"note0005"},{kw:"오시in",doc:"note0337"},{kw:"우롱차in",title:"우롱차 냉침",cat:"직원 메모장/우준"},...["콜드브루in","콜드브루out","디카페인in","디카페인out"].map(kw=>({kw,cat:"음료/콜드브루/대형 토디 일지"}))];
 /* 체크리스트 'in' 항목(예: 콜드브루in, 밀크티 in, 오시 in) → 다음 날 같은 매장에 'out' 체크 항목을 자동으로 만듦. in을 지우면 아직 안 한 out도 지움 */
 // 형식: '이름 in 시간 (몇 통)' → '이름 out 시간 (몇 통)'. 시간·통 수는 그대로, in이 붙어 있어도(밀크티in) '밀크티 out'처럼 띄움
 const inToOut=t=>{const re=/(^|[^a-z])in(?![a-z])/i;const m=t.match(re);if(!m||/(^|[^a-z])out(?![a-z])/i.test(t))return null;
