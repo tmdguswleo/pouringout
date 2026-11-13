@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-13T04:01:07Z";window.__APP_NOTE="보건증 메모 안내 글씨를 더 밝게 했어요. 시험 알림 창이 한 번 더 떠요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-13T04:08:10Z";window.__APP_NOTE="보건증 메모에서 koha 날짜가 다른 직원 날짜와 같은 자리에 맞춰져요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -889,6 +889,7 @@ html.np-lock,html.np-lock body{overflow:hidden;height:100%;overscroll-behavior:n
 .np-by{text-align:center;font-size:12px;color:var(--muted);margin-bottom:6px}
 .note-body{outline:none;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:17px;line-height:1.5;word-break:break-word;overflow-wrap:anywhere;min-height:55vh;margin-top:10px}
 .note-body{position:relative}
+.note-body.hc-tab{white-space:pre-wrap;tab-size:3.2em;-moz-tab-size:3.2em} /* 보건증 메모: '이름(탭)날짜' → 이름 길이가 달라도(koha) 날짜가 같은 자리에서 시작 */
 .note-body.nb-inline{min-height:0;margin:0;font-size:inherit;font-family:inherit}
 .note-body.nb-inline>:first-child{font-size:inherit;font-weight:600}
 .note-body.nb-inline img{max-height:320px;width:auto}
@@ -4193,6 +4194,7 @@ function notePage(d){
     tplPick=el("label",{class:"np-title np-ttlrow"},el("span",{},mdw(TODAY)+" "),el("span",{class:"np-ttlwrap"},sel,el("span",{class:"np-ttlarr","aria-hidden":"true"},"▾")));
     titleIn.hidden=true}
   const ed=el("div",{class:"note-body","data-ph":"메모를 입력하세요"});
+  if(d&&d.id===HC_DOC)ed.classList.add("hc-tab"); // 보건증 메모: 이름 뒤 탭으로 날짜 줄 맞춤
   ed.append(...docClean(html0).childNodes);
   const wireEd=()=>wireBody(ed,()=>ed.dispatchEvent(new Event("input")),edit);wireEd();
   if(edit){ed.contentEditable="true";try{document.execCommand("defaultParagraphSeparator",false,"div")}catch(e){}}
