@@ -1706,6 +1706,36 @@ async function notifyAsk(){if(!WEB||!me||document.querySelector(".alertov"))retu
   btn.onclick=async()=>{if("Notification" in window&&Notification.permission==="denied"){blocked();return}
     btn.disabled=true;const ok=await pushOn();btn.disabled=false;if(ok)ov.remove();else if("Notification" in window&&Notification.permission==="denied")blocked()};
   document.body.append(ov)}
+/* ---------- 보건증 만료 알림 ----------
+   자료실 '보건증 만료 날짜' 메모의 '이름 YY.MM.DD' 줄에서 내 만료일을 읽음(날짜는 메모만 고치면 됨).
+   만료 한 달 전부터 만료일까지, 본인에게만 하루 한 번(기기마다) 알림 창. '갱신 완료'를 누르면 그 만료일로는 더 뜨지 않음(monthnotes/hcdone_<key>).
+   monthnotes/healthcert {all:true} = 모든 직원, 없으면 사장만. {test:true} = 사장에게 날짜와 상관없이 띄움(시험용) */
+const HC_DOC="mweec3dxifid6";
+function hcMine(){const st=byKey[me];if(!st)return null;
+  const d=(S.docs||[]).find(x=>x.id===HC_DOC)||(S.docs||[]).find(x=>/보건증/.test(x.title||""));if(!d)return null;
+  for(const ln of String(d.body||"").split("\n")){const m=ln.match(/^\s*(\S+)\s+(\d{2,4})\s*[.\-/]\s*(\d{1,2})\s*[.\-/]\s*(\d{1,2})/);if(!m)continue;
+    if(m[1]!==st.full&&m[1]!==st.name&&m[1].toLowerCase()!==st.key)continue;
+    let y=+m[2];if(y<100)y+=2000;const dt=new Date(y,+m[3]-1,+m[4]);if(isNaN(dt)||dt.getMonth()!==+m[3]-1)return null;return iso(dt)}
+  return null}
+function hcCheck(){if(!loaded||!me||!db||!canWrite)return;if(document.querySelector(".alertov")){clearTimeout(hcCheck._t);hcCheck._t=setTimeout(hcCheck,3000);return} // 다른 알림창(알림 켜기 등)이 닫히면 다시
+  const cfg=(S.monthnotes||[]).find(x=>x.id==="healthcert")||{};
+  if(!cfg.all&&!isBoss())return; // 처음엔 사장만 (시험)
+  const exp=hcMine();if(!exp)return;
+  const done=(S.monthnotes||[]).find(x=>x.id==="hcdone_"+me);if(done&&done.exp===exp)return; // 이 만료일은 갱신 완료
+  const test=isBoss()&&!!cfg.test;
+  const e0=parse(exp),fromD=new Date(e0.getFullYear(),e0.getMonth()-1,1);fromD.setDate(Math.min(e0.getDate(),new Date(e0.getFullYear(),e0.getMonth(),0).getDate()));const from=iso(fromD); // 3/31 → 2/28(29)
+  if(!test&&!(TODAY>=from&&TODAY<=exp))return;
+  const lk="pn.hc."+me;try{if(localStorage.getItem(lk)===TODAY)return;localStorage.setItem(lk,TODAY)}catch(e){}
+  const [,mm,dd]=exp.split("-").map(Number);const left=Math.round((parse(exp)-parse(TODAY))/864e5);
+  const when=`${mm}월 ${dd}일(${DOW[parse(exp).getDay()]})`;
+  const msg=left>0?`보건증 만료일이 ${when}이에요. ${left}일 남았어요.`:left===0?`보건증이 오늘(${when}) 만료돼요.`:`보건증 만료일(${when})이 지났어요.`;
+  const ok=el("button",{class:"btn",type:"button"},"갱신 완료"),later=el("button",{class:"btn ghost",type:"button",style:"margin-top:6px"},"나중에");
+  const ov=el("div",{class:"alertov",role:"alertdialog","aria-label":"보건증 만료 알림"},el("div",{class:"ap np-ask"},el("h4",{},(test?"[시험] ":"")+"보건증 갱신 안내"),
+    el("p",{},`${byKey[me].name}님, ${msg}\n갱신했다면 '갱신 완료'를 눌러 주세요. 그 뒤로는 알림이 뜨지 않아요.`),ok,later));
+  later.onclick=()=>ov.remove();
+  ok.onclick=async()=>{ok.disabled=true;const r=await W(()=>col("monthnotes").doc("hcdone_"+me).set({exp,at:now(),by:me}),"갱신 완료로 저장했어요. 이제 알림이 뜨지 않아요");ok.disabled=false;if(r)ov.remove()};
+  document.body.append(ov)}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(hcCheck,1200)});
 async function pushOffNow(){try{const s=await pushSub();if(s){try{await db.collection("pushsubs").doc(await pushDocId(s)).delete()}catch(e){};await s.unsubscribe()}flash("알림을 껐어요")}catch(e){flash("알림을 끄지 못했어요",true)}}
 // 알림이 와서 서비스 워커가 아이콘 숫자를 올리면, 열려 있는 앱이 실제 안 본 글 수로 다시 맞춤
 try{navigator.serviceWorker&&navigator.serviceWorker.addEventListener("message",e=>{if(e.data==="badge")setTimeout(appBadge,1500)})}catch(e){}
@@ -4519,7 +4549,7 @@ function subAll(){
       SRV[name]=new Map(snap.docs.map(d=>[d.id,d.data()||{}])); // 되돌리기용: 앱이 미리 바꿔 둔 화면 값이 아닌 서버 값
       for(const k of [...KNOWN.keys()])if(k.startsWith(name+"/"))KNOWN.delete(k); // 서버 값이 왔으니 그걸 믿음
       if(name==="dayoffs"&&window.__hopeCalDraw)try{window.__hopeCalDraw()}catch(e){}
-      if(first){first=false;ready++;if(ready===total){loaded=true;clearTimeout(timer);setStatus("실시간 동기화 중");setTimeout(notifyAsk,700)}}
+      if(first){first=false;ready++;if(ready===total){loaded=true;clearTimeout(timer);setStatus("실시간 동기화 중");setTimeout(notifyAsk,700);setTimeout(hcCheck,1800)}}
       if(loaded&&(name==="notices"||ready===total))setTimeout(healAutoOut,1500);
       saveCacheSoon();
       // 새 주소에서 저장해 둔 데이터 없이 처음 받을 때는, 근무·전달사항 등이 하나씩 튀어나오지 않게 다 받은 뒤 한 번에 그림
