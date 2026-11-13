@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-13T03:50:18Z";window.__APP_NOTE="보건증 만료 한 달 전부터 본인에게 갱신 안내 창이 떠요. 지금은 사장님께만 시험으로 떠요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-13T03:56:35Z";window.__APP_NOTE="보건증 알림 창 문구를 '다가와요'로 바꾸고, 메모 위 안내는 연한 글씨로 고칠 수 없게 했어요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -361,6 +361,7 @@ html[data-theme="dark"] .edt:empty::before{color:#474747}
 .edt:not([contenteditable]):empty::before{content:""}
 .iedit-bar{display:none;gap:4px;align-items:center;margin-top:4px}
 .fperm{font-size:12.5px;color:var(--muted);opacity:.6;margin:-11px 0 -1px;line-height:1.45;text-align:center}
+.np-guide{font-size:12.5px;color:var(--muted);opacity:.6;line-height:1.45;margin:10px 0 6px;white-space:pre-line;word-break:keep-all;pointer-events:none;-webkit-user-select:none;user-select:none} /* 메모 위 안내(보건증 등): 연하고 작게, 누르거나 고칠 수 없음 */
 .dlink{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:26px;height:22px;margin:0 -6px 0 auto;padding:0;border:0;background:none;color:var(--muted);cursor:pointer}.dlink svg{width:17px;height:17px}li.editing .dlink{visibility:hidden}
 .dpick-q{display:block;width:calc(100% - 28px);margin:0 14px 6px;box-sizing:border-box;font:inherit;font-size:16px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}.dpick-c{display:block;font-size:12px;color:var(--muted);margin-top:2px}
 li.editing .iedit-bar{display:flex}
@@ -1728,7 +1729,7 @@ function hcCheck(){if(!loaded||!me||!db||!canWrite)return;if(document.querySelec
   const lk="pn.hc."+me;try{if(localStorage.getItem(lk)===TODAY)return;localStorage.setItem(lk,TODAY)}catch(e){}
   const [,mm,dd]=exp.split("-").map(Number);const left=Math.round((parse(exp)-parse(TODAY))/864e5);
   const when=`${mm}월 ${dd}일(${DOW[parse(exp).getDay()]})`;
-  const msg=left>0?`보건증 만료일이 ${when}이에요. ${left}일 남았어요.`:left===0?`보건증이 오늘(${when}) 만료돼요.`:`보건증 만료일(${when})이 지났어요.`;
+  const msg=`보건증 만료일이 다가와요.\n만료일: ${when}`+(left>0?` · ${left}일 남음`:left===0?" · 오늘":"");
   const ok=el("button",{class:"btn",type:"button"},"갱신 완료"),later=el("button",{class:"btn ghost",type:"button",style:"margin-top:6px"},"나중에");
   const ov=el("div",{class:"alertov",role:"alertdialog","aria-label":"보건증 만료 알림"},el("div",{class:"ap np-ask"},el("h4",{},(test?"[시험] ":"")+"보건증 갱신 안내"),
     el("p",{},`${byKey[me].name}님, ${msg}\n갱신했다면 '갱신 완료'를 눌러 주세요. 그 뒤로는 알림이 뜨지 않아요.`),ok,later));
@@ -4340,6 +4341,7 @@ function notePage(d){
       teamLine,
       tplPick,
       titleIn,
+      d&&d.id===HC_DOC?el("div",{class:"np-guide"},"만료 한 달 전부터 만료일까지 본인에게 알림 창이 주기적으로 떠요.\n보건증을 갱신했다면 알림 창의 '갱신 완료' 버튼을 눌러 주세요. 그 뒤로는 알림이 뜨지 않아요."):null, // 고칠 수 없는 안내 (본문 밖)
       ed)));
   /* ••• 메뉴 (아이폰 메모처럼) */
   let findBar=null,marks=[],mi=0;
