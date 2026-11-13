@@ -904,14 +904,14 @@ html.np-lock,html.np-lock body{overflow:hidden;height:100%;overscroll-behavior:n
 .note-body li.ck::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:22px;height:22px;border:2px solid var(--line);border-radius:50%;box-sizing:border-box;background:var(--surface);cursor:pointer}
 .note-body li.ck.done::before{background:var(--accent);border-color:var(--accent)}
 .note-body li.ck.done::after{content:"";position:absolute;left:8px;top:50%;width:6px;height:11px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:translateY(-62%) rotate(45deg);pointer-events:none}
-/* 양식의 '○ 영점 조절 확인': 다른 칸 글씨와 같은 줄 맨 앞에 붙는 체크 동그라미 (11/13 글 뒤 → 글 앞) */
+/* 글 뒤에 붙는 체크 동그라미 (양식의 '영점 조절 확인 ○') */
 :root{--ck-mark:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E")}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ck-mark:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b1410' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E")}}
 :root[data-theme="dark"]{--ck-mark:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b1410' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E")}
 .note-body li.ck.ck-r{padding-left:0}
-.note-body li.ck.ck-r::before{content:"";display:inline-block;position:static;vertical-align:-5px;margin-right:8px;width:22px;height:22px;border:2px solid var(--line);border-radius:50%;box-sizing:border-box;background:var(--surface);transform:none;cursor:pointer}
-.note-body li.ck.ck-r.done::before{background:var(--accent) var(--ck-mark) center/14px no-repeat;border-color:var(--accent)}
-.note-body li.ck.ck-r::after,.note-body li.ck.ck-r.done::after{content:none;display:none}
+.note-body li.ck.ck-r::before{content:none;display:none}
+.note-body li.ck.ck-r::after,.note-body li.ck.ck-r.done::after{content:"";display:inline-block;position:static;vertical-align:-5px;margin-left:8px;width:22px;height:22px;border:2px solid var(--line);border-radius:50%;box-sizing:border-box;background:var(--surface);transform:none;cursor:pointer;pointer-events:auto}
+.note-body li.ck.ck-r.done::after{background:var(--accent) var(--ck-mark) center/14px no-repeat;border-color:var(--accent)}
 .np-title[hidden]{display:none}
 .np-ttlrow{display:flex;align-items:baseline;gap:.3em;cursor:pointer;font-size:18px}
 .np-ttlwrap{position:relative;display:inline-flex;align-items:baseline}
@@ -4011,7 +4011,10 @@ function kbHeightEst(){const vv=window.visualViewport;const real=vv?Math.max(0,w
   return Math.round((land?0.55:0.345)*Math.min(sh,window.innerHeight+120))+IOS_ACC}
 /* 체크리스트: li.ck (체크됨 li.ck.done). 왼쪽 네모를 누르면 체크/해제 */
 function ckHit(e,root){if(e.target.closest&&e.target.closest("img,video"))return null;const li=e.target.closest&&e.target.closest("li.ck");if(!li||!root.contains(li))return null;
-  if(li.classList.contains("ck-r")){const lr=li.getBoundingClientRect();return e.clientX-lr.left<34&&e.clientY<lr.top+32?li:null} // 양식 동그라미: 글 앞 첫 줄
+  if(li.classList.contains("ck-r")){ // 글 뒤 동그라미: 글 끝 바로 오른쪽 칸
+    const rg=document.createRange();rg.selectNodeContents(li);const rs=rg.getClientRects(),lr=li.getBoundingClientRect();const last=rs.length?rs[rs.length-1]:null;const end=last?last.right:lr.left;
+    if(last&&e.clientY>last.bottom+2)return e.clientX-lr.left<40?li:null; // 글이 길어 동그라미가 다음 줄 맨 앞으로 넘어간 경우
+    return e.clientX>=end+2&&e.clientX<=end+40?li:null}
   const r=li.getBoundingClientRect();return e.clientX-r.left<30?li:null}
 function normDoc(html){const c=docClean(html,true);
   const isEmpty=n=>n&&n.nodeType===1&&n.nodeName==="DIV"&&!n.textContent.trim()&&!n.querySelector("img,video");
@@ -4067,7 +4070,7 @@ function chgApply(root,hist,lastRev){chgClear(root);root.normalize();if(!hist||!
 const noteDebug=window.__noteDebug;
 /* 새 글 양식: 폴더에 맞는 양식이 있으면 새 메모 본문에 미리 넣음 (안 고치고 나가면 저장하지 않음)
    콜드브루 일지: 경로에 '콜드브루'가 있고 마지막 폴더 이름에 '일지'가 들어간 폴더 (예: 음료/콜드브루/대형 토디 일지) */
-// kinds: 제목 '11/11(수) 콜드브루'처럼 오늘 날짜·요일 뒤에 붙는 종류(첫 번째가 기본). ck-r = 다른 칸과 같은 줄 맨 앞 체크 동그라미
+// kinds: 제목 '11/11(수) 콜드브루'처럼 오늘 날짜·요일 뒤에 붙는 종류(첫 번째가 기본). ck-r = 글 뒤에 체크 동그라미
 const NOTE_TEMPLATES=[{when:c=>{const ps=String(c||"").split("/");return ps.some(x=>x.includes("콜드브루"))&&ps[ps.length-1].includes("일지")},
   kinds:["메라키 콜드브루","디카페인"],
   html:["분쇄도","RD","물","in"].map(x=>`<div><span class="tpl-l">${x} :\u00a0</span>\u200b</div>`).join("")+'<ul><li class="ck ck-r"><span class="tpl-l">영점 조절 확인</span></li></ul><div><span class="tpl-l">특이사항 :</span></div><div><br></div>'}];
