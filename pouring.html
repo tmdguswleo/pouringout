@@ -4259,7 +4259,7 @@ function notePage(d){
     const mine=()=>$("sheetRoot").contains(page); // 그 사이 다른 메모를 열었으면 그 화면은 건드리지 않음
     if(ok===true){if(mine())closeSheet();return}
     if(!mine())return;
-    leaving=false;page.classList.remove("np-leaving");lockNoteScroll();
+    leaving=false;page.classList.remove("np-leaving");lockNoteScroll();rePush(); // 메모가 다시 떠 있으니 뒤로가기 기록도 다시
     confirmBox(ok==="timeout"?"저장이 아직 끝나지 않았어요. 그래도 나갈까요?":"저장하지 못했어요"+(why?" ("+why.slice(0,60)+")":"")+". 그래도 나갈까요? 방금 고친 내용이 저장되지 않을 수 있어요","나가기",()=>{if(mine())closeSheet()})};
   // 메모 안 되돌리기 ↶ / 다시 실행 ↷ (위쪽 앱 되돌리기 버튼이 메모 화면에 가려져서 여기에도 둠)
   // 아이폰 기본 되돌리기는 글쓰기 칸을 다시 눌러 키보드·화면이 튀어서, 본문 상태를 직접 기억했다가 되돌림 (커서·키보드는 건드리지 않음)
@@ -4399,6 +4399,17 @@ function notePage(d){
     scroller.addEventListener("scroll",hold,{passive:true});if(vv){vv.addEventListener("scroll",hold);dispose.push(()=>vv.removeEventListener("scroll",hold))}
   }
   sheetDismiss=close;document.addEventListener("keydown",escClose);
+  // 휴대폰 뒤로가기(화면 밀기·뒤로 버튼)도 '<'처럼 저장하고 닫음: 메모를 열 때 기록을 하나 쌓아 둠 (다른 메모로 바로 넘어가면 그 기록을 같이 씀)
+  let navPushed=false;
+  try{if(!(history.state&&history.state.pnNote))history.pushState({pnNote:1},"");navPushed=true}catch(_){}
+  function rePush(){try{if(!navPushed&&!(history.state&&history.state.pnNote)){history.pushState({pnNote:1},"");navPushed=true}}catch(_){}}
+  const onPop=()=>{navPushed=false;if(root.contains(page)&&!leaving)close()};
+  // 앱을 내리거나 닫을 때도 쓰던 글을 바로 저장 (멈춘 뒤 1.5초 자동 저장을 기다리지 않음)
+  const saveNow=()=>{if(edit&&root.contains(page)&&!leaving){clearTimeout(timer);save()}};
+  const onVis=()=>{if(document.visibilityState==="hidden")saveNow()};
+  window.addEventListener("popstate",onPop);document.addEventListener("visibilitychange",onVis);window.addEventListener("pagehide",saveNow);
+  dispose.push(()=>{window.removeEventListener("popstate",onPop);document.removeEventListener("visibilitychange",onVis);window.removeEventListener("pagehide",saveNow);
+    if(navPushed)setTimeout(()=>{try{if(!$("sheetRoot").querySelector(".notepage")&&history.state&&history.state.pnNote){noteBackPending=true;history.back()}}catch(_){}},0)});
   noteDebug.record("ready",{session:navSession,backButtons:page.querySelectorAll(".np-back").length});
   // 안내 문구: 글자가 없으면 계속 보이고(커서가 있어도), 입력을 시작하면 사라짐
   let phEmpty=false;
@@ -4440,6 +4451,10 @@ function blendPick(store,d){let ym=(d||TODAY).slice(0,7);const cal=el("div",{cla
   openSheet("제조일",[cal],async()=>true,"닫기",null,{autosave:true})} // 버튼 없음: 바깥을 누르면 닫힘
 /* ---------- sheet ---------- */
 let sheetDismiss=null,sheetFitOff=null,sheetNoteOff=null;
+// 메모를 닫으며 정리한 뒤로가기(history.back)는 늦게 도착함 → 그 사이 새 메모가 열렸어도 닫지 않게 여기서 먼저 받고, 새 메모의 기록은 다시 쌓음
+let noteBackPending=false;
+window.addEventListener("popstate",e=>{if(!noteBackPending)return;noteBackPending=false;e.stopImmediatePropagation();
+  if($("sheetRoot").querySelector(".notepage"))try{history.pushState({pnNote:1},"")}catch(_){}});
 function openSheet(title,parts,onSave,saveLabel="저장",extraBtn,opts={}){
   if(sheetNoteOff)sheetNoteOff();
   // 메모 화면에서 일반 창으로 바뀌면 메모용 잠금을 풀고 뒤 문서 위치를 되돌림
