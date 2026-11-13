@@ -800,6 +800,7 @@ button{-webkit-tap-highlight-color:transparent}
 .np-mi.danger{color:var(--ink)} /* 삭제도 흰 글씨 (사용자 요청) */
 .np-ic{width:24px;display:inline-flex;justify-content:center;color:inherit}.np-ic svg{width:22px;height:22px}.np-mi .np-ic{color:var(--muted)}.np-mi.on .np-ic{color:inherit}
 .nr-fic{display:inline-flex;vertical-align:-2px;margin-right:4px}.nr-fic svg{width:14px;height:14px}
+.doc.dsub{display:flex;align-items:center;gap:8px;min-height:44px;background:var(--surface)}.dsub-ic{display:inline-flex;color:var(--accent)}.dsub-ic svg{width:18px;height:18px}.dsub-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dsub-c{color:var(--muted)} /* 폴더 안 하위 폴더 줄 */
 .np-mh{font-size:13px;color:var(--muted);padding:6px 18px 8px}
 .np-title{display:block;width:100%;border:0;background:none;color:var(--ink);font:inherit;font-size:21px;font-weight:700;font-synthesis:weight;padding:4px 0 6px;outline:none;border-bottom:1px solid var(--line);margin-bottom:6px}
 .np-title::placeholder{color:var(--muted);font-weight:700}
@@ -3535,7 +3536,11 @@ function vDocs(root){
       ...(canWrite&&isBoss()?[{cls:"move",icon:"📁",label:"이동",fn:()=>moveFolder(k)},{cls:"del",icon:"🗑",label:"삭제",fn:()=>deleteFolder(k)}]:[])]):btn)});
   const list=docSort(DOCS.filter(d=>own(d,docCat)),docCat);
   const card=el("div",{class:"card dcard"});
-  if(!list.length) card.append(el("div",{class:"empty"},"아직 자료가 없어요. 레시피, 매뉴얼, 회의록을 여기에 모아두세요"));
+  // 폴더 안 맨 위에 바로 아래 하위 폴더 (휴대폰에선 폴더를 누르면 메모만 보여 하위 폴더가 안 보였음)
+  const kids=docCat==="all"?[]:allCats.filter(c=>c.startsWith(docCat+"/")&&c.split("/").length===docCat.split("/").length+1);
+  kids.forEach(kc=>card.append(el("button",{class:"doc dsub",type:"button",onclick:()=>{opened.add(docCat);folderOpenSave(opened);docCat=kc;mView.docs="detail";draw();window.scrollTo(0,0)}},
+    el("span",{class:"dsub-ic"},svgI(IC.folder)),el("span",{class:"dsub-n"},kc.split("/").pop()),el("span",{class:"dsub-c"},String(DOCS.filter(d=>inTree(d.cat||"기타",kc)).length)),el("span",{class:"dsub-c","aria-hidden":"true"},"›"))));
+  if(!list.length&&!kids.length) card.append(el("div",{class:"empty"},"아직 자료가 없어요. 레시피, 매뉴얼, 회의록을 여기에 모아두세요"));
   list.forEach(d=>{const showPill=d.cat!==docCat;const pl=docCat!=="all"&&showPill?String(d.cat).slice(docCat.length+1).split("/").join(" › "):catLabel(d.cat);
     const th=docFirstImg(d);
     const prev=(d.body||"").split("\n").map(x=>x.trim()).find(x=>x&&x!==d.title)||(th?"사진":"추가 텍스트 없음");
