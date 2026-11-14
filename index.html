@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-14T03:35:48Z";window.__APP_NOTE="체크리스트에서 ×를 누르면 바로 지워져요(다른 폰에서 지운 것도 바로 사라져요)."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-14T03:48:56Z";window.__APP_NOTE="체크리스트·전달사항의 ×는 한 번 누르면 주황색, 한 번 더 누르면 지워져요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -152,7 +152,8 @@ h2 .meta{font-size:12px;font-weight:400;color:var(--muted)}
 .chk:checked{background:var(--accent);border-color:var(--accent)}
 .chk:checked::after{content:"";width:6px;height:11px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:translateY(-1px) rotate(45deg)}
 .x{flex:0 0 auto;font:inherit;font-size:16px;line-height:1;border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:6px}
-.x:hover{color:var(--warn)}
+.x:hover{color:var(--warn)}@media (hover:none){.x:hover{color:var(--muted)}} /* 아이폰: 누른 뒤 남는 hover 색 없앰 → 주황색은 '지울 준비'일 때만 */
+.x.arm,.x.arm:hover{color:var(--warn)}
 .empty{padding:12px;color:var(--muted);font-size:13px}
 .add{display:flex;gap:8px;padding:8px;border-top:1px solid var(--line)}
 .add input,.add select{font:inherit;min-width:0;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--bg);color:var(--ink)}
@@ -2349,6 +2350,9 @@ function enableDrag(ul,colOf,ordKey="ord"){
       ul.insertBefore(li,to<i?sibs[to]:sibs[to].nextSibling);
       W(()=>Promise.all(arr.map((it,k)=>it[ordKey]===k?null:col(it._col||colOf).doc(it.id).update({[ordKey]:k}))),"순서 바꿨어요")}
   })}
+// × 두 번 누르기: 처음 누르면 주황색(지울 준비), 3초 안에 한 번 더 누르면 지움
+function armX(x){if(x.classList.contains("arm")){clearTimeout(x._armT);x.classList.remove("arm");x.setAttribute("aria-label","삭제");return true}
+  x.classList.add("arm");x.setAttribute("aria-label","한 번 더 누르면 삭제");clearTimeout(x._armT);x._armT=setTimeout(()=>{x.classList.remove("arm");x.setAttribute("aria-label","삭제")},3000);return false}
 function noticeCard(store,emptyText,placeholder,opt={}){
   const hasAutoOutForDay=n=>S.notices.some(o=>o.date===dayDate&&(o.autoFrom===n.id||!!n.autoOut&&o.id===n.autoOut)&&(o.store||"")===(n.store||""));
   const nsN=S.notices.filter(n=>visN(n)&&n.date<=dayDate&&!(n.date<dayDate&&hasAutoOutForDay(n))&&!(!store&&n.date!==dayDate&&!(n.check&&(!n.done||n.doneAt&&iso(new Date(n.doneAt))>=dayDate)))&&(!n.past||n.date===dayDate)&&(n.store||"")===store&&!(n.check&&n.done&&n.doneAt&&iso(new Date(n.doneAt))<dayDate)).map(n=>({...n,...(opt.alwaysCheck&&!n.html?{check:true}:{}),_col:"notices"})); // 다음 날 out이 있는 in은 중복 표시하지 않음
@@ -2396,7 +2400,7 @@ function noticeCard(store,emptyText,placeholder,opt={}){
   if(ns.length){const ul=el("ul",{class:"list"});ns.forEach(n=>{
     const C=n._col;
     // 메모 앱에서 옮겨 온 회의록은 오른쪽 위 × 없음 (지워도 다음 동기화 때 다시 생김)
-    const x=n.importedFrom==="notes"?null:el("button",{class:"x","aria-label":"삭제"},"×");if(x)x.onclick=()=>W(async()=>{const src=n.autoFrom&&S.notices.find(y=>y.id===n.autoFrom&&y.autoOut===n.id);if(src)await col(C).doc(src.id).update({autoOut:""}); // out을 지울 땐 in 연결부터 끊음 (자동 복구가 다시 만들지 않게)
+    const x=n.importedFrom==="notes"?null:el("button",{class:"x","aria-label":"삭제"},"×");if(x)x.onclick=()=>armX(x)&&W(async()=>{const src=n.autoFrom&&S.notices.find(y=>y.id===n.autoFrom&&y.autoOut===n.id);if(src)await col(C).doc(src.id).update({autoOut:""}); // out을 지울 땐 in 연결부터 끊음 (자동 복구가 다시 만들지 않게)
       await col(C).doc(n.id).delete();const o=n.autoOut&&S.notices.find(y=>y.id===n.autoOut);if(o&&!o.done)await col(C).doc(o.id).delete()},n.autoOut?"삭제됨 (다음 날 out도 지움)":"삭제됨");
     let lead=null;
     if(n.check){lead=el("input",{type:"checkbox",class:"chk","aria-label":"완료 표시"});lead.checked=!!n.done;
