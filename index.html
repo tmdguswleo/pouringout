@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-14T01:14:22Z";window.__APP_NOTE="자료실 메모에 https:// 주소를 쓰면 바로 눌리는 링크가 돼요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-14T03:34:42Z";window.__APP_NOTE="체크리스트에서 ×를 누르면 바로 지워져요(다른 폰에서 지운 것도 바로 사라져요)."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -1632,6 +1632,7 @@ const webEmail=k=>k+"@pouringout.app";
 const webErr=e=>{const m=(e&&e.message)||String(e||"");return{code:(e&&e.code==="42501")||/row-level security|permission/i.test(m)?"invalid_argument":"unavailable",message:m}};
 const jcp=x=>JSON.parse(JSON.stringify(x==null?{}:x));
 function makeWebDb(){
+  const live={}; // 종류별로 지금 보고 있는 목록: 이 기기에서 지우면 바로 빼도록
   const snapOf=rows=>({docs:rows.map(r=>({id:r.id,exists:true,data:()=>jcp(r.data)})),empty:!rows.length,size:rows.length});
   async function rowsOf(c,o){let q=sb.from("store").select("id,data").eq("col",c);
     if(o.order)q=q.order("data->>"+o.order[0],{ascending:o.order[1]!=="desc",nullsFirst:false});
@@ -1642,7 +1643,7 @@ function makeWebDb(){
     async create(d){const {error}=await sb.from("store").insert({col:c,id,data:jcp(d),updated_at:new Date().toISOString()});if(error)throw error&&error.code==="23505"?{code:"exists",message:"already exists"}:webErr(error)}, // 이미 있으면 덮어쓰지 않음
     async update(d){const {data,error}=await sb.from("store").select("data").eq("col",c).eq("id",id).maybeSingle();if(error)throw webErr(error);if(!data)throw{code:"not_found",message:"no document"};
       const r=await sb.from("store").update({data:{...(data.data||{}),...jcp(d)},updated_at:new Date().toISOString()}).eq("col",c).eq("id",id);if(r.error)throw webErr(r.error)},
-    async delete(){const {error}=await sb.from("store").delete().eq("col",c).eq("id",id);if(error)throw webErr(error)}});
+    async delete(){const {error}=await sb.from("store").delete().eq("col",c).eq("id",id);if(error)throw webErr(error);(live[c]||[]).forEach(h=>h(id))}}); // 지운 건 화면에서 바로 뺌 (실시간 DELETE 알림이 안 올 수 있음)
   const query=(c,o={})=>({orderBy:(f,d)=>query(c,{...o,order:[f,d]}),limit:n=>query(c,{...o,limit:n}),where:()=>query(c,o),doc:id=>docRef(c,id),
     async get(){return snapOf(await rowsOf(c,o))},
     /* 실시간 반영: 바뀐 한 건(payload)만 목록에 고쳐 넣음. 예전에는 한 건만 바뀌어도 그 종류 전체(최대 1000건, 메모는 본문까지)를 다시 받았음.
@@ -1659,14 +1660,20 @@ function makeWebDb(){
         const i=rows.findIndex(r=>r.id===nw.id),row={id:nw.id,data:nw.data};if(i>=0)rows[i]=row;else rows.push(row);sortRows();return true};
       const patchGen=p=>{const ok=patch(p);if(ok)gen++;return ok};
       const full=()=>{clearTimeout(st);st=null;clearTimeout(t);t=setTimeout(run,200)};
-      const ch=sb.channel("st-"+c+"-"+Math.random().toString(36).slice(2)).on("postgres_changes",{event:"*",schema:"public",table:"store",filter:"col=eq."+c},p=>{
+      const drop=id=>{if(!alive)return;gen++; // 받는 중인 조회가 있으면 지운 걸 반영해 다시 받게
+        if(!rows)return;const atLim=!!f&&rows.length>=lim;const i=rows.findIndex(r=>r.id===id);if(i>=0)rows.splice(i,1);
+        if(atLim)full(); // 개수 한도에 찼던 목록: 범위 밖 다음 항목을 채우려고 다시 받음
+        if(i<0)return;clearTimeout(et);et=setTimeout(()=>{if(alive&&rows)cb(snapOf(rows))},80)};
+      (live[c]=live[c]||new Set).add(drop);
+      // 걸러 받는(col=…) 구독에는 DELETE 알림이 오지 않음 → 다른 기기에서 지운 것은 거르지 않은 DELETE 알림으로 따로 받음
+      const ch=sb.channel("st-"+c+"-"+Math.random().toString(36).slice(2)).on("postgres_changes",{event:"DELETE",schema:"public",table:"store"},p=>{const ol=p&&p.old||{};if(ol.col===c&&ol.id)drop(ol.id)}).on("postgres_changes",{event:"*",schema:"public",table:"store",filter:"col=eq."+c},p=>{
         let ok=false;try{ok=patchGen(p)}catch(e){ok=false}
         if(!ok){full();return}
         clearTimeout(et);et=setTimeout(()=>{if(alive&&rows)cb(snapOf(rows))},80); // 몰려온 변경은 한 번에 그림
         if(!st)st=setTimeout(()=>{st=null;run()},20000)}).subscribe(); // 계속 바뀌어도 20초마다 한 번은 전체 맞춤
       const vis=()=>{if(document.visibilityState==="hidden"){hidAt=Date.now();return}if(hidAt)full();hidAt=0}; // 앱을 다시 보면 그동안 놓친 변경이 있을 수 있어 전체 맞춤
       document.addEventListener("visibilitychange",vis);
-      return()=>{alive=false;clearTimeout(t);clearTimeout(et);clearTimeout(st);document.removeEventListener("visibilitychange",vis);try{sb.removeChannel(ch)}catch(e){}}}});
+      return()=>{alive=false;if(live[c])live[c].delete(drop);clearTimeout(t);clearTimeout(et);clearTimeout(st);document.removeEventListener("visibilitychange",vis);try{sb.removeChannel(ch)}catch(e){}}}});
   return{collection:c=>query(c)}}
 function makeWebAssets(){return{async upload(blob){const id=[...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,"0")).join("");
   const {error}=await sb.storage.from("media").upload(id,blob,{contentType:blob.type||"application/octet-stream",upsert:false});if(error)throw webErr(error);return{id,url:BLOB+id,sizeBytes:blob.size,contentType:blob.type}},
