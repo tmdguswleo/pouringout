@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-14T00:48:58Z";window.__APP_NOTE="자료실 메모에 사진만 넣고 뒤로 가도 저장돼요. PC에서는 사진을 메모 화면에 끌어다 놓으면 바로 첨부돼요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-14T01:14:22Z";window.__APP_NOTE="자료실 메모에 https:// 주소를 쓰면 바로 눌리는 링크가 돼요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -4225,7 +4225,27 @@ function notePage(d){
     });
   const tplHit=edit?tplGuard(ed):()=>false;
   ed.addEventListener("paste",e=>{if(!edit)return;if(tplHit()){e.preventDefault();flash("양식 글자는 바꿀 수 없어요",true);return}e.preventDefault();document.execCommand("insertText",false,(e.clipboardData||window.clipboardData).getData("text/plain"))});
-  let range=null;const keep=()=>{const s=getSelection();if(s.rangeCount&&ed.contains(s.getRangeAt(0).commonAncestorContainer))range=s.getRangeAt(0).cloneRange()};
+  // 글 쓰는 중에도 https:// 주소를 바로 링크로: 띄어쓰기·줄바꿈·붙여넣기 뒤, 글쓰기를 마칠 때. 저장은 지금처럼 글자로(docClean이 자동 링크를 글자로 되돌림)
+  const autoLink=all=>{const s=getSelection();let cn=null,co=0;if(s.rangeCount&&s.isCollapsed&&ed.contains(s.anchorNode)){cn=s.anchorNode;co=s.anchorOffset}
+    const w=document.createTreeWalker(ed,NodeFilter.SHOW_TEXT),ts=[];while(w.nextNode()){const t=w.currentNode;if(/https?:\/\//.test(t.nodeValue)&&!t.parentElement.closest("a,.tpl-l,[data-noexport]"))ts.push(t)}
+    let moved=false;const RE=/https?:\/\/[^\s<>"']+/;
+    const RP=range&&ed.contains(range.startContainer)?[{n:range.startContainer,o:range.startOffset},{n:range.endContainer,o:range.endOffset}]:[];
+    ts.forEach(t=>{let node=t,m;
+      while(node&&(m=RE.exec(node.nodeValue))){const st=m.index,en=st+m[0].length;
+        if(!all&&node===cn&&co===en)break; // 커서가 주소 바로 끝: 아직 쓰는 중이라 그대로 둠
+        const r=document.createRange();r.setStart(node,st);r.setEnd(node,en);
+        const a=document.createElement("a");a.setAttribute("href",m[0]);a.target="_blank";a.rel="noopener noreferrer";r.surroundContents(a);
+        const rest=a.nextSibling&&a.nextSibling.nodeType===3?a.nextSibling:null;
+        if(node===cn){if(co>=en){cn=rest;co-=en;moved=true}else if(co>st){cn=a.firstChild;co-=st;moved=true}}
+        for(const q of RP)if(q.n===node){if(q.o>=en){q.n=rest||a.parentNode;q.o=rest?q.o-en:[...a.parentNode.childNodes].indexOf(a)+1;q.m=true}else if(q.o>st){q.n=a.firstChild;q.o-=st;q.m=true}}
+        node=rest}});
+    // 기억해 둔 위치(첨부·서식 넣을 곳)도 나뉜 글자에 맞춰 옮김
+    if(RP.some(q=>q.m)){try{const r=document.createRange();r.setStart(RP[0].n,RP[0].o);r.setEnd(RP[1].n,RP[1].o);range=r}catch(e){range=null}}
+    if(moved&&cn&&document.activeElement===ed){const r=document.createRange();r.setStart(cn,co);r.collapse(true);s.removeAllRanges();s.addRange(r)}};
+  if(edit){ed.addEventListener("input",e=>{const it=e.inputType||"",dt=e.data||"";
+      if(it==="insertParagraph"||it==="insertLineBreak"||it==="insertFromPaste"||(it==="insertText"&&(/\s/.test(dt)||dt.length>1)))autoLink(false)});
+    ed.addEventListener("blur",()=>autoLink(true))}
+  let range=null;const keep=()=>{if(document.activeElement!==ed)return; /* 글쓰기를 마친 뒤 남은 선택(자동 링크로 옮겨진 것)으로 기억한 위치를 덮어쓰지 않음 */const s=getSelection();if(s.rangeCount&&ed.contains(s.getRangeAt(0).commonAncestorContainer))range=s.getRangeAt(0).cloneRange()};
   ["keyup","mouseup","input","blur"].forEach(ev=>ed.addEventListener(ev,keep));
   // 아이폰에서 끌어서 선택한 범위도 기억 (selectionchange)
   const onSel=()=>{if(!document.body.contains(ed)){document.removeEventListener("selectionchange",onSel);return}keep()};
