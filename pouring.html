@@ -2342,7 +2342,7 @@ function enableDrag(ul,colOf,ordKey="ord"){
   })}
 function noticeCard(store,emptyText,placeholder,opt={}){
   const hasAutoOutForDay=n=>S.notices.some(o=>o.date===dayDate&&(o.autoFrom===n.id||!!n.autoOut&&o.id===n.autoOut)&&(o.store||"")===(n.store||""));
-  const nsN=S.notices.filter(n=>visN(n)&&n.date<=dayDate&&!(n.date<dayDate&&hasAutoOutForDay(n))&&!(!store&&dayDate>=TODAY&&n.date!==dayDate&&!(n.check&&(!n.done||n.doneAt&&iso(new Date(n.doneAt))>=dayDate)))&&(!n.past||n.date===dayDate)&&(n.store||"")===store&&!(n.check&&n.done&&n.doneAt&&iso(new Date(n.doneAt))<dayDate)).map(n=>({...n,...(opt.alwaysCheck&&!n.html?{check:true}:{}),_col:"notices"})); // 다음 날 out이 있는 in은 중복 표시하지 않음
+  const nsN=S.notices.filter(n=>visN(n)&&n.date<=dayDate&&!(n.date<dayDate&&hasAutoOutForDay(n))&&!(!store&&n.date!==dayDate&&!(n.check&&(!n.done||n.doneAt&&iso(new Date(n.doneAt))>=dayDate)))&&(!n.past||n.date===dayDate)&&(n.store||"")===store&&!(n.check&&n.done&&n.doneAt&&iso(new Date(n.doneAt))<dayDate)).map(n=>({...n,...(opt.alwaysCheck&&!n.html?{check:true}:{}),_col:"notices"})); // 다음 날 out이 있는 in은 중복 표시하지 않음
   const nsC=(opt.checks||[]).filter(visN).filter(c=>!c.done||!c.doneAt||iso(new Date(c.doneAt))>=dayDate).map(c=>({...c,check:true,date:"",_col:"checks"}));
   const ns=[...nsN,...nsC].sort((a,b)=>((!!a.check)-(!!b.check))||doneFirst(a,b));
   if(opt.defaultCheck&&noticeCheckMode[store||"all"]===undefined)noticeCheckMode[store||"all"]=true;
