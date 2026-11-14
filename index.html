@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-14T00:24:55Z";window.__APP_NOTE="지난 날짜의 전달사항이 그날 적은 것만 보여요(안 끝난 체크는 이어서 보여요)."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-14T00:48:58Z";window.__APP_NOTE="자료실 메모에 사진만 넣고 뒤로 가도 저장돼요. PC에서는 사진을 메모 화면에 끌어다 놓으면 바로 첨부돼요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -969,6 +969,7 @@ section.koha .empty{padding:6px 10px;font-size:12px}
 .kg:last-child{border-bottom:0}
 .kttl{display:inline-flex;align-items:center}
 .kfold{position:relative;display:inline-flex;align-items:center;justify-content:center;width:12px;height:20px;margin-left:4px;padding:0;border:0;background:none;color:var(--muted);cursor:pointer} /* 글씨와 꺾쇠 사이 = 오픈일수와 ? 사이(6px) */
+.notepage.np-drop .note-body{outline:1.5px dashed var(--accent);outline-offset:6px;border-radius:6px} /* 사진을 끌고 왔을 때 놓을 곳 표시 */
 .kfold::before{content:"";position:absolute;inset:-4px -10px} /* 누르기 쉽게 */
 .kfold svg{width:12px;height:12px;display:block;margin-top:1px;transition:transform .15s}
 .kfold[aria-expanded="true"] svg{transform:rotate(180deg)}
@@ -1091,10 +1092,11 @@ async function videoPoster(file){if(!assets)return null;let url="";
     const c=document.createElement("canvas");c.width=Math.round(w*sc);c.height=Math.round(h*sc);c.getContext("2d").drawImage(v,0,0,c.width,c.height);
     const b=await new Promise(ok=>c.toBlob(ok,"image/jpeg",0.7));if(!b)return null;const r=await assets.upload(b);return r.id}
   catch(e){return null}finally{if(url)URL.revokeObjectURL(url)}}
-async function upMedia(any){return new Promise(ok=>{const fi=el("input",{type:"file",accept:any?ACCEPT_ANY:"image/*,video/*",style:"display:none"});document.body.append(fi);
+// onUp: 파일을 고른 뒤 올리기 시작할 때 그 약속을 넘겨 줌 (고르기 취소는 해당 없음)
+async function upMedia(any,onUp){return new Promise(ok=>{const fi=el("input",{type:"file",accept:any?ACCEPT_ANY:"image/*,video/*",style:"display:none"});document.body.append(fi);
   fi.onchange=async()=>{const f=fi.files&&fi.files[0];fi.remove();if(!f)return ok(null);
     if(!db||!canWrite){flash("보기 전용 계정이에요",true);return ok(null)}
-    ok(await uploadAny(f))};
+    const p=uploadAny(f);if(onUp)onUp(p);ok(await p)};
   fi.click()})}
 /* 체크 항목 ↔ 자료실 메모 연결: 항목 글과 제목이 비슷한 메모를 맨 위에 보여 줌 */
 const dTitle=d=>d.title||String(d.body||"").split("\n")[0]||"제목 없음";
@@ -4239,6 +4241,14 @@ function notePage(d){
   const cmd=(c,v)=>{ed.focus();if(range){const s=getSelection();s.removeAllRanges();s.addRange(range)}document.execCommand(c,false,v);keep()};
   const tb=(label,title,fn)=>{const b=el("button",{class:"np-tb",type:"button",title,"aria-label":title,onclick:fn},label);b.addEventListener("mousedown",e=>e.preventDefault());b.addEventListener("pointerdown",e=>e.preventDefault());return b};
   const blockOf=()=>{let n=range&&range.startContainer;while(n&&n!==ed){if(/^H[123]$/.test(n.nodeName))return n.nodeName;n=n.parentNode}return "DIV"};
+  // 올린 사진·영상·파일을 본문에 넣음. input을 보내야 '고침'으로 잡혀서, 사진만 넣고 뒤로 가도 저장됨
+  const upBusy=new Set(); // 첨부 올리는 중인 것들 (뒤로 가면 모두 끝날 때까지 기다렸다 저장)
+  const track=p=>{const q=Promise.resolve(p).finally(()=>upBusy.delete(q));upBusy.add(q);return q};
+  const putMedia=m=>{if(!m||!root.contains(page)||leaving)return; // 이미 닫힌 메모에는 넣지 않음 (늦은 저장으로 덮어쓰기 방지)
+    if(m.k==="file")insertNode(el("a",{href:BLOB+m.id,target:"_blank",rel:"noopener"},"📎 "+(m.name||"첨부 파일")));
+    else{const e=el(m.k==="image"?"img":"video",{"data-id":m.id,src:BLOB+m.id,contenteditable:"false",...(m.k==="video"?{playsinline:""}:{})});insertNode(e);wireEd();
+      afterPoster(m,pid=>{if(!e.isConnected)return;e.dataset.poster=pid;e.poster=BLOB+pid;ed.dispatchEvent(new Event("input"))})}
+    ed.dispatchEvent(new Event("input"))};
   const tools=edit?el("div",{class:"np-tools"},
     tb("Aa","제목 / 본문",()=>{const cur=blockOf();cmd("formatBlock",cur==="H2"?"H3":cur==="H3"?"DIV":"H2")}),
     tb(el("b",{},"B"),"굵게",()=>cmd("bold")),
@@ -4247,11 +4257,7 @@ function notePage(d){
       if(li){li.classList.add("ck");ed.dispatchEvent(new Event("input"))}}),
     tb("•","글머리 목록",()=>cmd("insertUnorderedList")),
     tb("1.","번호 목록",()=>cmd("insertOrderedList")),
-    assets?tb(svgI(ICON_CLIP),"사진·영상·파일",async()=>{keep();const m=await upMedia(true);if(!m)return;
-      if(m.k==="file")insertNode(el("a",{href:BLOB+m.id,target:"_blank",rel:"noopener"},"📎 "+(m.name||"첨부 파일")));
-      else{const e=el(m.k==="image"?"img":"video",{"data-id":m.id,src:BLOB+m.id,contenteditable:"false",...(m.k==="video"?{playsinline:""}:{})});insertNode(e);wireEd();
-        afterPoster(m,pid=>{if(!e.isConnected)return;e.dataset.poster=pid;e.poster=BLOB+pid;ed.dispatchEvent(new Event("input"))})}
-      flash("첨부됨")}):null):null;
+    assets?tb(svgI(ICON_CLIP),"사진·영상·파일",async()=>{keep();await upMedia(true,p=>track(p.then(m=>{if(m&&root.contains(page)&&!leaving){putMedia(m);flash("첨부됨")}})))}):null):null;
   // 자동 저장: 여백을 눌러 글쓰기를 마치면, 쓰는 중엔 잠깐 멈췄을 때, 뒤로 갈 때
   let curId=d?d.id:null,baseHtml=base,baseCat=cat,pinned=!!(d&&d.pinned),saving=null,timer=null,contentEdited=false;
   let hist=d&&Array.isArray(d.hist)?d.hist.map(h=>({...h})):[];const SID=newId(); // 이번에 열어서 고친 것 = 기록 하나
@@ -4303,6 +4309,7 @@ function notePage(d){
   let navSession=0;
   const close=async()=>{noteDebug.record("close-request",{session:navSession,closing,attached:root.contains(page)});if(closing||!root.contains(page)){noteDebug.record("close-ignored",{session:navSession,closing,attached:root.contains(page)});return}
     closing=true;
+    if(upBusy.size){flash("첨부 올리는 중… 끝나면 닫혀요");while(upBusy.size)await Promise.allSettled([...upBusy])} // 올리는 중에 뒤로: 다 올리고 본문에 넣은 뒤 저장하고 닫음
     if(!saving&&!contentEdited&&cat===baseCat&&teamKey()===baseTeam&&!finalized){try{closeSheet()}finally{closing=false}return}
     clearTimeout(timer);let ok=false,why="";
     leaving=true;page.classList.add("np-leaving");document.documentElement.classList.remove("np-lock");restoreNoteScroll();
@@ -4364,6 +4371,18 @@ function notePage(d){
       titleIn,
       d&&d.id===HC_DOC?el("div",{class:"np-guide"},"만료 한 달 전부터 만료일까지 1주일마다 본인에게 알림 창이 떠요.\n보건증을 갱신했다면 알림 창의 '갱신 완료' 버튼을 눌러 주세요. 그 뒤로는 알림이 뜨지 않아요."):null, // 고칠 수 없는 안내 (본문 밖)
       ed)));
+  // PC: 사진·파일을 메모 화면에 끌어다 놓으면 바로 첨부 (본문 위에 놓으면 그 자리, 다른 곳이면 맨 끝)
+  if(edit&&assets){const hasF=e=>[...((e.dataTransfer&&e.dataTransfer.types)||[])].includes("Files");
+    page.addEventListener("dragover",e=>{if(!hasF(e))return;e.preventDefault();e.dataTransfer.dropEffect="copy";page.classList.add("np-drop")});
+    page.addEventListener("dragleave",e=>{if(!e.relatedTarget||!page.contains(e.relatedTarget))page.classList.remove("np-drop")});
+    page.addEventListener("drop",async e=>{if(!hasF(e))return;e.preventDefault();page.classList.remove("np-drop");
+      if(!db||!canWrite){flash("보기 전용 계정이에요",true);return}
+      const fs=[...e.dataTransfer.files];if(!fs.length)return;
+      let r=null;if(ed.contains(e.target)){if(document.caretRangeFromPoint)r=document.caretRangeFromPoint(e.clientX,e.clientY);
+        else if(document.caretPositionFromPoint){const cp=document.caretPositionFromPoint(e.clientX,e.clientY);if(cp){r=document.createRange();r.setStart(cp.offsetNode,cp.offset)}}}
+      let at=r&&ed.contains(r.startContainer)?r:null; // 놓은 자리를 따로 기억 (올리는 동안 본문을 눌러도 안 바뀜)
+      let n=0;await track((async()=>{for(const f of fs){const m=await uploadAny(f);if(!m||!root.contains(page)||leaving)continue;range=at;putMedia(m);at=range;n++}})());
+      if(n)flash(n>1?`${n}개 첨부됨`:"첨부됨")})}
   /* ••• 메뉴 (아이폰 메모처럼) */
   let findBar=null,marks=[],mi=0;
   const clearMarks=()=>{ed.querySelectorAll("mark.np-find").forEach(m=>m.replaceWith(...m.childNodes));ed.normalize();marks=[]};
