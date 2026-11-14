@@ -1661,7 +1661,7 @@ function makeWebDb(){
       const patchGen=p=>{const ok=patch(p);if(ok)gen++;return ok};
       const full=()=>{clearTimeout(st);st=null;clearTimeout(t);t=setTimeout(run,200)};
       const drop=id=>{if(!alive)return;gen++; // 받는 중인 조회가 있으면 지운 걸 반영해 다시 받게
-        if(!rows)return;const atLim=!!f&&rows.length>=lim;const i=rows.findIndex(r=>r.id===id);if(i>=0)rows.splice(i,1);
+        if(!rows)return;const atLim=rows.length>=lim;const i=rows.findIndex(r=>r.id===id);if(i>=0)rows.splice(i,1);
         if(atLim)full(); // 개수 한도에 찼던 목록: 범위 밖 다음 항목을 채우려고 다시 받음
         if(i<0)return;clearTimeout(et);et=setTimeout(()=>{if(alive&&rows)cb(snapOf(rows))},80)};
       (live[c]=live[c]||new Set).add(drop);
