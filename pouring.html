@@ -2487,7 +2487,7 @@ async function yStockSheet(date){
   // 앱이 받아 둔 재고 기록(최근 240건) 밖의 날짜면 그 두 기록만 따로 읽어 옴
   const ids=[date,`${date}_meraki`],got={},fail=new Set();
   await Promise.all(ids.filter(id=>!S.closing.some(c=>c.id===id)).map(async id=>{try{const d=await col("closing").doc(id).get();if(d&&d.exists)got[id]={id,...(d.data()||{})}}catch(e){fail.add(id)}}));
-  openSheet("재고 (어제)",[fail.size?el("p",{class:"hint",style:"margin:0 0 8px"},"기록을 불러오지 못했어요. 창을 닫고 다시 열어 주세요"):null,stockBoard(date,true,got)],async()=>true,"닫기",null,{autosave:true,tapClose:true}); // 닫기 버튼 없이 창을 한 번 누르면 닫힘
+  openSheet(`${mdw(date)} 재고 (어제)`,[fail.size?el("p",{class:"hint",style:"margin:0 0 8px"},"기록을 불러오지 못했어요. 창을 닫고 다시 열어 주세요"):null,stockBoard(date,true,got)],async()=>true,"닫기",null,{autosave:true,tapClose:true}); // 닫기 버튼 없이 창을 한 번 누르면 닫힘
 }
 function closingCard(date,store="pouring",ro=false,recs={}){
   const did=store==="pouring"?date:`${date}_meraki`;
