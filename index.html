@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-15T02:02:24Z";window.__APP_NOTE="어제 재고 창이 오늘 재고와 같은 모양으로 보여요. '‹ 어제 재고'는 글씨만 남겼어요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-15T02:07:19Z";window.__APP_NOTE="'‹ 어제 재고'를 '‹ 어제'로 줄였어요. 어제 재고 창은 제목이 '재고 (어제)'이고, 닫기 버튼 없이 창을 한 번 누르면 닫혀요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -2297,7 +2297,7 @@ function vToday(root){setTimeout(sweepToday,800);
     v.append(el("section",{},el("h2",{},"발주 요청",el("span",{class:"meta"},`${pend.length}건`)),pend.length>1?el("p",{class:"hint",style:"margin:-10px 0 10px"},"항목을 길게 눌러 순서를 바꿀 수 있어요"):null,two))}
   if(can("today:stock")){ // 내일 화면에도 보임. 수량은 날짜별로 따로 저장돼서 내일은 빈칸으로 시작(항목은 그대로)
   const sc=stockBoard(dayDate);
-  v.append(el("section",{},el("h2",{},"재고",el("button",{class:"ystk-btn",type:"button","aria-label":"어제 재고 보기",onclick:()=>yStockSheet(addDays(dayDate,-1))},"‹ 어제 재고")),sc));}
+  v.append(el("section",{},el("h2",{},"재고",el("button",{class:"ystk-btn",type:"button","aria-label":"어제 재고 보기",onclick:()=>yStockSheet(addDays(dayDate,-1))},"‹ 어제")),sc));}
 
   const cw=el("div",{});vClean(cw);
   if(can("today:clean"))v.append(el("section",{class:"clean-in-today"},el("h2",{},"월간 청소"),cw));
@@ -2487,7 +2487,7 @@ async function yStockSheet(date){
   // 앱이 받아 둔 재고 기록(최근 240건) 밖의 날짜면 그 두 기록만 따로 읽어 옴
   const ids=[date,`${date}_meraki`],got={},fail=new Set();
   await Promise.all(ids.filter(id=>!S.closing.some(c=>c.id===id)).map(async id=>{try{const d=await col("closing").doc(id).get();if(d&&d.exists)got[id]={id,...(d.data()||{})}}catch(e){fail.add(id)}}));
-  openSheet(`${mdw(date)} 재고`,[fail.size?el("p",{class:"hint",style:"margin:0 0 8px"},"기록을 불러오지 못했어요. 창을 닫고 다시 열어 주세요"):null,stockBoard(date,true,got)],async()=>true,"닫기",el("button",{class:"btn ghost",type:"button",onclick:closeSheet},"닫기"),{autosave:true});
+  openSheet("재고 (어제)",[fail.size?el("p",{class:"hint",style:"margin:0 0 8px"},"기록을 불러오지 못했어요. 창을 닫고 다시 열어 주세요"):null,stockBoard(date,true,got)],async()=>true,"닫기",null,{autosave:true,tapClose:true}); // 닫기 버튼 없이 창을 한 번 누르면 닫힘
 }
 function closingCard(date,store="pouring",ro=false,recs={}){
   const did=store==="pouring"?date:`${date}_meraki`;
@@ -4587,6 +4587,7 @@ function openSheet(title,parts,onSave,saveLabel="저장",extraBtn,opts={}){
   sheetDismiss=opts.autosave?autoSave:closeSheet;
   const row=opts.autosave?(extraBtn?el("div",{class:"row",style:"justify-content:flex-start"},extraBtn):null):el("div",{class:"row"},extraBtn||null,cancel,save);
   const panel=el("div",{class:"panel",role:"dialog","aria-modal":"true","aria-label":title},el("h3",{},title),...parts.filter(Boolean),row);
+  if(opts.tapClose)panel.addEventListener("click",()=>sheetDismiss&&sheetDismiss()); // 보기 전용 창: 창 안을 눌러도 닫힘
   // 바깥 여백을 "눌렀다 뗀" 경우에만 닫기 (창이 움직이는 순간의 탭이 바깥으로 잘못 잡히는 것 방지)
   let downBg=false,downAt=0;
   const sh=el("div",{class:"sheet"+(opts.autosave?" autosave":""),onclick:e=>{if(e.target===sh&&downBg&&Date.now()-downAt<1500)sheetDismiss&&sheetDismiss();downBg=false}},panel);
