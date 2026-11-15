@@ -154,6 +154,13 @@ h2 .meta{font-size:12px;font-weight:400;color:var(--muted)}
 .x{flex:0 0 auto;font:inherit;font-size:16px;line-height:1;border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:6px}
 .x:hover{color:var(--warn)}@media (hover:none){.x:hover{color:var(--muted)}} /* 아이폰: 누른 뒤 남는 hover 색 없앰 → 주황색은 '지울 준비'일 때만 */
 .x.arm,.x.arm:hover{color:var(--warn)}
+.ystk-btn{padding:2px 8px;font-size:12.5px;font-weight:400}
+.ystk-sec{margin-bottom:14px}.ystk-sec:last-of-type{margin-bottom:4px}
+.ystk-h{display:flex;align-items:center;gap:8px;margin-bottom:6px}.ystk-h .by{font-size:12px;color:var(--muted)}
+.ystk-row{display:flex;align-items:center;justify-content:space-between;gap:12px;height:38px;box-sizing:border-box;padding:0 12px;border-bottom:1px solid var(--line);font-size:14px;font-weight:400}
+.ystk-row:last-child{border-bottom:0}
+.ystk-l{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ystk-v{flex:none;white-space:nowrap;font-variant-numeric:tabular-nums}.ystk-v.none{color:var(--muted)}
 .empty{padding:12px;color:var(--muted);font-size:13px}
 .add{display:flex;gap:8px;padding:8px;border-top:1px solid var(--line)}
 .add input,.add select{font:inherit;min-width:0;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--bg);color:var(--ink)}
@@ -2304,7 +2311,7 @@ function vToday(root){setTimeout(sweepToday,800);
     // 빈 줄 = 옆 칸 같은 줄을 보이지 않게 복사 (그래서 높이가 정확히 같음)
     tbs.forEach((tb,i)=>{const other=tbs[1-i];while(tb.children.length<n){const r=other.children[tb.children.length].cloneNode(true);r.className="stk-pad";r.setAttribute("aria-hidden","true");
       r.querySelectorAll("input,button").forEach(x=>{x.disabled=true;x.tabIndex=-1});tb.append(r)}})}
-  v.append(el("section",{},el("h2",{},"재고"),sc));}
+  v.append(el("section",{},el("h2",{},"재고",el("button",{class:"chktog ystk-btn",type:"button","aria-label":"어제 재고 보기",onclick:()=>yStockSheet(addDays(dayDate,-1))},"‹ 어제 재고")),sc));}
   const cw=el("div",{});vClean(cw);
   if(can("today:clean"))v.append(el("section",{class:"clean-in-today"},el("h2",{},"월간 청소"),cw));
 }
@@ -2473,6 +2480,23 @@ function noticeCard(store,emptyText,placeholder,opt={}){
   inp.addEventListener("blur",()=>setTimeout(()=>{if(!box.contains(document.activeElement)&&!inp.value.trim()&&(opt.alwaysCheck||!noticeCheckMode[key]))box.classList.remove("open")},250));
   card.append(box);fitInput();
   return card;
+}
+/* 어제 재고: 두 매장 기록을 창 하나에서 읽기만 (고치기는 그날 화면에서) */
+async function yStockSheet(date){
+  // 앱이 받아 둔 재고 기록(최근 240건) 밖의 날짜면 그 두 기록만 따로 읽어 옴
+  const ids=[date,`${date}_meraki`],got={},fail=new Set();
+  await Promise.all(ids.filter(id=>!S.closing.some(c=>c.id===id)).map(async id=>{try{const d=await col("closing").doc(id).get();if(d&&d.exists)got[id]={id,...(d.data()||{})}}catch(e){fail.add(id)}}));
+  const recOf=id=>S.closing.find(c=>c.id===id)||got[id];
+  const unitOf=cup=>[Array.isArray(cup)?cup[0]:typeof cup==="string"?cup:cup===true?"보울":"",Array.isArray(cup)?cup[1]:cup===true?"종이컵":""];
+  const secs=["pouring","meraki"].map(st=>{const rec=recOf(st==="pouring"?date:`${date}_meraki`);const vals=rec&&rec.values||{};
+    const cdoc=S.monthnotes.find(x=>x.id==="stockitems_"+st)||{};const base=st==="pouring"?CLOSE_ITEMS:CLOSE_ITEMS_MERAKI;const custom=(cdoc.items||[]).filter(c=>!base.some(b=>b[0]===c.k));
+    const card=el("div",{class:"card ystk-card"});
+    [...base,...custom.map(c=>[c.k,c.label,false])].forEach(([k,label,cup])=>{const [u1,u2]=unitOf(cup);const a=String(vals[k]??"").trim(),b=String(vals[k+"Cup"]??"").trim();
+      const t=[a?a+(u1?" "+u1:""):"",b?b+(u2?" "+u2:""):""].filter(Boolean).join(" · ");
+      card.append(el("div",{class:"ystk-row"},el("span",{class:"ystk-l"},label),el("span",{class:"ystk-v"+(t?"":" none")},t||"–")))});
+    const by=rec&&rec.by&&fwho(rec.by)?el("span",{class:"by"},`${fwho(rec.by)} 기록${rec.updatedAt?" "+hm(rec.updatedAt):""}`):el("span",{class:"by"},fail.has(st==="pouring"?date:`${date}_meraki`)?"불러오지 못했어요. 창을 닫고 다시 열어 주세요":"기록 없음");
+    return el("div",{class:"ystk-sec"},el("div",{class:"ystk-h"},el("span",{class:"pill "+st},STORES[st]),by),card)});
+  openSheet(`${mdw(date)} 재고`,secs,async()=>true,"닫기",el("button",{class:"btn ghost",type:"button",onclick:closeSheet},"닫기"),{autosave:true});
 }
 function closingCard(date,store="pouring"){
   const did=store==="pouring"?date:`${date}_meraki`;
