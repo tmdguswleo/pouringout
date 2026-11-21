@@ -1252,7 +1252,7 @@ const SLOTS=[
 const CLOSE_ITEMS=[["banana","바나나 브레드",false],["fin","휘낭시에",false],["vin","뱅쇼","보틀"],["c_mw6emxg48xges","매실",false],["greentea","녹차 아이스크림",true],["vanilla","바닐라 아이스크림",true]];
 // 시즌 메뉴(2026-11-21 재고 창에서 뺌). 내년에 다시 만들 때 이 양식 그대로 CLOSE_ITEMS의 매실 뒤에 넣으면 예전 기록(키 lemon·mango)도 이어짐
 const SEASON_SORBET=[["lemon","레몬 소르베",true],["mango","망고 소르베",true]];
-const STOCK_HINT={vin:"여유가 많으면 적지 않아도 괜찮아요",c_mw6emxg48xges:"여유가 많으면 적지 않아도 괜찮아요",coldbrew:"여유가 많으면 적지 않아도 괜찮아요",decaf:"여유가 많으면 적지 않아도 괜찮아요"}; // 기본 항목 옆 안내 (티라미수 안내와 같은 자리)
+const STOCK_HINT={fin:"여유가 많으면 적지 않아도 괜찮아요",vin:"여유가 많으면 적지 않아도 괜찮아요",c_mw6emxg48xges:"여유가 많으면 적지 않아도 괜찮아요",coldbrew:"여유가 많으면 적지 않아도 괜찮아요",decaf:"여유가 많으면 적지 않아도 괜찮아요"}; // 기본 항목 옆 안내 (티라미수 안내와 같은 자리)
 const CLOSE_ITEMS_MERAKI=[["tiramisu","티라미수",["통","조각","조각은 총 1통 미만일\n경우에만 적어주세요"]],["vin","뱅쇼","보틀"],["coldbrew","콜드브루","보틀"],["decaf","디카페인","보틀"]];
 const EQUIP={pouring:["미토스원","EK43","제빙기","냉장고","하수구"],meraki:["미토스원","EK43","제빙기","냉장고","하수구","뒷수구"]};
 const EQKEY={"제빙기":"ice","하수구":"drain","EK43":"ek43","냉장고":"fridge","미토스원":"mythos","뒷수구":"backdrain"};
@@ -2504,10 +2504,11 @@ function closingCard(date,store="pouring",ro=false,recs={}){
   const stockBase=base.map(b=>{const c=promo(b);return c?[c.k,...b.slice(1)]:b}); // 기본 항목이 된 추가 항목(이름 같음)은 그 키로 기록 이어 씀
   const custom=citems.filter(c=>!stockBase.some(b=>b[0]===c.k)); // 기본 항목이 된 추가 항목은 한 번만
   [...stockBase,...custom.map(c=>[c.k,c.label,false,c])].forEach(([k,label,cup,cx])=>{
+    const hk=cx?k:(base.find(b=>b[1]===label)||[k])[0]; // 휘낭시에처럼 추가 항목 키를 쓰는 기본 항목도 안내는 기본 키로
     const mk=(key,ph)=>{const i=el("input",{type:"text",inputmode:"decimal",placeholder:ph,"aria-label":label+" "+ph});i.value=vals[key]??"";if(ro){i.readOnly=true;i.tabIndex=-1;return i}i.onchange=()=>{vals[key]=i.value.trim();save()};return i};
     const p=prevRec&&prevRec.values?[prevRec.values[k],(cup===true||Array.isArray(cup))?prevRec.values[k+"Cup"]:null].filter(x=>x!=null&&x!=="").join(" / "):"";
     const del=!ro&&cx&&(isBoss()||cx.addedBy===me)?el("button",{class:"x","aria-label":`${label} 항목 삭제`,onclick:()=>askConfirm(`'${label}' 항목을 지울까요?`,()=>W(()=>col("monthnotes").doc("stockitems_"+store).set({items:citems.filter(c=>c.k!==k),updatedAt:now()}),"항목 삭제됨"))},"×"):null;
-    tb.append(el("tr",{},el("td",{},label,del,p?el("div",{class:"prev"},`전 기록 ${md(prevRec.date||prevRec.id)}: ${p}`):null),el("td",{},mk(k,Array.isArray(cup)?cup[0]:typeof cup==="string"?cup:cup?"보울":"수량")),el("td",{},Array.isArray(cup)?[cup[2]?el("div",{class:"prev stk-hint"},cup[2]):null,mk(k+"Cup",cup[1])]:cup===true?mk(k+"Cup","종이컵"):!cx&&STOCK_HINT[k]?el("div",{class:"stk-side"},STOCK_HINT[k]):null))); // 티라미수: 통 · 조각(1통 미만일 때)
+    tb.append(el("tr",{},el("td",{},label,del,p?el("div",{class:"prev"},`전 기록 ${md(prevRec.date||prevRec.id)}: ${p}`):null),el("td",{},mk(k,Array.isArray(cup)?cup[0]:typeof cup==="string"?cup:cup?"보울":"수량")),el("td",{},Array.isArray(cup)?[cup[2]?el("div",{class:"prev stk-hint"},cup[2]):null,mk(k+"Cup",cup[1])]:cup===true?mk(k+"Cup","종이컵"):!cx&&STOCK_HINT[hk]?el("div",{class:"stk-side"},STOCK_HINT[hk]):null))); // 티라미수: 통 · 조각(1통 미만일 때)
   });
   const card=el("div",{class:"card",style:"overflow-x:auto"},el("table",{class:"close"},tb));
   const ai=el("input",{type:"text",placeholder:"재고 항목 추가","aria-label":`${STORES[store]} 재고 항목 추가`});
