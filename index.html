@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-21T12:18:23Z";window.__APP_NOTE="재고 창 휘낭시에 옆에도 뱅쇼처럼 '여유가 많으면 적지 않아도 괜찮아요' 안내가 나와요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-24T00:49:05Z";window.__APP_NOTE="자료실 메모 첨부가 빨라졌어요. 사진·영상을 고르면 바로 보이고, 올리는 중에도 뒤로 갈 수 있어요. 메모 위쪽에 첨부(클립) 버튼이 생겼어요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -881,6 +881,8 @@ html.np-lock,html.np-lock body{overflow:hidden;height:100%;overscroll-behavior:n
 .np-kbar .np-tb{min-width:44px;height:40px;font-size:18px;border-radius:999px}
 .np-urg{display:inline-flex;gap:8px}
 .np-circ{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--soft);color:var(--ink);font:inherit;font-size:18px;cursor:pointer;padding:0;flex:none}
+.np-clip svg{width:21px;height:21px}
+@media (max-width:350px){.np-bar{gap:4px}.np-bar .np-urg{gap:4px}.np-bar .np-circ{width:40px;height:40px}}
 .np-circ.np-done{background:#e8b923;border-color:#e8b923;color:#fff}
 .np-right{gap:10px!important}
 .np-tb{display:inline-grid;place-items:center;min-width:36px;height:36px;border:0;border-radius:8px;background:none;color:var(--ink);font:inherit;font-size:16px;cursor:pointer;padding:0 6px}
@@ -972,6 +974,12 @@ section.koha .empty{padding:6px 10px;font-size:12px}
 .kg:last-child{border-bottom:0}
 .kttl{display:inline-flex;align-items:center}
 .kfold{position:relative;display:inline-flex;align-items:center;justify-content:center;width:12px;height:20px;margin-left:4px;padding:0;border:0;background:none;color:var(--muted);cursor:pointer} /* 글씨와 꺾쇠 사이 = 오픈일수와 ? 사이(6px) */
+/* 올리는 중인 사진·영상: 먼저 흐리게 보이고 그 위에 진행률 (저장 안 됨) */
+.np-upw{position:relative;display:inline-block;vertical-align:top;line-height:0}
+.np-upw img,.np-upw video{opacity:.5}
+.np-upw>.vthumb::after{display:none}
+.np-upw::before{content:attr(data-pct);position:absolute;z-index:1;left:0;right:6px;top:50%;transform:translateY(-50%);text-align:center;font-size:12px;line-height:1.4;color:#fff;text-shadow:0 0 4px #000,0 0 2px #000;pointer-events:none;white-space:pre-line}
+.note-bg{position:fixed;left:0;top:0;width:100%;height:0;overflow:hidden;opacity:0;pointer-events:none} /* 닫은 메모: 첨부가 다 올라갈 때까지 뒤에 둠 */
 .notepage.np-drop .note-body{outline:1.5px dashed var(--accent);outline-offset:6px;border-radius:6px} /* 사진을 끌고 왔을 때 놓을 곳 표시 */
 .kfold::before{content:"";position:absolute;inset:-4px -10px} /* 누르기 쉽게 */
 .kfold svg{width:12px;height:12px;display:block;margin-top:1px;transition:transform .15s}
@@ -1049,23 +1057,86 @@ const iconBtn=(svg,label,extra={})=>el("button",{class:"ibtn",type:"button","ari
 
 /* 칸을 누르면 바로 고치기 (아이폰 메모처럼). 빈 곳을 누르면 자동 저장 */
 const ACCEPT_ANY="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.hwp,.txt,.csv";
-async function uploadAny(f){
+// opt(없어도 됨): onState(문구) 진행 표시, onErr(문구) 실패 알림, onBlob(줄인 파일)
+async function uploadAny(f,opt={}){
   const isV=/^video\//.test(f.type),isI=/^image\//.test(f.type);
-  if(!isI&&!isV&&f.size>VMAX){flash("파일이 너무 커요(20MB까지)",true);return null}
-  flash(isV?"영상 올리는 중… 잠시만요":isI?"사진 올리는 중…":"파일 올리는 중…");
-  try{const blob=isI?await shrinkImage(f):isV?await shrinkVideo(f):f;if(isV&&blob.size>VMAX){flash("줄여도 영상이 너무 커요(20MB까지). 짧게 잘라서 올려 주세요",true);return null}
-    if(isV)flash("영상 올리는 중…");const r=await assets.upload(blob);return {k:isV?"video":isI?"image":"file",id:r.id,name:f.name,posterP:isV?videoPoster(f):null}}
-  catch(e){flash(isI||isV?"올리지 못했어요. 다시 해주세요":"이 파일은 올릴 수 없어요. 사진·영상·PDF로 올리거나 링크를 붙여 주세요",true);return null}}
+  const say=opt.onState||(t=>flash(t)),err=opt.onErr||(t=>flash(t,true));
+  if(!isI&&!isV&&f.size>VMAX){err("파일이 너무 커요(20MB까지)");return null}
+  say(isV?"영상 준비 중…":isI?"사진 올리는 중…":"파일 올리는 중…");
+  const pb=isV?posterBlob(f):null; // 첫 장면은 영상을 줄이는 동안 미리 만들어 둠
+  try{const blob=isI?await shrinkImage(f):isV?await shrinkVideo(f,p=>say(`영상 줄이는 중 ${p}%`)):f;if(isV&&blob.size>VMAX){err("줄여도 영상이 너무 커요(20MB까지). 짧게 잘라서 올려 주세요");return null}
+    if(opt.onBlob)opt.onBlob(blob);
+    const posterP=pb?pb.then(b=>b?assets.upload(b):null).then(r=>r?r.id:null).catch(()=>null):null;
+    const kind=isV?"영상":isI?"사진":"파일";say(kind+" 올리는 중…");
+    const r=await assets.upload(blob,{onProgress:p=>say(`${kind} 올리는 중 ${p}%`)});return {k:isV?"video":isI?"image":"file",id:r.id,name:f.name,posterP}}
+  catch(e){err(isI||isV?"올리지 못했어요. 다시 해주세요":"이 파일은 올릴 수 없어요. 사진·영상·PDF로 올리거나 링크를 붙여 주세요");return null}}
 const mediaUp=m=>({image:m.k==="image"?m.id:"",video:m.k==="video"?m.id:"",posterId:"",fileId:m.k==="file"?m.id:"",fileName:m.k==="file"?m.name:""});
 // 영상 미리보기가 준비되면 나중에 붙임 (기다리지 않게)
 const afterPoster=(m,fn)=>{if(m&&m.posterP)m.posterP.then(pid=>{if(pid)fn(pid)})};
 const fileChip=it=>it.fileId?el("a",{class:"fchip",href:BLOB+it.fileId,target:"_blank",rel:"noopener",download:it.fileName||""},"📎 "+(it.fileName||"첨부 파일")):null;
 function setLinked(span,text){span.textContent="";String(text||"").split(/(https?:\/\/[^\s]+)/).forEach((x,i)=>{if(!x)return;span.append(i%2?el("a",{href:x,target:"_blank",rel:"noopener noreferrer",class:"tlink"},x):document.createTextNode(x))})}
 /* 영상 줄이기: 긴 쪽 720px, 약 1Mbps(소리 64kbps) MP4로 다시 녹화 → 1분에 약 8MB. 영상 길이만큼 시간이 걸림(재생하면서 녹화).
-   MP4 녹화가 안 되는 브라우저, 소리를 못 잡는 경우, 실패·결과가 더 크면 원본 그대로 */
+   MP4 녹화가 안 되는 브라우저, 소리를 못 잡는 경우, 실패·결과가 더 크면 원본 그대로
+   → 먼저 fastShrink(휴대폰의 영상 변환 장치로 바로 변환, 소리는 그대로 복사)를 쓰고, 안 되는 기기에서만 예전처럼 재생하면서 녹화 */
 const VMAX=20*1024*1024;
-async function shrinkVideo(file){
-  if(file.size<4e6||!window.MediaRecorder)return file;
+const mbUrl="vendor/mediabunny-1.66.3.min.js";let mbP=null; // 영상 변환 도구: 큰 영상을 처음 올릴 때만 받음
+const loadMb=()=>mbP||(mbP=(WEB?loadScript(mbUrl):Promise.reject(new Error("web only"))).then(()=>{if(!window.Mediabunny)throw new Error("mediabunny");return window.Mediabunny}).catch(e=>{mbP=null;throw e}));
+const waitMax=(p,ms)=>{let t;return Promise.race([p,new Promise((_,no)=>{t=setTimeout(()=>no(new Error("timeout")),ms)})]).finally(()=>clearTimeout(t))};
+let vidChain=Promise.resolve(); // 영상 변환은 한 번에 하나씩 (여러 개를 한꺼번에 하면 휴대폰이 버벅임)
+function shrinkVideo(file,onP=()=>{}){
+  if(file.size<4e6)return Promise.resolve(file);
+  const run=vidChain.then(async()=>{let last=-1;const pr=x=>{const p=Math.max(0,Math.min(99,Math.round(x*100)));if(p!==last){last=p;onP(p)}};
+    return (await fastShrink(file,pr))||slowShrink(file,pr)});
+  vidChain=run.catch(()=>{});return run}
+// 장면 줄이기: 사파리는 2D 캔버스로 영상 장면을 줄이면 아주 느려서(한 장에 30ms 정도) WebGL로 그림. 못 하면 null
+// rot: 세로로 찍은 영상의 돌림(시계 방향 각도). 여기서 바로 세움
+function glScaler(w,h,rot){try{let n=0;const c=document.createElement("canvas");c.width=w;c.height=h;const g=c.getContext("webgl",{alpha:false,antialias:false,depth:false,preserveDrawingBuffer:true});if(!g)return null;
+  const sh=(t,src)=>{const x=g.createShader(t);g.shaderSource(x,src);g.compileShader(x);return x},p=g.createProgram();
+  g.attachShader(p,sh(g.VERTEX_SHADER,"attribute vec2 a;varying vec2 u;void main(){"+({90:"u=vec2(1.-a.y,1.-a.x);",180:"u=vec2(1.-a.x,a.y);",270:"u=vec2(a.y,a.x);"}[rot]||"u=vec2(a.x,1.-a.y);")+"gl_Position=vec4(a*2.-1.,0.,1.);}"));
+  // 네 점을 섞어 부드럽게 줄임
+  g.attachShader(p,sh(g.FRAGMENT_SHADER,"precision highp float;varying vec2 u;uniform sampler2D t;uniform vec2 d;void main(){gl_FragColor=.25*(texture2D(t,u+d)+texture2D(t,u-d)+texture2D(t,u+vec2(d.x,-d.y))+texture2D(t,u+vec2(-d.x,d.y)));}"));
+  g.linkProgram(p);if(!g.getProgramParameter(p,g.LINK_STATUS))return null;g.useProgram(p);
+  g.bindBuffer(g.ARRAY_BUFFER,g.createBuffer());g.bufferData(g.ARRAY_BUFFER,new Float32Array([0,0,1,0,0,1,1,1]),g.STATIC_DRAW);const a=g.getAttribLocation(p,"a");g.enableVertexAttribArray(a);g.vertexAttribPointer(a,2,g.FLOAT,false,0,0);
+  g.uniform2f(g.getUniformLocation(p,"d"),.25/(rot%180?h:w),.25/(rot%180?w:h));g.bindTexture(g.TEXTURE_2D,g.createTexture());
+  [[g.TEXTURE_MIN_FILTER,g.LINEAR],[g.TEXTURE_MAG_FILTER,g.LINEAR],[g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE],[g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE]].forEach(x=>g.texParameteri(g.TEXTURE_2D,x[0],x[1]));g.viewport(0,0,w,h);
+  return{draw(f){g.texImage2D(g.TEXTURE_2D,0,g.RGB,g.RGB,g.UNSIGNED_BYTE,f);g.drawArrays(g.TRIANGLE_STRIP,0,4);if(g.isContextLost()||(!n++&&g.getError()))throw new Error("webgl");return c},
+    end(){const x=g.getExtension("WEBGL_lose_context");if(x)x.loseContext()}}}catch(e){return null}}
+// 빠른 변환. 못 하는 기기·영상이면 null
+// 안전장치: 빠른 변환을 하다 앱이 꺼졌으면(시작 표시가 남아 있으면) 그 기기에서는 7일 동안 예전 방식을 씀
+const VF_KEY="pn.vidfast";
+async function fastShrink(file,pr){
+  if(!window.VideoEncoder||!window.VideoDecoder)return null;
+  try{const t=+localStorage.getItem(VF_KEY);if(t&&Date.now()-t<7*864e5)return null;localStorage.setItem(VF_KEY,String(Date.now()))}catch(e){}
+  const vfEnd=()=>{try{localStorage.removeItem(VF_KEY)}catch(e){}};
+  window.addEventListener("pagehide",vfEnd); // 사용자가 직접 닫거나 새로 고친 것은 꺼짐으로 보지 않음
+  let input=null,conv=null,wd=0,gl=null;
+  try{const M=await waitMax(loadMb(),15000);
+    input=new M.Input({source:new M.BlobSource(file),formats:[M.MP4,M.QTFF,M.WEBM,M.MATROSKA]});
+    const prep=async()=>{const vt=await input.getPrimaryVideoTrack();if(!vt)return false;
+      const w=await vt.getDisplayWidth(),h=await vt.getDisplayHeight();if(!w||!h)return false;
+      const sc=Math.min(1,720/Math.max(w,h)),ev=x=>Math.max(2,Math.round(x*sc/2)*2),rot=await vt.getRotation(),fps=(await vt.computePacketStats(90)).averagePacketRate;
+      const gw=ev(w),gh=ev(h);gl=await vt.hasHighDynamicRange()||(vt.getFlip&&await vt.getFlip())?null:glScaler(gw,gh,rot);
+      const out=new M.Output({format:new M.Mp4OutputFormat({fastStart:"in-memory"}),target:new M.BufferTarget()});
+      conv=await M.Conversion.init({input,output:out,showWarnings:false,
+        video:{codec:"avc",bitrate:1000000,forceTranscode:true,...(fps>40?{frameRate:30}:{}),
+          // 캔버스를 그대로 넘김: VideoFrame으로 감싸 넘기면 사파리 엔진이 꺼짐(WebKit에서 확인)
+          // rotate로 돌림을 상쇄해(도구가 2D 캔버스로 돌리면 느림) 원래 장면을 받고, 세우기·줄이기를 WebGL로 한 번에. 장면 모양이 예상과 다르면 그만둠. HDR 영상은 색이 틀어지지 않게 2D 캔버스로
+          ...(gl?{rotate:(360-rot)%360,allowTransformationMetadata:false,processedWidth:gw,processedHeight:gh,process:sm=>{const f=sm.toVideoFrame();try{const fa=f.displayWidth/f.displayHeight;if(Math.abs((rot%180?1/fa:fa)/(w/h)-1)>.03)throw new Error("rotation");return gl.draw(f)}finally{f.close()}}}
+            :{width:ev(w),height:ev(h),fit:"fill",allowTransformationMetadata:false})},
+        audio:{codec:"aac"}});
+      const ats=await input.getAudioTracks();
+      return conv.isValid&&conv.utilizedTracks.includes(vt)&&(!ats.length||conv.utilizedTracks.some(t=>ats.includes(t)))}; // 소리를 못 옮기면 쓰지 않음
+    if(!await waitMax(prep(),20000))return null;
+    let kick;const stall=new Promise((_,no)=>{kick=()=>{clearTimeout(wd);const t0=Date.now();wd=setTimeout(()=>Date.now()-t0>25000?kick():no(new Error("stall")),20000)}}); // 20초 동안 진행이 없으면 그만둠 (앱을 내려 멈췄던 시간은 빼고 다시 셈)
+    conv.onProgress=p=>{kick();pr(p)};kick();
+    await Promise.race([conv.execute(),stall]);
+    const buf=conv.output.target.buffer;if(!buf||buf.byteLength<1e4)return null;
+    const blob=new Blob([buf],{type:"video/mp4"});conv=null;
+    return blob.size<file.size*0.85?blob:file}
+  catch(e){return null}
+  finally{window.removeEventListener("pagehide",vfEnd);vfEnd();clearTimeout(wd);if(conv)try{conv.cancel().catch(()=>{})}catch(e){}if(input)try{input.dispose()}catch(e){}if(gl)try{gl.end()}catch(e){}}}
+async function slowShrink(file,pr){
+  if(!window.MediaRecorder)return file;
   const mime=["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4;codecs=avc1","video/mp4"].find(t=>{try{return MediaRecorder.isTypeSupported(t)}catch(e){return false}});
   if(!mime)return file;
   let url="",ac=null,raf=0;
@@ -1077,7 +1148,7 @@ async function shrinkVideo(file){
     ac=new (window.AudioContext||window.webkitAudioContext)();const src=ac.createMediaElementSource(v);const dst=ac.createMediaStreamDestination();src.connect(dst); // 스피커로는 안 나감
     const stream=new MediaStream([...vs.getVideoTracks(),...dst.stream.getAudioTracks()]);
     const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:1000000,audioBitsPerSecond:64000});const parts=[];rec.ondataavailable=e=>{if(e.data&&e.data.size)parts.push(e.data)};
-    const draw=()=>{g.drawImage(v,0,0,c.width,c.height);flash(`영상 용량 줄이는 중… ${Math.min(99,Math.round(v.currentTime/dur*100))}%`);raf=requestAnimationFrame(draw)};
+    const draw=()=>{g.drawImage(v,0,0,c.width,c.height);pr(v.currentTime/dur);raf=requestAnimationFrame(draw)};
     try{await ac.resume()}catch(e){}
     await v.play();draw();rec.start(1000);
     await new Promise((ok,no)=>{v.onended=ok;v.onerror=no;setTimeout(no,dur*1500+20000)});
@@ -1087,19 +1158,21 @@ async function shrinkVideo(file){
   catch(e){return file}
   finally{cancelAnimationFrame(raf);try{ac&&ac.close()}catch(e){}if(url)URL.revokeObjectURL(url)}}
 /* 영상 첫 장면 사진(미리보기): 올릴 때 브라우저에서 첫 장면을 그려 사진으로 함께 올림. 실패하면 없이 */
-async function videoPoster(file){if(!assets)return null;let url="";
+async function videoPoster(file){if(!assets)return null;
+  try{const b=await posterBlob(file);if(!b)return null;const r=await assets.upload(b);return r.id}catch(e){return null}}
+async function posterBlob(file){let url="";
   try{url=URL.createObjectURL(file);const v=document.createElement("video");v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");v.preload="auto";v.src=url;
     await new Promise((ok,no)=>{v.onloadeddata=ok;v.onerror=no;setTimeout(no,8000)});
     try{v.currentTime=Math.min(0.1,(v.duration||1)/10);await new Promise(ok=>{v.onseeked=ok;setTimeout(ok,2500)})}catch(e){}
     const w=v.videoWidth,h=v.videoHeight;if(!w||!h)return null;const sc=Math.min(1,640/Math.max(w,h));
     const c=document.createElement("canvas");c.width=Math.round(w*sc);c.height=Math.round(h*sc);c.getContext("2d").drawImage(v,0,0,c.width,c.height);
-    const b=await new Promise(ok=>c.toBlob(ok,"image/jpeg",0.7));if(!b)return null;const r=await assets.upload(b);return r.id}
+    return await new Promise(ok=>c.toBlob(ok,"image/jpeg",0.7))}
   catch(e){return null}finally{if(url)URL.revokeObjectURL(url)}}
-// onUp: 파일을 고른 뒤 올리기 시작할 때 그 약속을 넘겨 줌 (고르기 취소는 해당 없음)
-async function upMedia(any,onUp){return new Promise(ok=>{const fi=el("input",{type:"file",accept:any?ACCEPT_ANY:"image/*,video/*",style:"display:none"});document.body.append(fi);
+// onUp: 파일을 고른 뒤 올리기 시작할 때 그 약속을 넘겨 줌 (고르기 취소는 해당 없음). run: 올리기를 직접 할 때(메모)
+async function upMedia(any,onUp,run){return new Promise(ok=>{const fi=el("input",{type:"file",accept:any?ACCEPT_ANY:"image/*,video/*",style:"display:none"});document.body.append(fi);
   fi.onchange=async()=>{const f=fi.files&&fi.files[0];fi.remove();if(!f)return ok(null);
     if(!db||!canWrite){flash("보기 전용 계정이에요",true);return ok(null)}
-    const p=uploadAny(f);if(onUp)onUp(p);ok(await p)};
+    const p=run?run(f):uploadAny(f);if(onUp)onUp(p);ok(await p)};
   fi.click()})}
 /* 체크 항목 ↔ 자료실 메모 연결: 항목 글과 제목이 비슷한 메모를 맨 위에 보여 줌 */
 const dTitle=d=>d.title||String(d.body||"").split("\n")[0]||"제목 없음";
@@ -1462,7 +1535,8 @@ function fastSave(c,ids,patch,msg){const st=optimisticPatch(c,ids,patch);let fai
   return W(async()=>{const rs=await Promise.allSettled(ids.map(id=>col(c).doc(id).update(patch)));failed=ids.filter((id,i)=>rs[i].status!=="fulfilled");
     if(failed.length)throw rs.find(r=>r.status!=="fulfilled").reason},msg).then(ok=>{patchEnd(c,ids,ok?[]:failed,st);return ok})}
 const doneP=on=>({done:on,doneBy:on?me:"",doneAt:on?now():""});
-function render(){if(busy()){const a=document.activeElement;const ad=a&&a.closest&&a.closest(".add[data-key]");
+const noteOpen=()=>!!$("sheetRoot").querySelector(".notepage:not(.np-leaving)"); // 메모가 화면을 덮고 있는 동안: 저장할 때마다 안 보이는 뒤 화면을 다시 그리지 않고, 닫을 때 한 번 그림
+function render(){if(noteOpen()){pendingRender=true;return}if(busy()){const a=document.activeElement;const ad=a&&a.closest&&a.closest(".add[data-key]");
     if(ad&&addCont&&addCont.key===ad.dataset.key&&Date.now()<addCont.until&&!a.value&&!document.querySelector(".np-teambox")){contDraw(ad.dataset.key);return} // 참여 인원 고르는 중엔 다시 그리지 않음 (고른 인원 유지)
     pendingRender=true;return}pendingRender=false;draw()}
 $("view").addEventListener("focusout",()=>setTimeout(()=>{if(pendingRender&&!busy())render()},0));
@@ -1681,8 +1755,30 @@ function makeWebDb(){
       document.addEventListener("visibilitychange",vis);
       return()=>{alive=false;if(live[c])live[c].delete(drop);clearTimeout(t);clearTimeout(et);clearTimeout(st);document.removeEventListener("visibilitychange",vis);try{sb.removeChannel(ch)}catch(e){}}}});
   return{collection:c=>query(c)}}
-function makeWebAssets(){return{async upload(blob){const id=[...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,"0")).join("");
-  const {error}=await sb.storage.from("media").upload(id,blob,{contentType:blob.type||"application/octet-stream",upsert:false});if(error)throw webErr(error);return{id,url:BLOB+id,sizeBytes:blob.size,contentType:blob.type}},
+/* 올리기: 진행률을 알 수 있는 방식(XHR)으로 보냄. 한 번에 3개까지, 45초 동안 멈추면 끊고 같은 이름으로 다시(모두 3번). 파일 이름이 매번 새로 생겨 내용이 바뀌지 않으므로 휴대폰이 오래 기억해 둠(1년) */
+let upRun=0;const upWait=[];
+async function upSlot(fn){if(upRun>=3)await new Promise(ok=>upWait.push(ok));else upRun++;
+  try{return await fn()}finally{const n=upWait.shift();if(n)n();else upRun--}}
+function upSend(id,blob,token,onP){return new Promise((ok,no)=>{
+  const x=new XMLHttpRequest();let st=0,dead=false,last=-1;const kick=()=>{clearTimeout(st);st=setTimeout(()=>{dead=true;x.abort()},45000)};
+  const fail=(message,retry)=>{clearTimeout(st);no({message,retry})};
+  x.open("POST",SUPA_URL+"/storage/v1/object/media/"+id);
+  x.setRequestHeader("Authorization","Bearer "+token);x.setRequestHeader("apikey",SUPA_KEY);x.setRequestHeader("x-upsert","false");
+  x.upload.onprogress=e=>{kick();if(!onP||!e.lengthComputable||!e.total)return;const p=Math.min(99,Math.round(e.loaded/e.total*100));if(p!==last){last=p;onP(p)}};
+  x.onload=()=>{clearTimeout(st);if(x.status>=200&&x.status<300){ok();return}
+    let m={};try{m=JSON.parse(x.responseText)||{}}catch(e){}
+    if(x.status===409||/duplicate|already exists/i.test((m.error||"")+" "+(m.message||""))){no({dup:true,message:m.message||"duplicate"});return}
+    fail(m.message||m.error||"HTTP "+x.status,x.status>=500||x.status===429||/jwt|token/i.test(m.message||""))};
+  x.onerror=()=>fail("network",true);x.onabort=()=>fail(dead?"timeout":"abort",true);
+  const fd=new FormData();fd.append("cacheControl","31536000");fd.append("",blob);kick();x.send(fd)})}
+function makeWebAssets(){return{async upload(blob,opt={}){const id=[...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,"0")).join("");
+  if(!blob.type)blob=new Blob([blob],{type:"application/octet-stream"});
+  await upSlot(async()=>{for(let n=0;;n++){
+    try{let {data:{session}}=await sb.auth.getSession();if(n===2)try{const r=await sb.auth.refreshSession();if(r.data&&r.data.session)session=r.data.session}catch(e){}
+      if(!session)throw{message:"no session"};await upSend(id,blob,session.access_token,opt.onProgress);return}
+    catch(e){if(e&&e.dup&&n>0)return; // 앞의 시도가 사실은 다 올라간 경우
+      if(!(e&&e.retry)||n>=2)throw webErr(e);await new Promise(r=>setTimeout(r,n?2500:800))}}});
+  return{id,url:BLOB+id,sizeBytes:blob.size,contentType:blob.type}},
   async list(){return{assets:[],usage:{}}},async delete(id){await sb.storage.from("media").remove([id])}}}
 function loadScript(src){return new Promise((ok,no)=>{const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=no;document.head.append(s)})}
 // 로그인: 이름 + 비밀번호. 처음엔 본인 휴대폰 번호 → 바로 새 비밀번호 정하기
@@ -2307,9 +2403,20 @@ function vToday(root){setTimeout(sweepToday,800);
 }
 let noticeCheckMode={},noticeDrafts=new Map();
 /* 사진 줄이기: 긴 쪽 1280px, JPEG 품질 0.72 → 보통 150~350KB. 글씨(레시피·메모 사진)도 읽힐 정도. 이미 작은 사진은 그대로 */
+// 화면이 멈추지 않게 다른 일꾼(Worker)에서 줄임. 못 하는 브라우저에서는 예전처럼
+let imgWk=null,imgChain=Promise.resolve();
+const IMG_WK=`onmessage=async e=>{try{const{f,max,q}=e.data,b=await createImageBitmap(f),s=Math.min(1,max/Math.max(b.width,b.height)),w=Math.max(1,Math.round(b.width*s)),h=Math.max(1,Math.round(b.height*s)),c=new OffscreenCanvas(w,h),g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,w,h);g.drawImage(b,0,0,w,h);b.close();postMessage(await c.convertToBlob({type:"image/jpeg",quality:q}))}catch(x){postMessage(null)}}`;
+function shrinkInWorker(file){
+  if(!window.Worker||!window.OffscreenCanvas||!OffscreenCanvas.prototype.convertToBlob)return Promise.resolve(null);
+  const run=imgChain.then(()=>new Promise(ok=>{let t=0;const end=(b,bad)=>{clearTimeout(t);if(imgWk){imgWk.onmessage=imgWk.onerror=null;if(bad){try{imgWk.terminate()}catch(e){}imgWk=null}}ok(b)};
+    try{if(!imgWk){const u=URL.createObjectURL(new Blob([IMG_WK],{type:"text/javascript"}));imgWk=new Worker(u);setTimeout(()=>URL.revokeObjectURL(u),10000)}
+      imgWk.onmessage=e=>end(e.data&&e.data.size&&e.data.type==="image/jpeg"?e.data:null);imgWk.onerror=()=>end(null,true);
+      t=setTimeout(()=>end(null,true),15000);imgWk.postMessage({f:file,max:1280,q:0.72})}catch(e){end(null,true)}}));
+  imgChain=run.catch(()=>{});return run}
 async function shrinkImage(file){
   try{
     if(file.size<250e3&&/^image\/(jpeg|webp)$/.test(file.type))return file;
+    const wb=await shrinkInWorker(file);if(wb)return wb.size<file.size?wb:file;
     const bmp=await createImageBitmap(file);const max=1280;const sc=Math.min(1,max/Math.max(bmp.width,bmp.height));
     const c=document.createElement("canvas");c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);
     const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(bmp,0,0,c.width,c.height); // 투명 PNG는 흰 바탕
@@ -3868,7 +3975,7 @@ function blockOfIn(root,n){while(n&&n.parentNode!==root)n=n.parentNode;return n}
 function mediaSideActs(root,m,onChange){
   if(m.dataset.size==="l")return [];const blk=blockOfIn(root,m);if(!blk||blk===m)return [];
   const acts=[];
-  const mv=m.closest(".vthumb")||m; // 영상은 ▶ 겉싸개째
+  const mv=m.closest(".np-upw")||m.closest(".vthumb")||m; // 영상은 ▶ 겉싸개째 (올리는 중이면 그 겉싸개째)
   if(blk.querySelectorAll("img,video").length>1)acts.push({label:"따로 놓기",fn:()=>{const d=el("div",{},mv);blk.after(d);if(onChange)onChange()}});
   let prev=blk.previousSibling;while(prev&&(prev.nodeType!==1||isBlank(prev)))prev=prev.previousSibling;
   if(mediaOnly(prev)&&!prev.querySelector("[data-size='l']")){acts.push({label:"위 사진 옆에 두기",fn:()=>{const br=prev.lastChild&&prev.lastChild.nodeName==="BR"?prev.lastChild:null;br?prev.insertBefore(mv,br):prev.append(mv);
@@ -4056,7 +4163,7 @@ function docClean(html,forSave){
     if(t==="IMG"||t==="VIDEO"){const id=c.getAttribute("data-id")||"";if(!ASSET_ID.test(id))return;
       const e=document.createElement(t);e.setAttribute("data-id",id);if(c.getAttribute("data-size")==="l")e.setAttribute("data-size","l");
       const pv=c.getAttribute("data-poster")||"";if(t==="VIDEO"&&ASSET_ID.test(pv)){e.setAttribute("data-poster",pv);if(!forSave)e.poster=BLOB+pv}
-      if(!forSave){e.src=BLOB+id+(t==="VIDEO"?"#t=0.1":"");if(t==="VIDEO"){e.muted=true;e.controls=true;e.setAttribute("playsinline","");e.preload="metadata"}else{e.loading="lazy";e.alt="사진"}e.contentEditable="false"}
+      if(!forSave){e.src=BLOB+id+(t==="VIDEO"?"#t=0.1":"");if(t==="VIDEO"){e.muted=true;e.controls=true;e.setAttribute("playsinline","");e.preload=ASSET_ID.test(pv)?"none":"metadata"}else{e.loading="lazy";e.decoding="async";e.alt="사진"}e.contentEditable="false"}
       to.append(e);return}
     // 저장할 때: 주소 그대로인 링크(자동 링크)는 글자로 되돌림 → 열어보기만 해도 '바뀜'으로 잡히지 않게
     if(forSave&&t==="A"&&c.textContent.trim()===(c.getAttribute("href")||"").trim()){to.append(c.textContent);return}
@@ -4093,6 +4200,7 @@ const STAFF_MEMO="직원 메모장"; // 직원별 메모 폴더(하위 폴더 �
 // 키보드 높이: 알 수 있으면 실제 값, Claude 앱 안처럼 모르면 아이폰 키보드 비율로 추정
 // 아이폰 Safari는 키보드 위에 ∧ ∨ ✓ 줄(약 44px)을 붙임. 웹페이지에서 끌 수 없어서, 키보드 높이를 추정할 때 그만큼 더 올려 서식 도구가 가려지지 않게
 const IOS_ACC=/iP(hone|od|ad)/.test(navigator.userAgent)&&(/Safari\//.test(navigator.userAgent)||navigator.standalone===true)?44:0; // 홈 화면에 추가한 앱도 같은 줄이 뜸
+const IOS_LIFT=IOS_ACC?52:0; // 메모 서식 도구: 아이폰이 알려 주는 키보드 높이에 ∧ ∨ ✓ 줄이 빠져 도구가 겹쳐 눌리지 않던 것 → 그 줄만큼 더 올림
 function kbHeightEst(){const vv=window.visualViewport;const real=vv?Math.max(0,window.innerHeight-vv.height-vv.offsetTop):0;if(real>120)return real;
   if(!matchMedia("(pointer:coarse)").matches)return 0;const sh=Math.max(screen.height||0,window.innerHeight);const land=window.innerWidth>window.innerHeight;
   return Math.round((land?0.55:0.345)*Math.min(sh,window.innerHeight+120))+IOS_ACC}
@@ -4225,6 +4333,9 @@ function bindNoteHeaderTap(button){
     }
   },true);
 }
+/* 메모를 닫은 뒤에도 이어서 올리는 첨부: 저장은 한 번에 하나씩(noteBgChain), 열린 메모 화면(noteAdopt), 남은 개수(noteBgN) */
+let noteBgChain=Promise.resolve(),noteAdopt=null,noteBgN=0;
+window.addEventListener("beforeunload",e=>{if(noteBgN){e.preventDefault();e.returnValue=""}}); // PC에서 올리는 중에 창을 닫으면 한 번 물어봄
 function notePage(d){
   if(sheetNoteOff)sheetNoteOff();
   const root=$("sheetRoot");root.textContent="";
@@ -4291,18 +4402,73 @@ function notePage(d){
     const wrap=el("div",{},node);
     if(range){range.collapse(false);let blk=range.startContainer;while(blk&&blk.parentNode!==ed)blk=blk.parentNode;
       if(blk&&blk.parentNode===ed)blk.after(wrap);else ed.append(wrap)}else ed.append(wrap);
-    const after=el("div",{},el("br"));wrap.after(after);const r=document.createRange();r.setStart(after,0);r.collapse(true);const s=getSelection();s.removeAllRanges();s.addRange(r);range=r.cloneRange()};
+    const after=el("div",{},el("br"));wrap.after(after);if(bg)return;const r=document.createRange();r.setStart(after,0);r.collapse(true);if(document.activeElement===ed){const s=getSelection();s.removeAllRanges();s.addRange(r)}range=r.cloneRange()};
   const cmd=(c,v)=>{ed.focus();if(range){const s=getSelection();s.removeAllRanges();s.addRange(range)}document.execCommand(c,false,v);keep()};
   const tb=(label,title,fn)=>{const b=el("button",{class:"np-tb",type:"button",title,"aria-label":title,onclick:fn},label);b.addEventListener("mousedown",e=>e.preventDefault());b.addEventListener("pointerdown",e=>e.preventDefault());return b};
   const blockOf=()=>{let n=range&&range.startContainer;while(n&&n!==ed){if(/^H[123]$/.test(n.nodeName))return n.nodeName;n=n.parentNode}return "DIV"};
   // 올린 사진·영상·파일을 본문에 넣음. input을 보내야 '고침'으로 잡혀서, 사진만 넣고 뒤로 가도 저장됨
-  const upBusy=new Set(); // 첨부 올리는 중인 것들 (뒤로 가면 모두 끝날 때까지 기다렸다 저장)
+  const upBusy=new Set(); // 첨부 올리는 중인 것들 (뒤로 가면 화면은 바로 닫고, 모두 끝난 뒤 뒤에서 저장)
   const track=p=>{const q=Promise.resolve(p).finally(()=>upBusy.delete(q));upBusy.add(q);return q};
-  const putMedia=m=>{if(!m||!root.contains(page)||leaving)return; // 이미 닫힌 메모에는 넣지 않음 (늦은 저장으로 덮어쓰기 방지)
-    if(m.k==="file")insertNode(el("a",{href:BLOB+m.id,target:"_blank",rel:"noopener"},"📎 "+(m.name||"첨부 파일")));
-    else{const e=el(m.k==="image"?"img":"video",{"data-id":m.id,src:BLOB+m.id,contenteditable:"false",...(m.k==="video"?{playsinline:""}:{})});insertNode(e);wireEd();
-      afterPoster(m,pid=>{if(!e.isConnected)return;e.dataset.poster=pid;e.poster=BLOB+pid;ed.dispatchEvent(new Event("input"))})}
-    ed.dispatchEvent(new Event("input"))};
+  let bg=false; // 메모 화면을 닫았지만 첨부가 남아 뒤에서 이어가는 중
+  const alive=()=>bg||root.contains(page);
+  const putFile=m=>{if(!m||!alive())return;insertNode(el("a",{href:BLOB+m.id,target:"_blank",rel:"noopener"},"📎 "+(m.name||"첨부 파일")));upAdded.push(m.id);
+    contentEdited=true;if(!bg)ed.dispatchEvent(new Event("input"))};
+  /* 사진·영상: 고르자마자 휴대폰에 있는 원본을 본문에 먼저 보여 주고(data-up) 뒤에서 줄이고 올림. 다 올라가면 진짜 번호(data-id)를 붙임.
+     올리는 중(data-id 없음)인 것은 docClean이 빼므로 저장되지 않음 */
+  const upJobs=new Map(),upUrls=[],upAdded=[];
+  const edHtml=()=>ed.innerHTML.replace(/ data-pct="[^"]*"/g,""); // 되돌리기 비교용: 진행률 글자는 빼고
+  const syncUps=()=>ed.querySelectorAll("[data-up]").forEach(e=>{const j=upJobs.get(e.getAttribute("data-up")),w=e.closest(".np-upw"),host=e.closest(".vthumb")||e;
+    if(!j||j.fail){const blk=blockOfIn(ed,e);(w||host).remove();if(isBlank(blk)&&blk.nodeName==="DIV"){const nx=blk.nextSibling;blk.remove();if(!ed.firstChild&&!nx)ed.append(el("div",{},el("br")))}return}
+    if(!j.id){if(w)w.dataset.pct=j.text;return}
+    e.setAttribute("data-id",j.id);e.removeAttribute("data-up");if(j.poster){e.dataset.poster=j.poster}
+    if(j.url&&e.nodeName==="IMG")e.src=j.url; // 큰 원본 대신 줄인 사진 (다시 내려받지 않음)
+    if(w)w.replaceWith(host)});
+  const upSay=tok=>t=>{const j=upJobs.get(tok);j.text=t;
+    const e=ed.querySelector(`[data-up="${tok}"]`),w=e&&e.closest(".np-upw");if(w)w.dataset.pct=j.text;if(bg)flash(t)};
+  const upErr=t=>{alertBox("첨부를 올리지 못했어요",(bg?(titleIn.value.trim()||"메모")+" — ":"")+t)};
+  const addFile=async f=>{const isV=/^video\//.test(f.type),isI=/^image\//.test(f.type);
+    if(!isI&&!isV){const at=range?range.cloneRange():null;const m=await uploadAny(f,{onErr:upErr});if(m&&alive()){if(at&&ed.contains(at.startContainer))range=at;putFile(m);return true}return false}
+    const tok=newId(),url=URL.createObjectURL(f),j={text:isV?"영상":"사진",id:"",poster:"",url:"",fail:false};upUrls.push(url);upJobs.set(tok,j);
+    const e=el(isI?"img":"video",{"data-up":tok,src:url+(isV?"#t=0.1":""),contenteditable:"false",...(isV?{playsinline:"",muted:"",preload:"metadata"}:{decoding:"async"})});if(isV)e.muted=true;
+    insertNode(e);wireEd();{const host=e.closest(".vthumb")||e,w=el("span",{class:"np-upw",contenteditable:"false"});host.replaceWith(w);w.append(host)}
+    phUpd();uhSnap();
+    const m=await uploadAny(f,{onState:upSay(tok),onErr:upErr,onBlob:b=>{if(isI){j.url=URL.createObjectURL(b);upUrls.push(j.url)}}});
+    if(!alive())return false;
+    let late=null;if(m&&m.posterP){const r=await Promise.race([m.posterP,new Promise(ok=>setTimeout(()=>ok(undefined),3000))]);if(r)j.poster=r;else if(r===undefined)late=m.posterP;if(!alive())return false}
+    if(m)j.id=m.id;else j.fail=true;
+    clearTimeout(uhT);if(!bg)uhSnap();const had=!!ed.querySelector(`[data-up="${tok}"]`);syncUps();if(!bg){UH[uhI]=edHtml();wireEd()}
+    if(had&&j.id){upAdded.push(j.id);contentEdited=true;if(!bg)ed.dispatchEvent(new Event("input"))}else if(!bg)phUpd();
+    if(late)late.then(pid=>{if(!pid||bg||!root.contains(page))return;j.poster=pid;const v=ed.querySelector(`video[data-id="${j.id}"]`);if(v){v.dataset.poster=pid;v.poster=BLOB+pid;ed.dispatchEvent(new Event("input"))}});
+    return had&&!!j.id};
+  // 닫은 메모의 첨부 마무리: 다 올라가면 저장. 그 사이 같은 메모를 다시 열었거나 다른 사람이 고쳤으면 덮어쓰지 않고 맨 끝에 덧붙임
+  const toBg=()=>{if(bg)return;bg=true;clearTimeout(timer);clearTimeout(uhT);
+    const box=el("div",{class:"note-bg","aria-hidden":"true",inert:""},ed);document.body.append(box);ed.contentEditable="false";noteBgN++;
+    (async()=>{let ok=true;
+      try{while(upBusy.size)await Promise.allSettled([...upBusy]);
+        const task=noteBgChain.then(bgSave);noteBgChain=task.catch(()=>{});ok=await task}catch(e){ok=false}
+      noteBgN--;box.remove();setTimeout(()=>upUrls.forEach(u=>URL.revokeObjectURL(u)),2000);
+      if(ok===true)flash("첨부 저장됨");else if(ok===false)alertBox("첨부를 저장하지 못했어요",(titleIn.value.trim()||"메모")+" — 메모를 열어 다시 첨부해 주세요")})()};
+  // 아직 올리는 중이거나, 닫으며 저장하는 사이에 다 올라와 아직 저장 안 된 첨부가 있는지
+  const upLeft=()=>upBusy.size>0||(upAdded.length>0&&normDoc(ed.innerHTML).innerHTML!==baseHtml);
+  const bgSave=async()=>{const own=()=>[...new Set(upAdded)].map(id=>ed.querySelector(`[data-id="${id}"]`)||ed.querySelector(`a[href="${BLOB+id}"]`)).filter(Boolean).map(x=>x.cloneNode(true));
+    if(!own().length)return null;
+    for(let n=0;n<3;n++){if(n)await new Promise(r=>setTimeout(r,n*2000));
+      if(saving)try{await saving}catch(e){}
+      if(!curId){if(await save())return true;continue}
+      // 같은 메모가 지금 열려 있으면 그 화면에 넣음 (저장도 그 화면이 함). 닫는 중이면 다 닫힐 때까지 기다림
+      for(let k=0;k<30&&noteAdopt&&noteAdopt.id()===curId;k++){if(await noteAdopt.put(own())===true)return true;await new Promise(r=>setTimeout(r,1000))}
+      let sn=null;try{sn=await db.collection("docs").doc(curId).get()}catch(e){continue}
+      if(!sn||!sn.exists)return null; // 그 사이 지운 메모는 되살리지 않음
+      const cur=sn.data()||{};
+      if((cur.updatedAt||"")===baseUpd){if(await save())return true;continue}
+      const c=docClean(docHtml(cur),true);own().forEach(x=>{const y=docClean(x.outerHTML,true).firstChild;if(y&&!(y.nodeType===1&&y.getAttribute("data-id")&&c.querySelector(`[data-id="${y.getAttribute("data-id")}"]`)))c.append(el("div",{},y))});
+      const media=[...c.querySelectorAll("img,video")].map(x=>({k:x.nodeName==="IMG"?"image":"video",id:x.getAttribute("data-id")})),t=now();
+      if(await W(()=>col("docs").doc(curId).update({html:c.innerHTML,media,editedBy:me,editedAt:t,updatedAt:t})))return true}
+    return false};
+  const pickMedia=()=>{keep();upMedia(true,track,addFile)};
+  // 위쪽 첨부 버튼: 아이폰에서 키보드 위 서식 도구가 ∧ ∨ ✓ 줄에 가려져도 늘 첨부할 수 있게. 누를 때 글쓰기(커서·키보드)는 그대로 두고, 파일 창은 기본 click에서 바로 엶
+  const clipBtn=edit&&assets?el("button",{class:"np-circ np-clip",type:"button",title:"사진·영상·파일 첨부","aria-label":"사진·영상·파일 첨부",onclick:pickMedia},svgI(ICON_CLIP)):null;
+  if(clipBtn){clipBtn.style.touchAction="manipulation";["pointerdown","mousedown"].forEach(ev=>clipBtn.addEventListener(ev,e=>e.preventDefault()))}
   const tools=edit?el("div",{class:"np-tools"},
     tb("Aa","제목 / 본문",()=>{const cur=blockOf();cmd("formatBlock",cur==="H2"?"H3":cur==="H3"?"DIV":"H2")}),
     tb(el("b",{},"B"),"굵게",()=>cmd("bold")),
@@ -4311,9 +4477,9 @@ function notePage(d){
       if(li){li.classList.add("ck");ed.dispatchEvent(new Event("input"))}}),
     tb("•","글머리 목록",()=>cmd("insertUnorderedList")),
     tb("1.","번호 목록",()=>cmd("insertOrderedList")),
-    assets?tb(svgI(ICON_CLIP),"사진·영상·파일",async()=>{keep();await upMedia(true,p=>track(p.then(m=>{if(m&&root.contains(page)&&!leaving){putMedia(m);flash("첨부됨")}})))}):null):null;
+    assets?tb(svgI(ICON_CLIP),"사진·영상·파일",async()=>{keep();pickMedia()}):null):null;
   // 자동 저장: 여백을 눌러 글쓰기를 마치면, 쓰는 중엔 잠깐 멈췄을 때, 뒤로 갈 때
-  let curId=d?d.id:null,baseHtml=base,baseCat=cat,pinned=!!(d&&d.pinned),saving=null,timer=null,contentEdited=false;
+  let curId=d?d.id:null,baseUpd=d?(d.updatedAt||""):"",baseHtml=base,baseCat=cat,pinned=!!(d&&d.pinned),saving=null,timer=null,contentEdited=false;
   let hist=d&&Array.isArray(d.hist)?d.hist.map(h=>({...h})):[];const SID=newId(); // 이번에 열어서 고친 것 = 기록 하나
   // 만든 시각은 처음 저장한 값 그대로 유지 (목록 순서 기준)
   let createdAt=d?(d.createdAt||d.noteDate||d.updatedAt||now()):null;
@@ -4353,7 +4519,7 @@ function notePage(d){
     saving=W(()=>col("docs").doc(id).set({hist:H,...(d&&d.noteDate?{noteDate:d.noteDate}:{}),...(d&&d.importedFrom?{importedFrom:d.importedFrom}:{}),...(d&&d.ord!=null?{ord:d.ord}:{}),cat,title,titleSep:true,body:lines.join("\n"),html:htmlNew,media,...(pinned?{pinned:true}:{}),members,...(d&&d.finalizedAt?{finalizedAt:d.finalizedAt}:{}),...(finalized?{finalizedAt:t}:{}),
       createdBy,createdAt:createdAt||t,...(curId?{editedBy:me,editedAt:t}:{}),updatedAt:t}));
     const ok=await saving;saving=null;
-    if(ok){hist=H;if(!createdAt)createdAt=t;curId=id;baseHtml=htmlNew;baseCat=cat;baseTeam=teamKey();finalized=false;baseTitle=titleIn.value;if(d)d.titleSep=true}return ok};
+    if(ok){hist=H;if(!createdAt)createdAt=t;curId=id;baseUpd=t;baseHtml=htmlNew;baseCat=cat;baseTeam=teamKey();finalized=false;baseTitle=titleIn.value;if(d)d.titleSep=true}return ok};
   let finalized=false;
   if(edit){ed.addEventListener("input",()=>{contentEdited=true;clearTimeout(timer);timer=setTimeout(save,1500)});
     ed.addEventListener("blur",()=>{clearTimeout(timer);save().then(()=>{if(document.activeElement!==ed)showChg()})});
@@ -4363,32 +4529,32 @@ function notePage(d){
   let navSession=0;
   const close=async()=>{noteDebug.record("close-request",{session:navSession,closing,attached:root.contains(page)});if(closing||!root.contains(page)){noteDebug.record("close-ignored",{session:navSession,closing,attached:root.contains(page)});return}
     closing=true;
-    if(upBusy.size){flash("첨부 올리는 중… 끝나면 닫혀요");while(upBusy.size)await Promise.allSettled([...upBusy])} // 올리는 중에 뒤로: 다 올리고 본문에 넣은 뒤 저장하고 닫음
-    if(!saving&&!contentEdited&&cat===baseCat&&teamKey()===baseTeam&&!finalized){try{closeSheet()}finally{closing=false}return}
+    // 올리는 중에 뒤로: 글만 먼저 저장하고 화면은 바로 닫음. 첨부는 뒤에서 이어 올려 저장(toBg)
+    if(!saving&&!contentEdited&&cat===baseCat&&teamKey()===baseTeam&&!finalized){try{if(upLeft())toBg();closeSheet()}finally{closing=false}return}
     clearTimeout(timer);let ok=false,why="";
     leaving=true;page.classList.add("np-leaving");document.documentElement.classList.remove("np-lock");restoreNoteScroll();
     try{ok=await Promise.race([save(),new Promise(r=>setTimeout(()=>r("timeout"),20000))])}catch(e){why=String(e&&e.message||e);ok=false}
     closing=false;noteDebug.record("save-result",{session:navSession,result:ok===true?"ok":ok==="timeout"?"timeout":"failed"});
     const mine=()=>$("sheetRoot").contains(page); // 그 사이 다른 메모를 열었으면 그 화면은 건드리지 않음
-    if(ok===true){if(mine())closeSheet();return}
-    if(!mine())return;
+    if(ok===true){const m=mine();if(upLeft())toBg();if(m)closeSheet();return}
+    if(!mine()){if(upLeft())toBg();return}
     leaving=false;page.classList.remove("np-leaving");lockNoteScroll();rePush(); // 메모가 다시 떠 있으니 뒤로가기 기록도 다시
-    confirmBox(ok==="timeout"?"저장이 아직 끝나지 않았어요. 그래도 나갈까요?":"저장하지 못했어요"+(why?" ("+why.slice(0,60)+")":"")+". 그래도 나갈까요? 방금 고친 내용이 저장되지 않을 수 있어요","나가기",()=>{if(mine())closeSheet()})};
+    confirmBox(ok==="timeout"?"저장이 아직 끝나지 않았어요. 그래도 나갈까요?":"저장하지 못했어요"+(why?" ("+why.slice(0,60)+")":"")+". 그래도 나갈까요? 방금 고친 내용이 저장되지 않을 수 있어요","나가기",()=>{const m=mine();if(upLeft())toBg();if(m)closeSheet()})};
   // 메모 안 되돌리기 ↶ / 다시 실행 ↷ (위쪽 앱 되돌리기 버튼이 메모 화면에 가려져서 여기에도 둠)
   // 아이폰 기본 되돌리기는 글쓰기 칸을 다시 눌러 키보드·화면이 튀어서, 본문 상태를 직접 기억했다가 되돌림 (커서·키보드는 건드리지 않음)
-  const UH=[ed.innerHTML];let uhI=0,uhT=null,uhSkip=false;
-  const uhSnap=()=>{const h=ed.innerHTML;if(h===UH[uhI])return;UH.splice(uhI+1);UH.push(h);if(UH.length>100)UH.shift();uhI=UH.length-1;urUpd()};
+  const UH=[edHtml()];let uhI=0,uhT=null,uhSkip=false;
+  const uhSnap=()=>{const h=edHtml();if(h===UH[uhI])return;UH.splice(uhI+1);UH.push(h);if(UH.length>100)UH.shift();uhI=UH.length-1;urUpd()};
   ed.addEventListener("input",()=>{if(uhSkip)return;clearTimeout(uhT);uhT=setTimeout(uhSnap,350)});
   const uhGo=dir=>{clearTimeout(uhT);uhSnap();const j=uhI+dir;if(j<0||j>=UH.length){flash(dir<0?"되돌릴 것이 없어요":"다시 실행할 것이 없어요");return}
     const sc=page.querySelector(".np-scroll");const y=window.scrollY,stp=sc?sc.scrollTop:0;
-    uhI=j;uhSkip=true;ed.innerHTML=UH[j];wireEd();ed.dispatchEvent(new Event("input"));uhSkip=false;
+    uhI=j;uhSkip=true;ed.innerHTML=UH[j];syncUps();wireEd();ed.dispatchEvent(new Event("input"));uhSkip=false;
     if(document.activeElement===ed){try{const r=document.createRange();r.selectNodeContents(ed);r.collapse(false);const sl=getSelection();sl.removeAllRanges();sl.addRange(r)}catch(e){}}
     const back=()=>{if(Math.abs(window.scrollY-y)>1)window.scrollTo(0,y);if(sc&&Math.abs(sc.scrollTop-stp)>1)sc.scrollTop=stp};back();requestAnimationFrame(back);setTimeout(back,120);urUpd()};
   const urBtn=(dir,label,path)=>{const b=el("button",{class:"np-circ np-ur",type:"button",title:label,"aria-label":label},svgI(`<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`));
     b.addEventListener("pointerdown",e=>e.preventDefault());b.addEventListener("mousedown",e=>e.preventDefault());b.onclick=()=>uhGo(dir);return b};
   let urUpd=()=>{};
   const npUR=edit?el("span",{class:"np-urg"},urBtn(-1,"되돌리기",'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'),urBtn(1,"다시 실행",'<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>')):null;
-  if(npUR){const [ub,rb]=npUR.children;urUpd=()=>{ub.style.opacity=uhI>0||ed.innerHTML!==UH[uhI]?"":".4";rb.style.opacity=uhI<UH.length-1?"":".4"};ed.addEventListener("input",()=>setTimeout(urUpd,0));urUpd()}
+  if(npUR){const [ub,rb]=npUR.children;urUpd=()=>{ub.style.opacity=uhI>0||edHtml()!==UH[uhI]?"":".4";rb.style.opacity=uhI<UH.length-1?"":".4"};ed.addEventListener("input",()=>setTimeout(urUpd,0));urUpd()}
   const back=el("button",{class:"np-circ np-back",type:"button",onclick:()=>{noteDebug.record("button:click",{session:navSession});close()},title:"뒤로 ("+(cat?cat.split("/").pop():"자료실")+")","aria-label":"뒤로"},svgI('<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>'));
   // 모든 레시피의 뒤로가기는 기본 click 한 번으로 처리. 터치 시작·종료에서 click을 취소하지 않음.
   back.style.touchAction="manipulation";
@@ -4435,8 +4601,8 @@ function notePage(d){
       let r=null;if(ed.contains(e.target)){if(document.caretRangeFromPoint)r=document.caretRangeFromPoint(e.clientX,e.clientY);
         else if(document.caretPositionFromPoint){const cp=document.caretPositionFromPoint(e.clientX,e.clientY);if(cp){r=document.createRange();r.setStart(cp.offsetNode,cp.offset)}}}
       let at=r&&ed.contains(r.startContainer)?r:null; // 놓은 자리를 따로 기억 (올리는 동안 본문을 눌러도 안 바뀜)
-      let n=0;await track((async()=>{for(const f of fs){const m=await uploadAny(f);if(!m||!root.contains(page)||leaving)continue;range=at;putMedia(m);at=range;n++}})());
-      if(n)flash(n>1?`${n}개 첨부됨`:"첨부됨")})}
+      fs.forEach(f=>{range=at;track(addFile(f));at=range})}); // 모두 먼저 보여 주고 함께 올림
+    }
   /* ••• 메뉴 (아이폰 메모처럼) */
   let findBar=null,marks=[],mi=0;
   const clearMarks=()=>{ed.querySelectorAll("mark.np-find").forEach(m=>m.replaceWith(...m.childNodes));ed.normalize();marks=[]};
@@ -4475,10 +4641,10 @@ function notePage(d){
       it(svgI(IC.photo),"첨부 파일 보기",openMedia),
       edit&&mineOrBoss()?it(svgI(IC.trash),"삭제",doDelete,"danger"):null);
     const ov=overlay(box,"np-menuwrap")};
-  page.querySelector(".np-more").before(attrBtn);
+  if(clipBtn)page.querySelector(".np-more").before(clipBtn);page.querySelector(".np-more").before(attrBtn);
   // iOS에서는 포커스/레이아웃 변경 뒤 호환 click이 오지 않을 수 있다.
   // 헤더는 이동 없는 터치 pointerup에서 한 번 실행하고 뒤따르는 click만 억제한다.
-  page.querySelectorAll(".np-bar button").forEach(bindNoteHeaderTap);
+  page.querySelectorAll(".np-bar button:not(.np-clip)").forEach(bindNoteHeaderTap);
 
   root.append(page);
   navSession=noteDebug.open(()=>({closing,leaving,attached:root.contains(page),saving:!!saving,edited:contentEdited}));
@@ -4488,12 +4654,17 @@ function notePage(d){
     if("requestIdleCallback" in window)requestIdleCallback(paint,{timeout:1200});else setTimeout(paint,180);
   }
   const dispose=[];
+  // 닫은 뒤 다 올라온 첨부를 다시 열린 이 화면에 받음 (닫는 중이면 받지 않음)
+  const adopt={id:()=>curId,put:async ns=>{if(!edit||!root.contains(page)||leaving||closing)return null;
+    ns.forEach(x=>{const id=x.getAttribute("data-id"),hf=x.getAttribute("href");if(id?ed.querySelector(`[data-id="${id}"]`):hf&&ed.querySelector(`a[href="${hf}"]`))return;ed.append(el("div",{},...docClean(x.outerHTML).childNodes))});
+    wireEd();ed.dispatchEvent(new Event("input"));clearTimeout(timer);return await save()}}; // 저장까지 끝나야 넘겨받은 것 (실패하면 보낸 쪽이 다시 시도)
+  noteAdopt=adopt;dispose.push(()=>{if(noteAdopt===adopt)noteAdopt=null;if(!bg)setTimeout(()=>{if(!bg)upUrls.forEach(u=>URL.revokeObjectURL(u))},30000)});
   sheetNoteOff=()=>{noteDebug.record("cleanup",{session:navSession});clearTimeout(timer);clearTimeout(uhT);document.removeEventListener("selectionchange",onSel);window.removeEventListener("scroll",pin);dispose.forEach(fn=>fn());sheetNoteOff=null};
   // 상단 ‹ ••• 고정: 메모가 열린 동안 바깥 페이지가 밀려 올라가지 않게 막음
   lockNoteScroll();const keepY=0;
   const pin=()=>{if(!document.body.contains(page)){window.removeEventListener("scroll",pin);document.documentElement.classList.remove("np-lock");restoreNoteScroll();return}if(leaving)return;if(Math.abs(window.scrollY-keepY)>1||window.scrollX)window.scrollTo(0,keepY)};
   window.addEventListener("scroll",pin,{passive:true});
-  page.addEventListener("pointerdown",e=>{if(e.target.closest(".np-back"))return;if(edit&&document.activeElement===ed&&!ed.contains(e.target)&&!e.target.closest(".np-kbar")&&!(ed.style.minHeight&&e.target.closest(".np-scroll")&&!e.target.closest(".np-title,.np-team")))ed.blur()});
+  page.addEventListener("pointerdown",e=>{if(e.target.closest(".np-back"))return;if(edit&&document.activeElement===ed&&!ed.contains(e.target)&&!e.target.closest(".np-kbar,.np-clip")&&!(ed.style.minHeight&&e.target.closest(".np-scroll")&&!e.target.closest(".np-title,.np-team")))ed.blur()});
   if(tools){ // 글 쓸 때만 서식 도구. 키보드 높이를 알 수 있으면 키보드 바로 위, 모르면(앱 안 화면) 상단 바 바로 아래
     const kbar=el("div",{class:"np-kbar"},tools);page.querySelector(".np-bar").after(kbar);
     const vv=window.visualViewport;
@@ -4503,7 +4674,7 @@ function notePage(d){
     const kbH=()=>{const real=vv?Math.max(0,window.innerHeight-vv.height-vv.offsetTop):0;if(real>120)return real;
       if(!touch)return 0;const sh=Math.max(screen.height||0,window.innerHeight);const land=window.innerWidth>window.innerHeight;
       return Math.round((land?0.55:0.345)*Math.min(sh,window.innerHeight+120))+IOS_ACC};
-    const place=()=>{const off=kbH();kbar.classList.add("kb-bottom");kbar.style.bottom=off+"px";
+    const place=()=>{const off=kbH()+IOS_LIFT;kbar.classList.add("kb-bottom");kbar.style.bottom=off+"px";
       scroller.style.paddingBottom=(off+kbar.offsetHeight+16)+"px"};
     const isEmp=()=>!ed.textContent.trim()&&!ed.querySelector("img,video,li");
     const keepCaret=()=>{if(isEmp())return;const s=getSelection();if(!s.rangeCount||!ed.contains(s.anchorNode))return;
