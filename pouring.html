@@ -212,6 +212,9 @@ table.oc{table-layout:fixed;width:100%}table.oc th:first-child,table.oc td:first
 .xline{display:flex;flex-wrap:wrap;gap:10px 22px;padding:12px}
 .xitem{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
 .xitem.ro{cursor:default}
+.xnav{display:inline-flex;gap:2px;margin-left:auto}
+.xnav-b{border:0;background:none;color:var(--accent);font:inherit;font-size:20px;line-height:1;width:34px;height:24px;padding:0;cursor:pointer}
+.xnav-b:disabled{color:var(--line);cursor:default}
 .chk:disabled{cursor:default;opacity:.55}
 .chk:disabled:checked{opacity:1}
 .dlayout{--sw:100px;display:grid;grid-template-columns:var(--sw) minmax(0,1fr);gap:16px;align-items:start;position:relative}
@@ -3126,7 +3129,11 @@ function hopeCal(who){
   openSheet(`${byKey[who].name} 희망휴무`,[box,el("p",{class:"hint",style:"margin:0"},"날짜를 누르면 신청, 다시 누르면 취소돼요.",el("br"),"수요일은 세 명까지 신청할 수 있어요.")],async()=>true,"닫기",null,{autosave:true});
   box._shown=true;
 }
-function extraSection(mkey){
+let extraMo=null; // 추가근무 칸에서 화살표로 고른 달 {base,k}. 근무표 기간(base 달)이 바뀌면 무시하고 그 달로 돌아감
+const mAdd=(k,n)=>{const d=new Date(+k.slice(0,4),+k.slice(5)-1+n,1);return `${d.getFullYear()}-${pad(d.getMonth()+1)}`};
+function extraSection(base){
+  if(extraMo&&extraMo.base!==base)extraMo=null; // 근무표가 다른 달로 넘어가면 고른 달을 지움
+  const mkey=extraMo?extraMo.k:base;
   const mo=+mkey.slice(5);
   const ex=S.extra.find(x=>x.id===mkey)||{staff:[]};
   const staff=ex.staff||[];
@@ -3139,7 +3146,14 @@ function extraSection(mkey){
       W(()=>col("extra").doc(mkey).set({staff:[...set],notes:ex.notes||{},updatedAt:now()}),cb.checked?`${st.name} 추가근무 가능`:`${st.name} 체크 해제`)};
     line.append(el("label",{for:`ex-${st.key}`,class:"xitem"+(can?"":" ro")},cb,rank>=0?el("span",{class:"xrank"},`${rank+1}.`):null,nameEl(st.key)));
   });
-  return el("section",{class:"mini"},el("h2",{},`${mo}월 추가근무 가능`),el("div",{class:"card"},line));
+  // 달 넘기기: 이번 달·근무표 달 중 이른 달 ~ 늦은 달의 두 달 뒤. 달마다 따로 저장돼서 새 달은 빈칸으로 시작하고 지난달 기록은 남음
+  const tm=TODAY.slice(0,7),lo=base<tm?base:tm,hi=mAdd(base>tm?base:tm,2);
+  const go=n=>{const k=mAdd(mkey,n);extraMo=k===base?null:{base,k};sec.replaceWith(extraSection(base))};
+  const nav=el("span",{class:"xnav"},
+    el("button",{class:"xnav-b",type:"button","aria-label":"이전 달",disabled:mkey<=lo,onclick:()=>go(-1)},"‹"),
+    el("button",{class:"xnav-b",type:"button","aria-label":"다음 달",disabled:mkey>=hi,onclick:()=>go(1)},"›"));
+  const sec=el("section",{class:"mini"},el("h2",{},`${mo}월 추가근무 가능`,nav),el("div",{class:"card"},line));
+  addHelp(sec);return sec;
 }
 function confirmHope(d,k,on){
   if(!needMe())return;
