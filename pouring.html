@@ -3036,7 +3036,9 @@ function editDay(k,back){ // back: 저장하거나 닫으면 돌아갈 창(스�
   const wed=parse(k).getDay()===3;
   const state={};SLOTS.forEach(sl=>state[sl.k]=[...(s[sl.k]||[])]);state.off=[...(s.off||[])];
   const parts=[];
-  const cap=wed&&(s.note_meraki||"").trim()==="휴무"?WSTAFF.length:hopeCap(k);const offN=()=>new Set([...state.off,...hope].filter(x=>x!=="seunghyun"));const offBtns=[];
+  // 사장이 정하는 휴무: 수요일 5명까지(직원 희망휴무 신청은 hopeCap대로 3명)
+  // 승현 빼고 직원 5명이라 메라키 휴무인 수요일도 모두 쉴 수 있음
+  const cap=wed?BOSS_WED_OFF:hopeCap(k);const offN=()=>new Set([...state.off,...hope].filter(x=>x!=="seunghyun"));const offBtns=[];
   const refreshOff=()=>{const full=offN().size>=cap;offBtns.forEach(([b,key])=>{const on=state.off.includes(key);b.classList.toggle("blocked",!hope.includes(key)&&!on&&full&&key!=="seunghyun")})};
   const chipRow=key=>{const r=el("div",{class:"chips"});WSTAFF.forEach(st=>{const hp=hope.includes(st.key);const b=el("button",{class:"chip"+(hp&&key!=="off"&&!state[key].includes(st.key)?" blocked":""),type:"button",style:`--c:var(--c-${st.key})`,"aria-pressed":String(state[key].includes(st.key))},(hp?"★":"")+st.name);
     b.onclick=()=>{const a=state[key];const i=a.indexOf(st.key);
@@ -3439,6 +3441,7 @@ async function draftSheet(hs){
   // 바깥을 누르면 닫힘. 다시 만들기·비우기·확정하기는 근무표 위 버튼으로
   openSheet(`${md(hs)}~${md(addDays(hs,13))} 초안을 넣었어요`,[el("p",{class:"hint",style:"margin:0;white-space:pre-line"},"달력에서 칸을 눌러 고치면 그 날은 고정돼요. '다시 만들기'를 해도 고친 날은 그대로예요.\n창을 닫은 뒤에도 근무표 위 '더 반영할 내용' 칸에 적을 수 있어요.\n다 됐으면 '확정하기' → '공개하기'를 눌러 주세요"),box,reqBox],async()=>true,"",null,{autosave:true});draw()}
 function hopeCap(d){return parse(d).getDay()===3?3:1}
+const BOSS_WED_OFF=5; // 수요일에 사장이 근무표에서 넣을 수 있는 휴무 인원(승현 제외)
 function hopeBlocked(d,who){
   const taken=S.dayoffs.filter(x=>x.date===d&&x.staff!==who&&x.staff!=="seunghyun");
   const cap=hopeCap(d);if(taken.length<cap)return false;
