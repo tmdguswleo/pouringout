@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-26T01:37:10Z";window.__APP_NOTE="근무표: 수요일 휴무는 사장님이 날짜 편집에서 5명까지 넣을 수 있어요. 직원 희망휴무 신청은 그대로 수요일 3명까지예요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html lang="ko"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon3-180.png"><link rel="apple-touch-icon" sizes="1024x1024" href="icon3-1024.png"><link rel="icon" href="icon3-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="pouring out"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#141414"><meta name="robots" content="noindex,nofollow"><script>window.__APP_VER="2026-11-27T00:22:19Z";window.__APP_NOTE="전달사항: 글을 눌러 '메모 연결'로 자료실 메모를 연결할 수 있어요. 연결하면 오른쪽 작은 아이콘으로 메모가 바로 열려요."</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* PC: 스케줄 짜기는 화면 전체, 메라키 조각 안내는 입력칸 오른쪽에 맞춤 */
 .sched-tools-close{display:none}
 @media (min-width:601px){
@@ -1626,7 +1626,7 @@ function verCheck(){const V=window.__APP_VER||"";if(!WEB||!V||!isBoss())return;
       if(prompted===j.v)return;
       try{localStorage.setItem(verPromptKey,j.v)}catch(e){}
       const old=document.querySelector(".verbar");if(old)old.remove();
-      document.body.append(el("button",{class:"verbar",type:"button",onclick:()=>location.reload()},"새 버전이 올라왔어요 · 눌러서 반영"))}}catch(e){}};
+      document.body.append(el("button",{class:"verbar",type:"button",onclick:()=>{try{sessionStorage.setItem("po.fresh","1")}catch(e){}location.reload()}},"새 버전이 올라왔어요 · 눌러서 반영"))}}catch(e){}};
   setInterval(poll,120000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)poll()})}
 /* 직원 가입 알림(사장만, 새 주소): 직원이 휴대폰 번호로 처음 들어와 새 비밀번호까지 정하면 사장 화면에 창. 1분마다·앱으로 돌아올 때 확인.
    이 기기에서 처음 켤 때는 지금 상태를 기억만 하고(이미 가입한 사람은 안 띄움) 그 뒤 새로 가입한 사람만 알림 */
@@ -2117,7 +2117,7 @@ async function importMove(){
         const {error}=await sb.from("store").upsert(rows.slice(i,i+200).map(r=>({col:r.col,id:r.id,data:r.data,updated_at:new Date().toISOString()})));if(error)throw error}
       st.textContent=`다 옮겼어요. 글 ${rows.length}개, 사진·영상 ${media.length-bad}개`+(bad?` (못 올린 것 ${bad}개)`:"")+". 화면을 새로 고쳐 주세요"}
     catch(e){st.textContent="옮기지 못했어요: "+((e&&e.message)||e);fi.disabled=false}}}
-function logout(){if(WEB&&sb){try{localStorage.removeItem("pn.login");localStorage.removeItem("pn.uid")}catch(e){};try{caches.delete("po-data")}catch(e){}; // 로그아웃하면 저장해 둔 데이터도 지움 // 이 기기 로그인만 바로 지우고 새로 고침 (서버를 기다리지 않음)
+function logout(){if(WEB&&sb){try{localStorage.removeItem("pn.login");localStorage.removeItem("pn.uid")}catch(e){};try{caches.delete("po-data");caches.delete("po-app")}catch(e){}; // po-app = 첫 화면이 받아 둔 앱 본체 // 로그아웃하면 저장해 둔 데이터도 지움 // 이 기기 로그인만 바로 지우고 새로 고침 (서버를 기다리지 않음)
     me="";try{closeSheet()}catch(e){};try{draw()}catch(e){} // 앱 화면을 남기지 않고 바로 로그인 화면
     sb.auth.signOut({scope:"local"}).catch(()=>{}).finally(()=>location.reload());setTimeout(()=>location.reload(),600);return}me="";try{localStorage.removeItem("pn.login");sessionStorage.setItem("pn.noauto","1")}catch(e){};if(window.__updMe)__updMe();draw()}
 async function pinHash(salt,pin){const data=new TextEncoder().encode(salt+":"+pin);
@@ -2530,8 +2530,9 @@ function noticeCard(store,emptyText,placeholder,opt={}){
     const at=attrib(n);
     if(n.check&&n.done&&fwho(n.doneBy)){const d=el("span",{},` · ${fwho(n.doneBy)} 완료 ${hm(n.doneAt)}`);if(at)at.append(d);else txt.append(el("div",{class:"by attr"},d))}
     if(at) txt.append(at);
-    const dc=(n.check||opt.alwaysCheck)?docChip(n):null; // 오른쪽 × 왼쪽에 작은 메모·폴더 아이콘
-    const li=el("li",{},el("span",{class:"pre-chk ie-pc","aria-hidden":"true"}),lead,txt,dc,x);(n.html||inlineEdit(li,sp,n,C,{check:C==="notices"&&!opt.alwaysCheck,media:C==="notices",doc:!!n.check}));li._it=n;li._grp=n.check&&n.done?null:(n.check?"c":"p");ul.append(li)});card.append(ul);enableDrag(ul,"notices")}
+    // 오른쪽 × 왼쪽에 작은 메모·폴더 아이콘. 전달사항(체크 아님)은 글자 자동 연결 없이 직접 연결한 메모만
+    const dc=(n.check||opt.alwaysCheck)?docChip(n):n.docId?docChip({docId:n.docId}):null;
+    const li=el("li",{},el("span",{class:"pre-chk ie-pc","aria-hidden":"true"}),lead,txt,dc,x);(n.html||inlineEdit(li,sp,n,C,{check:C==="notices"&&!opt.alwaysCheck,media:C==="notices",doc:!!n.check||C==="notices"}));li._it=n;li._grp=n.check&&n.done?null:(n.check?"c":"p");ul.append(li)});card.append(ul);enableDrag(ul,"notices")}
   const key=store||"all";
   const tog=opt.alwaysCheck?null:iconBtn(ICON_CHECK,"체크 항목으로 쓰기",{"aria-pressed":String(!!noticeCheckMode[key])});
   if(tog)tog.onclick=()=>{noticeCheckMode[key]=!noticeCheckMode[key];tog.setAttribute("aria-pressed",String(noticeCheckMode[key]));box.classList.toggle("chkmode",!!noticeCheckMode[key]);inp.focus()};
